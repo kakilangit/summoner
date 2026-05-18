@@ -166,8 +166,8 @@ defmodule Summoner.Swarms.SwarmRunner do
 
   defp turn_loop(state) do
     case determine_next_agent(state) do
-      {:ok, agent} ->
-        execute_turn(state, agent)
+      {:ok, agent, directive} ->
+        execute_turn(state, agent, directive)
 
       {:done, summary} ->
         # Coordinator provided a summary — write it as system message
@@ -203,7 +203,8 @@ defmodule Summoner.Swarms.SwarmRunner do
   defp determine_next_agent(state) do
     case state.swarm.mode do
       :directed ->
-        # Use coordinator LLM to decide
+        # Coordinator returns {agent, directive} — the directive is the
+        # coordinator's instruction for what this agent should contribute.
         SwarmCoordinator.route(state.swarm, state.conversation, state.members)
 
       mode when mode in [:round_robin, :relay] ->
@@ -223,11 +224,14 @@ defmodule Summoner.Swarms.SwarmRunner do
             }
           end)
 
-        TurnRouter.next_agent(state.swarm, context_messages, state.members)
+        case TurnRouter.next_agent(state.swarm, context_messages, state.members) do
+          {:ok, agent} -> {:ok, agent, nil}
+          other -> other
+        end
     end
   end
 
-  defp execute_turn(state, agent) do
+  defp execute_turn(state, agent, directive \\ nil) do
     # Broadcast which agent is responding
     topic = Broadcasts.swarm_topic(state.workspace_id, state.swarm.id)
 
@@ -239,13 +243,17 @@ defmodule Summoner.Swarms.SwarmRunner do
     # Ensure agent server is started and invoke synchronously
     AgentServer.ensure_started(state.workspace_id, agent.id)
 
+    # The message is either the user's original message (first turn),
+    # a directive from the coordinator, or nil for relay handoffs.
+    message = state.last_message || directive
+
     # Use synchronous invoke so we can check the result for __done__
     result =
       invoke_with_timeout(
         state.workspace_id,
         agent,
         state.conversation.id,
-        state.last_message,
+        message,
         state.scope,
         state.members,
         state.swarm.mode
@@ -325,26 +333,18 @@ defmodule Summoner.Swarms.SwarmRunner do
             :ok
         end
 
-      %{"tool" => @done_tool_name, "summary" => summary} ->
-        # Legacy __done__ or relay __done__ signal
-        if state.swarm.mode == :directed do
-          state = %{
-            state
-            | turn_count: state.turn_count + 1,
-              last_message: nil
-          }
+      %{"tool" => @done_tool_name, "summary" => _summary} ->
+        # In directed mode, __done__ from an agent just means its turn is over —
+        # the coordinator decides whether the swarm continues.
+        # In round_robin/relay, an individual agent's __done__ also just means
+        # its turn is complete — continue to next turn via the router.
+        state = %{
+          state
+          | turn_count: state.turn_count + 1,
+            last_message: nil
+        }
 
-          turn_loop(state)
-        else
-          broadcast_done(
-            state.workspace_id,
-            state.swarm.id,
-            state.conversation.id,
-            summary
-          )
-
-          :ok
-        end
+        turn_loop(state)
 
       _ ->
         # Continue to next turn — don't pass a message since the agent's
