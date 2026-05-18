@@ -29,8 +29,8 @@ defmodule SummonerWeb.ConversationLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Channels", nil}
         ]
       )
@@ -80,7 +80,7 @@ defmodule SummonerWeb.ConversationLive.Index do
         {:noreply,
          push_navigate(socket,
            to:
-             ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/channels/#{conversation.id}"
+             ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/channels/#{conversation.id}"
          )}
 
       {:error, _changeset} ->
@@ -160,7 +160,7 @@ defmodule SummonerWeb.ConversationLive.Index do
           <div :if={@agents == []} class="text-sm text-base-content/60 py-4 text-center">
             No summons available.
             <.link
-              navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/new"}
+              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/new"}
               class="link link-primary"
             >
               Create one first.
@@ -209,7 +209,7 @@ defmodule SummonerWeb.ConversationLive.Index do
         >
           <.link
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/channels/#{conversation.id}"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/channels/#{conversation.id}"
             }
             class="flex items-center gap-4 min-w-0 flex-1"
           >

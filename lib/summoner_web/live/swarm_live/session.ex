@@ -45,13 +45,13 @@ defmodule SummonerWeb.SwarmLive.Session do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Partys", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Partys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
           {swarm.name,
-           ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}"},
+           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}"},
           {"Channels",
-           ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}/channels"},
+           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}/channels"},
           {conversation.title || "Channel", nil}
         ]
       )
@@ -360,7 +360,7 @@ defmodule SummonerWeb.SwarmLive.Session do
           </SC.title_editor>
           <div class="flex items-center gap-1">
             <.link
-              navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/scrolls"}
+              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/scrolls"}
               class="btn btn-ghost btn-xs gap-1"
               title="Browse workspace files"
             >

@@ -24,9 +24,9 @@ defmodule SummonerWeb.ProviderLive.Show do
       |> assign(copilot_connect: nil)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Gateways", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/gateways"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Gateways", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/gateways"},
           {provider.name, nil}
         ]
       )
@@ -94,7 +94,7 @@ defmodule SummonerWeb.ProviderLive.Show do
         <h1 class="text-2xl font-bold">{@provider.name}</h1>
         <.link
           navigate={
-            ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{@provider.id}/edit"
+            ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{@provider.id}/edit"
           }
           class="btn btn-primary btn-sm"
         >

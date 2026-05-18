@@ -26,8 +26,8 @@ defmodule SummonerWeb.AgentLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Summons", nil}
         ]
       )
@@ -114,7 +114,7 @@ defmodule SummonerWeb.AgentLive.Index do
         <h1 class="text-2xl font-bold">Summons</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/new"}
+          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/new"}
           class="btn btn-primary btn-sm"
         >
           New Summon
@@ -143,7 +143,7 @@ defmodule SummonerWeb.AgentLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}"
+                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}"
                 }
                 class="font-medium hover:underline truncate"
               >
@@ -167,7 +167,7 @@ defmodule SummonerWeb.AgentLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/runes"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/runes"
               }
               class="btn btn-ghost btn-sm"
             >
@@ -175,7 +175,7 @@ defmodule SummonerWeb.AgentLive.Index do
             </.link>
             <.link
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/skills"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/skills"
               }
               class="btn btn-ghost btn-sm"
             >
@@ -184,7 +184,7 @@ defmodule SummonerWeb.AgentLive.Index do
             <.link
               :if={@can?.(:configure)}
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/edit"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{agent.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

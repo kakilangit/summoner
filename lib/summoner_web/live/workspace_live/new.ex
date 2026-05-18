@@ -13,7 +13,7 @@ defmodule SummonerWeb.WorkspaceLive.New do
       |> assign(form: to_form(changeset))
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{socket.assigns.tenant.id}/realms"},
+          {"Realms", ~p"/guilds/#{socket.assigns.tenant.id}/realms"},
           {"New Realm", nil}
         ]
       )
@@ -30,7 +30,7 @@ defmodule SummonerWeb.WorkspaceLive.New do
         socket =
           socket
           |> put_flash(:info, "Realm created successfully.")
-          |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}")
+          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")
 
         {:noreply, socket}
 
@@ -48,7 +48,7 @@ defmodule SummonerWeb.WorkspaceLive.New do
       <.form for={@form} id="workspace-form" phx-submit="save" class="space-y-4">
         <.input field={@form[:name]} type="text" label="Name" required />
         <div class="flex items-center gap-4">
-          <.link navigate={~p"/realms/#{@tenant.id}/realms"} class="btn btn-ghost btn-sm">
+          <.link navigate={~p"/guilds/#{@tenant.id}/realms"} class="btn btn-ghost btn-sm">
             Cancel
           </.link>
           <.button phx-disable-with="Creating..." class="btn btn-primary btn-sm">

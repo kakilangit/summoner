@@ -53,9 +53,9 @@ defmodule SummonerWeb.PipelineLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Quests", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Quests", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
             {title, nil}
           ]
         )
@@ -65,7 +65,7 @@ defmodule SummonerWeb.PipelineLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
     end
   end
 
@@ -273,7 +273,7 @@ defmodule SummonerWeb.PipelineLive.Form do
          socket
          |> put_flash(:info, "Quest created.")
          |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests/#{pipeline.id}"
+           to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests/#{pipeline.id}"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -289,7 +289,7 @@ defmodule SummonerWeb.PipelineLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Quest updated.")
-         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests")}
+         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -394,7 +394,7 @@ defmodule SummonerWeb.PipelineLive.Form do
 
         <div class="flex items-center justify-end gap-3 pt-2">
           <.link
-            navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

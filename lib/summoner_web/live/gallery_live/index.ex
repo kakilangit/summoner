@@ -23,8 +23,8 @@ defmodule SummonerWeb.GalleryLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Gallery", nil}
         ]
       )

@@ -18,9 +18,9 @@ defmodule SummonerWeb.AgentLive.Show do
       |> assign(agent: agent, usage: usage)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Summons", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
           {agent.name, nil}
         ]
       )
@@ -36,7 +36,7 @@ defmodule SummonerWeb.AgentLive.Show do
         <h1 class="text-2xl font-bold">{@agent.name}</h1>
         <.link
           navigate={
-            ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/edit"
+            ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/edit"
           }
           class="btn btn-primary btn-sm"
         >
@@ -74,7 +74,7 @@ defmodule SummonerWeb.AgentLive.Show do
         <div class="flex gap-2 pt-2">
           <.link
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/runes"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/runes"
             }
             class="btn btn-ghost btn-sm"
           >
@@ -82,7 +82,7 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
           <.link
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/skills"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/skills"
             }
             class="btn btn-ghost btn-sm"
           >

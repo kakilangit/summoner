@@ -25,8 +25,8 @@ defmodule SummonerWeb.SecretLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Seals", nil}
         ]
       )
@@ -85,7 +85,7 @@ defmodule SummonerWeb.SecretLive.Index do
         <h1 class="text-2xl font-bold">Seals</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals/new"}
+          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals/new"}
           class="btn btn-primary btn-sm"
         >
           New Seal
@@ -125,7 +125,7 @@ defmodule SummonerWeb.SecretLive.Index do
             <.link
               :if={@can?.(:configure) and is_nil(secret.tenant_id)}
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals/#{secret.id}/edit"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals/#{secret.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

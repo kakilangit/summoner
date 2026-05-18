@@ -26,8 +26,8 @@ defmodule SummonerWeb.FileBrowserLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Scrolls", nil}
         ]
       )
@@ -278,10 +278,10 @@ defmodule SummonerWeb.FileBrowserLive.Index do
   end
 
   defp scroll_path(workspace, ""),
-    do: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls"
+    do: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls"
 
   defp scroll_path(workspace, path),
-    do: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls/#{path}"
+    do: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls/#{path}"
 
   defp path_breadcrumbs(current_path) do
     parts = current_path |> String.split("/") |> Enum.reject(&(&1 == ""))
@@ -484,7 +484,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
               <.link
                 :if={entry.type == :file}
                 href={
-                  ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{entry_path(@current_path, entry.name)}"
+                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{entry_path(@current_path, entry.name)}"
                 }
                 class="btn btn-ghost btn-xs"
                 title="Download"
@@ -536,7 +536,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
               <.link
                 :if={@viewing_file}
                 href={
-                  ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{@viewing_file || ""}"
+                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{@viewing_file || ""}"
                 }
                 class="btn btn-ghost btn-sm gap-1"
               >

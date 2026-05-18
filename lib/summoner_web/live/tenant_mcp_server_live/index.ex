@@ -24,7 +24,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
       |> assign(
         breadcrumbs: [
           {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/realms/#{tenant.id}/realms"},
+          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
           {"Runes", nil}
         ]
       )
@@ -91,7 +91,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
         <h1 class="text-2xl font-bold">Runes</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/realms/#{@tenant.id}/runes/new"}
+          navigate={~p"/guilds/#{@tenant.id}/runes/new"}
           class="btn btn-primary btn-sm"
         >
           New Rune
@@ -136,7 +136,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/realms/#{@tenant.id}/runes/#{server.id}/edit"}
+              navigate={~p"/guilds/#{@tenant.id}/runes/#{server.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

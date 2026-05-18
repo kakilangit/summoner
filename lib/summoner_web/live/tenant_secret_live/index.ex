@@ -24,7 +24,7 @@ defmodule SummonerWeb.TenantSecretLive.Index do
       |> assign(
         breadcrumbs: [
           {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/realms/#{tenant.id}/realms"},
+          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
           {"Seals", nil}
         ]
       )
@@ -88,7 +88,7 @@ defmodule SummonerWeb.TenantSecretLive.Index do
         <h1 class="text-2xl font-bold">Seals</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/realms/#{@tenant.id}/seals/new"}
+          navigate={~p"/guilds/#{@tenant.id}/seals/new"}
           class="btn btn-primary btn-sm"
         >
           New Seal
@@ -126,7 +126,7 @@ defmodule SummonerWeb.TenantSecretLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/realms/#{@tenant.id}/seals/#{secret.id}/edit"}
+              navigate={~p"/guilds/#{@tenant.id}/seals/#{secret.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

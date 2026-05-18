@@ -33,7 +33,7 @@ defmodule SummonerWeb.TenantLive.Index do
 
       case tenants do
         [single] ->
-          {:ok, push_navigate(socket, to: ~p"/realms/#{single.id}/realms")}
+          {:ok, push_navigate(socket, to: ~p"/guilds/#{single.id}/realms")}
 
         _ ->
           socket =
@@ -124,7 +124,7 @@ defmodule SummonerWeb.TenantLive.Index do
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <.link
           :for={tenant <- @tenants}
-          navigate={~p"/realms/#{tenant.id}/realms"}
+          navigate={~p"/guilds/#{tenant.id}/realms"}
           class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
         >
           <div class="card-body">
@@ -172,7 +172,7 @@ defmodule SummonerWeb.TenantLive.Index do
             <tr :for={tenant <- @page.entries} class="hover">
               <td>
                 <.link
-                  navigate={~p"/realms/#{tenant.id}/realms"}
+                  navigate={~p"/guilds/#{tenant.id}/realms"}
                   class="link link-hover font-medium"
                 >
                   {tenant.name}
@@ -194,7 +194,7 @@ defmodule SummonerWeb.TenantLive.Index do
               </td>
               <td class="flex gap-1">
                 <.link
-                  navigate={~p"/realms/#{tenant.id}/edit"}
+                  navigate={~p"/guilds/#{tenant.id}/edit"}
                   class="btn btn-ghost btn-xs"
                 >
                   Edit

@@ -28,7 +28,7 @@ defmodule SummonerWeb.TenantInvitationLive.Index do
       |> assign(
         breadcrumbs: [
           {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/realms/#{tenant.id}/realms"},
+          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
           {"Invites", nil}
         ]
       )

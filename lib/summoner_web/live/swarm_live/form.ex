@@ -45,9 +45,9 @@ defmodule SummonerWeb.SwarmLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Partys", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Partys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
             {title, nil}
           ]
         )
@@ -57,7 +57,7 @@ defmodule SummonerWeb.SwarmLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
     end
   end
 
@@ -155,7 +155,7 @@ defmodule SummonerWeb.SwarmLive.Form do
          socket
          |> put_flash(:info, "Party formed. Add members below.")
          |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}/edit"
+           to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}/edit"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -171,7 +171,7 @@ defmodule SummonerWeb.SwarmLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Party updated.")
-         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties")}
+         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -240,7 +240,7 @@ defmodule SummonerWeb.SwarmLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties"}
             class="btn btn-ghost btn-sm"
           >
             Cancel
@@ -272,7 +272,7 @@ defmodule SummonerWeb.SwarmLive.Form do
                 <div class="flex items-center gap-2">
                   <.link
                     navigate={
-                      ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{member.agent.id}"
+                      ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{member.agent.id}"
                     }
                     class="font-medium link link-hover truncate"
                   >

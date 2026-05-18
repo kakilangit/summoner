@@ -18,9 +18,9 @@ defmodule SummonerWeb.SwarmLive.Show do
       |> assign(swarm: swarm)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Partys", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Partys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
           {swarm.name, nil}
         ]
       )
@@ -83,7 +83,7 @@ defmodule SummonerWeb.SwarmLive.Show do
           <.link
             :if={length(@swarm.members) > 0}
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{@swarm.id}/channels"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{@swarm.id}/channels"
             }
             class="btn btn-primary btn-sm"
           >
@@ -91,7 +91,7 @@ defmodule SummonerWeb.SwarmLive.Show do
           </.link>
           <.link
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{@swarm.id}/edit"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{@swarm.id}/edit"
             }
             class="btn btn-ghost btn-sm"
           >
@@ -124,7 +124,7 @@ defmodule SummonerWeb.SwarmLive.Show do
           <span class="text-base-content/60">Coordinator:</span>
           <.link
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@swarm.coordinator_agent.id}"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@swarm.coordinator_agent.id}"
             }
             class="font-medium link link-hover"
           >
@@ -144,7 +144,7 @@ defmodule SummonerWeb.SwarmLive.Show do
           >
             <.link
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{member.agent.id}"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{member.agent.id}"
               }
               class="font-medium link link-hover"
             >

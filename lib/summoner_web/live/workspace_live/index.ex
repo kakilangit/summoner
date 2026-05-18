@@ -81,7 +81,7 @@ defmodule SummonerWeb.WorkspaceLive.Index do
         <h1 class="text-2xl font-bold">Guilds</h1>
         <.link
           :if={assigns[:tenant]}
-          navigate={~p"/realms/#{@tenant.id}/realms/new"}
+          navigate={~p"/guilds/#{@tenant.id}/realms/new"}
           class="btn btn-primary btn-sm"
         >
           New Realm
@@ -104,7 +104,7 @@ defmodule SummonerWeb.WorkspaceLive.Index do
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <.link
           :for={workspace <- @page.entries}
-          navigate={~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"}
+          navigate={~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"}
           class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
         >
           <div class="card-body">

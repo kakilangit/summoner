@@ -25,11 +25,11 @@ defmodule SummonerWeb.PipelineLive.RunShow do
       |> assign(stage_events: %{}, subscribed_invocations: MapSet.new())
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Quests", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Quests", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
           {pipeline.name,
-           ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests/#{pipeline.id}"},
+           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests/#{pipeline.id}"},
           {"Run", nil}
         ]
       )

@@ -28,8 +28,8 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
             {"Settings", nil}
           ]
         )
@@ -39,7 +39,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
     end
   end
 
@@ -75,7 +75,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
           |> put_flash(:info, "Settings updated successfully.")
           |> push_navigate(
             to:
-              ~p"/realms/#{socket.assigns.workspace.tenant_id}/realms/#{socket.assigns.workspace.id}"
+              ~p"/guilds/#{socket.assigns.workspace.tenant_id}/realms/#{socket.assigns.workspace.id}"
           )
 
         {:noreply, socket}
@@ -286,7 +286,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
         <p class="text-xs text-base-content/60">
           {@pending_jobs} conjuration(s) currently channeling.
           <.link
-            navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/gallery"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gallery"}
             class="link link-primary"
           >
             View Gallery

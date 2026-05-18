@@ -37,18 +37,18 @@ defmodule SummonerWeb.AgentLive.Form do
       breadcrumbs =
         if agent.id do
           [
-            {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Summons", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
             {agent.name,
-             ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"},
+             ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"},
             {"Edit", nil}
           ]
         else
           [
-            {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Summons", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
             {"New Summon", nil}
           ]
         end
@@ -91,7 +91,7 @@ defmodule SummonerWeb.AgentLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
     end
   end
 
@@ -168,7 +168,7 @@ defmodule SummonerWeb.AgentLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Summon summoned successfully.")
-         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons")}
+         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -188,7 +188,7 @@ defmodule SummonerWeb.AgentLive.Form do
          socket
          |> put_flash(:info, "Summon updated successfully.")
          |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"
+           to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -388,7 +388,7 @@ defmodule SummonerWeb.AgentLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

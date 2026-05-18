@@ -25,8 +25,8 @@ defmodule SummonerWeb.SkillLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Grimoire", nil}
         ]
       )
@@ -91,7 +91,7 @@ defmodule SummonerWeb.SkillLive.Index do
         <div class="flex-shrink-0">
           <.link
             :if={@can?.(:configure)}
-            navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells/new"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells/new"}
             class="btn btn-primary btn-sm"
           >
             New Spell
@@ -133,7 +133,7 @@ defmodule SummonerWeb.SkillLive.Index do
             <.link
               :if={@can?.(:configure) and is_nil(skill.tenant_id)}
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells/#{skill.id}/edit"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells/#{skill.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

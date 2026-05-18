@@ -35,8 +35,8 @@ defmodule SummonerWeb.TenantProviderLive.Form do
         |> assign(
           breadcrumbs: [
             {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/realms/#{tenant.id}/realms"},
-            {"Gateways", ~p"/realms/#{tenant.id}/gateways"},
+            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
+            {"Gateways", ~p"/guilds/#{tenant.id}/gateways"},
             {title, nil}
           ]
         )
@@ -46,7 +46,7 @@ defmodule SummonerWeb.TenantProviderLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/realms/#{tenant.id}/realms")}
+       |> redirect(to: ~p"/guilds/#{tenant.id}/realms")}
     end
   end
 
@@ -112,7 +112,7 @@ defmodule SummonerWeb.TenantProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Gateway created successfully.")
-         |> push_navigate(to: ~p"/realms/#{tenant.id}/gateways")}
+         |> push_navigate(to: ~p"/guilds/#{tenant.id}/gateways")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -127,7 +127,7 @@ defmodule SummonerWeb.TenantProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Gateway updated successfully.")
-         |> push_navigate(to: ~p"/realms/#{tenant.id}/gateways")}
+         |> push_navigate(to: ~p"/guilds/#{tenant.id}/gateways")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -176,7 +176,7 @@ defmodule SummonerWeb.TenantProviderLive.Form do
         />
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/realms/#{@tenant.id}/gateways"}
+            navigate={~p"/guilds/#{@tenant.id}/gateways"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

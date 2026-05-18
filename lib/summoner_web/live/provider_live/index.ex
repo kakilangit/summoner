@@ -25,8 +25,8 @@ defmodule SummonerWeb.ProviderLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
           {"Gateways", nil}
         ]
       )
@@ -70,7 +70,7 @@ defmodule SummonerWeb.ProviderLive.Index do
         <h1 class="text-2xl font-bold">Gateways</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/new"}
+          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/new"}
           class="btn btn-primary btn-sm"
         >
           Add Gateway
@@ -99,7 +99,7 @@ defmodule SummonerWeb.ProviderLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{provider.id}"
+                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{provider.id}"
                 }
                 class="font-medium link link-hover"
               >
@@ -123,7 +123,7 @@ defmodule SummonerWeb.ProviderLive.Index do
             <.link
               :if={@can?.(:configure) and is_nil(provider.tenant_id)}
               navigate={
-                ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{provider.id}/edit"
+                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways/#{provider.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

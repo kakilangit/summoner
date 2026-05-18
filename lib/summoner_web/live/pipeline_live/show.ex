@@ -26,9 +26,9 @@ defmodule SummonerWeb.PipelineLive.Show do
       |> assign(has_active_run: Pipelines.has_active_run?(pipeline.id))
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Quests", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
+          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Quests", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/quests"},
           {pipeline.name, nil}
         ]
       )
@@ -239,7 +239,7 @@ defmodule SummonerWeb.PipelineLive.Show do
           <.link
             :if={@can?.(:configure)}
             navigate={
-              ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{@pipeline.id}/edit"
+              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{@pipeline.id}/edit"
             }
             class="btn btn-ghost btn-sm"
           >
@@ -300,7 +300,7 @@ defmodule SummonerWeb.PipelineLive.Show do
                 <td class="text-sm">
                   <.link
                     navigate={
-                      ~p"/realms/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{@pipeline.id}/runs/#{run.id}"
+                      ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{@pipeline.id}/runs/#{run.id}"
                     }
                     class="link link-hover"
                   >
