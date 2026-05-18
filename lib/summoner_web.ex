@@ -89,8 +89,8 @@ defmodule SummonerWeb do
       import SummonerWeb.CoreComponents
 
       # Common modules used in templates
-      alias SummonerWeb.Layouts
       alias Phoenix.LiveView.JS
+      alias SummonerWeb.Layouts
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

@@ -3,8 +3,8 @@ defmodule SummonerWeb.GalleryLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Media
   alias Phoenix.LiveView.JS
+  alias Summoner.Media
 
   @max_gallery_items 100
 

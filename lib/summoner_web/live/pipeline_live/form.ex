@@ -1,11 +1,11 @@
 defmodule SummonerWeb.PipelineLive.Form do
   use SummonerWeb, :live_view
 
+  alias Phoenix.HTML.Form
   alias Summoner.Agents
   alias Summoner.Pipelines
   alias Summoner.Pipelines.{CronBuilder, Pipeline}
   alias Summoner.Workspaces.Policy
-  alias Phoenix.HTML.Form
 
   @impl true
   def mount(params, _session, socket) do
