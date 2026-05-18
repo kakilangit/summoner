@@ -1,4 +1,9 @@
-.PHONY: setup server iex fmt lint test ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build
+.PHONY: setup server iex fmt lint test ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build hooks
+
+## Git Hooks
+
+hooks:
+	git config core.hooksPath .githooks
 
 ## Infrastructure
 
