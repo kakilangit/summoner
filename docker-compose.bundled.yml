@@ -47,7 +47,7 @@ services:
       sh -c 'curl -sf http://ollama:11434/api/tags | grep -q "qwen3:0.6b" && echo "Model already pulled" || curl -s -X POST http://ollama:11434/api/pull -d "{\"name\": \"qwen3:0.6b\"}" | tail -1'
 
   app:
-    image: kakilangit/summoner:latest
+    image: ghcr.io/kakilangit/summoner:latest
     pull_policy: always
     restart: unless-stopped
     depends_on:
@@ -75,7 +75,7 @@ services:
       - "${PORT:-4000}:4000"
 
   seed:
-    image: kakilangit/summoner-seed:latest
+    image: ghcr.io/kakilangit/summoner-seed:latest
     pull_policy: always
     depends_on:
       db:

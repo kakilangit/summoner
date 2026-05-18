@@ -3,10 +3,14 @@
 # Uses pre-built builder and base images for fast builds.
 # Only application code changes trigger a rebuild.
 
-ARG BUILDER_IMAGE="kakilangit/summoner-builder:latest"
-ARG BASE_IMAGE="kakilangit/summoner-base:latest"
+ARG BUILDER_IMAGE="ghcr.io/kakilangit/summoner-builder:latest"
+ARG BASE_IMAGE="ghcr.io/kakilangit/summoner-base:latest"
 
 FROM ${BUILDER_IMAGE} AS builder
+
+LABEL org.opencontainers.image.source="https://github.com/kakilangit/summoner"
+LABEL org.opencontainers.image.description="Summoner - Local-first AI agent platform"
+LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 
