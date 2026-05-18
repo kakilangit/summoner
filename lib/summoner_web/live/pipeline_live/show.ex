@@ -51,8 +51,7 @@ defmodule SummonerWeb.PipelineLive.Show do
               page: socket.assigns.runs_page.page
             )
 
-          {:noreply,
-           socket |> assign(runs_page: runs_page) |> put_flash(:info, "Run cancelled.")}
+          {:noreply, socket |> assign(runs_page: runs_page) |> put_flash(:info, "Run cancelled.")}
 
         {:error, :already_terminal} ->
           {:noreply, put_flash(socket, :info, "Run already finished.")}

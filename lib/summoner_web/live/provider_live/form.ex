@@ -20,7 +20,8 @@ defmodule SummonerWeb.ProviderLive.Form do
             {%Provider{workspace_id: workspace.id}, "Add Gateway"}
 
           id ->
-            {Providers.get_provider!(scope, workspace.id, workspace.tenant_id, id), "Edit Gateway"}
+            {Providers.get_provider!(scope, workspace.id, workspace.tenant_id, id),
+             "Edit Gateway"}
         end
 
       changeset = Provider.changeset(provider, %{})

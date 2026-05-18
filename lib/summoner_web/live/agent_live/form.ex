@@ -168,9 +168,7 @@ defmodule SummonerWeb.AgentLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Summon summoned successfully.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/summons")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

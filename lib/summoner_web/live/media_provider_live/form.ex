@@ -159,9 +159,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge created successfully.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/forges"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/forges")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -180,9 +178,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge updated successfully.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/forges"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/forges")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

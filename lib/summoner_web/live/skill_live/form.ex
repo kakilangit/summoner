@@ -100,9 +100,7 @@ defmodule SummonerWeb.SkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell created.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/spells"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/spells")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -117,9 +115,7 @@ defmodule SummonerWeb.SkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell updated.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/spells"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/spells")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

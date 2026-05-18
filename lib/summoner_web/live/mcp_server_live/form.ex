@@ -41,8 +41,7 @@ defmodule SummonerWeb.McpServerLive.Form do
           breadcrumbs: [
             {"Realms", ~p"/realms/#{workspace.tenant_id}/realms"},
             {workspace.name, ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Runes",
-             ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes"},
+            {"Runes", ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes"},
             {title, nil}
           ]
         )
@@ -168,9 +167,7 @@ defmodule SummonerWeb.McpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune created.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -185,9 +182,7 @@ defmodule SummonerWeb.McpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune updated.")
-         |> push_navigate(
-           to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes"
-         )}
+         |> push_navigate(to: ~p"/realms/#{workspace.tenant_id}/realms/#{workspace.id}/runes")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
