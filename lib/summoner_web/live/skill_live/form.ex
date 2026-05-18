@@ -39,7 +39,7 @@ defmodule SummonerWeb.SkillLive.Form do
           breadcrumbs: [
             {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
             {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Grimoire", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/spells"},
+            {"Spellbook", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/spells"},
             {title, nil}
           ]
         )

@@ -86,7 +86,7 @@ defmodule SummonerWeb.AgentLive.Show do
             }
             class="btn btn-ghost btn-sm"
           >
-            Grimoire
+            Spellbook
           </.link>
         </div>
 

@@ -15,7 +15,7 @@ defmodule SummonerWeb.GalleryLive.Index do
     socket =
       socket
       |> assign(
-        page_title: "Grimoire Gallery - #{workspace.name}",
+        page_title: "Spellbook Gallery - #{workspace.name}",
         filter_type: nil,
         filter_source: nil,
         filter_status: nil,
@@ -87,7 +87,7 @@ defmodule SummonerWeb.GalleryLive.Index do
     ~H"""
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Grimoire Gallery</h1>
+        <h1 class="text-2xl font-bold">Spellbook Gallery</h1>
         <div class="flex items-center gap-2">
           <.quota_badge used={@storage_used} max={@storage_max} />
         </div>

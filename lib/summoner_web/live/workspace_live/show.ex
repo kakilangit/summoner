@@ -132,7 +132,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
-                <h2 class="card-title">Grimoire</h2>
+                <h2 class="card-title">Spellbook</h2>
                 <p class="text-sm text-base-content/60">Knowledge and skills for summons</p>
               </div>
             </.link>

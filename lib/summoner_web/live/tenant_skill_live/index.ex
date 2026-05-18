@@ -15,7 +15,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
     socket =
       socket
       |> assign(
-        page_title: "Grimoire - #{tenant.name}",
+        page_title: "Spellbook - #{tenant.name}",
         sort_by: @default_sort_by,
         sort_dir: @default_sort_dir,
         filter: "",
@@ -25,7 +25,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
         breadcrumbs: [
           {"Guilds", ~p"/guilds"},
           {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-          {"Grimoire", nil}
+          {"Spellbook", nil}
         ]
       )
       |> load_page()
@@ -88,7 +88,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
     ~H"""
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Grimoire</h1>
+        <h1 class="text-2xl font-bold">Spellbook</h1>
         <div class="flex-shrink-0">
           <.link
             :if={@tenant_can?.(:manage_resources)}

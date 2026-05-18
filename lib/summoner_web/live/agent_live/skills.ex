@@ -16,7 +16,7 @@ defmodule SummonerWeb.AgentLive.Skills do
 
     socket =
       socket
-      |> assign(page_title: "Grimoire - #{agent.name}")
+      |> assign(page_title: "Spellbook - #{agent.name}")
       |> assign(
         agent: agent,
         all_skills: all_skills,
@@ -29,7 +29,7 @@ defmodule SummonerWeb.AgentLive.Skills do
           {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
           {agent.name,
            ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"},
-          {"Grimoire", nil}
+          {"Spellbook", nil}
         ]
       )
 
@@ -72,7 +72,7 @@ defmodule SummonerWeb.AgentLive.Skills do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <h1 class="text-2xl font-bold">Grimoire for {@agent.name}</h1>
+      <h1 class="text-2xl font-bold">Spellbook for {@agent.name}</h1>
 
       <div :if={@all_skills == []} class="text-center py-12 text-base-content/60">
         <p>

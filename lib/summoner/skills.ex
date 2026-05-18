@@ -1,6 +1,6 @@
 defmodule Summoner.Skills do
   @moduledoc """
-  The Skills context (Grimoire).
+  The Skills context (Spellbook).
 
   Manages workspace-scoped and tenant-scoped knowledge documents that
   can be equipped to agents. Skills may have vector embeddings for

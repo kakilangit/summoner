@@ -36,7 +36,7 @@ defmodule SummonerWeb.TenantSkillLive.Form do
           breadcrumbs: [
             {"Guilds", ~p"/guilds"},
             {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-            {"Grimoire", ~p"/guilds/#{tenant.id}/spells"},
+            {"Spellbook", ~p"/guilds/#{tenant.id}/spells"},
             {title, nil}
           ]
         )

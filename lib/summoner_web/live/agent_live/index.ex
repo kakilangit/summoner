@@ -179,7 +179,7 @@ defmodule SummonerWeb.AgentLive.Index do
               }
               class="btn btn-ghost btn-sm"
             >
-              Grimoire
+              Spellbook
             </.link>
             <.link
               :if={@can?.(:configure)}
