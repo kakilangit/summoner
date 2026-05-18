@@ -28,6 +28,7 @@ defmodule Summoner.Orchestration.ReactLoop do
   alias Summoner.Inference
   alias Summoner.Ledger
   alias Summoner.Orchestration
+  alias Summoner.Orchestration.ToolCallRecovery
   alias Summoner.Workers.CompactorJob
 
   @doc """
@@ -201,6 +202,8 @@ defmodule Summoner.Orchestration.ReactLoop do
     case Inference.Gateway.stream(state.provider, intent, state.gateway_opts) do
       {:ok, stream} ->
         merged = consume_stream(state, stream)
+        # Recover swarm signal tool calls that lost their name during streaming
+        merged = ToolCallRecovery.recover(merged)
         # Normalize the final merged response (XML tool-call extraction, etc.)
         profile = ModelProfile.Resolver.resolve(state.provider.kind, state.agent.model)
         {:ok, Normalizer.normalize(merged, profile)}
@@ -653,29 +656,36 @@ defmodule Summoner.Orchestration.ReactLoop do
   end
 
   defp find_done_call(tool_calls) do
-    # Check for __relay__ first (structured relay routing)
-    case Enum.find(tool_calls, &(&1.function.name == @relay_tool_name)) do
-      nil ->
-        # Fall back to legacy __done__ tool
-        case Enum.find(tool_calls, &(&1.function.name == @done_tool_name)) do
-          nil ->
-            :none
+    relay_calls = Enum.filter(tool_calls, &(&1.function.name == @relay_tool_name))
 
-          tool_call ->
-            args = parse_json(tool_call.function.arguments)
-            summary = args["summary"] || "Party discussion complete"
-            {:ok, summary}
-        end
+    case relay_calls do
+      [] -> find_legacy_done_call(tool_calls)
+      calls -> resolve_relay_calls(calls)
+    end
+  end
+
+  defp find_legacy_done_call(tool_calls) do
+    case Enum.find(tool_calls, &(&1.function.name == @done_tool_name)) do
+      nil ->
+        :none
 
       tool_call ->
         args = parse_json(tool_call.function.arguments)
-        next_agent = args["next_agent"] || "__done__"
+        summary = args["summary"] || "Party discussion complete"
+        {:ok, summary}
+    end
+  end
 
-        if next_agent == "__done__" do
-          {:ok, "Party discussion complete"}
-        else
-          {:relay, next_agent}
-        end
+  defp resolve_relay_calls(calls) do
+    parsed_calls =
+      Enum.map(calls, fn tc ->
+        args = parse_json(tc.function.arguments)
+        {tc, args["next_agent"] || "__done__"}
+      end)
+
+    case Enum.find(parsed_calls, fn {_tc, target} -> target != "__done__" end) do
+      {_tc, target} -> {:relay, target}
+      nil -> {:ok, "Party discussion complete"}
     end
   end
 

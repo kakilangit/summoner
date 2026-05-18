@@ -20,7 +20,7 @@ defmodule Summoner.Swarms.SwarmCoordinator do
   @doc """
   Calls the coordinator agent's LLM to determine the next agent.
 
-  Returns `{:ok, agent}` or `{:done, reason}`.
+  Returns `{:ok, agent, directive}` or `{:done, reason}`.
 
   The `opts` keyword list supports:
   - `:min_agents` — minimum distinct agents that must respond before
@@ -54,12 +54,11 @@ defmodule Summoner.Swarms.SwarmCoordinator do
   defp call_coordinator(provider, intent, routing_ctx) do
     case Inference.Gateway.chat(provider, intent) do
       {:ok, %Response{content: content}} ->
-        Logger.debug("Coordinator raw response: #{inspect(content)}")
         parse_routing_decision(content, routing_ctx)
 
       {:error, reason} ->
         Logger.error("Coordinator routing failed: #{inspect(reason)}")
-        fallback_to_first(routing_ctx.members)
+        fallback_to_first(routing_ctx.members, nil)
     end
   end
 
@@ -181,7 +180,9 @@ defmodule Summoner.Swarms.SwarmCoordinator do
     min_agents = routing_ctx.min_agents
     enough_agents = MapSet.size(responded) >= min_agents
 
-    case extract_json(content) do
+    text = normalize_content(content)
+
+    case extract_json(text) do
       {:ok, %{"next" => "__done__"} = parsed} ->
         if enough_agents do
           {:done, Map.get(parsed, "reason", "Task complete.")}
@@ -191,25 +192,45 @@ defmodule Summoner.Swarms.SwarmCoordinator do
             "Coordinator tried __done__ with only #{MapSet.size(responded)}/#{min_agents} agents, overriding"
           )
 
-          pick_unheard_agent(members, responded)
+          pick_unheard_agent(members, responded, nil)
         end
 
-      {:ok, %{"next" => identifier}} ->
-        resolve_agent(identifier, members)
+      {:ok, %{"next" => identifier} = parsed} ->
+        reason = Map.get(parsed, "reason")
+        resolve_agent(identifier, members, reason)
 
       {:error, _reason} ->
-        extract_from_reasoning(content, members, enough_agents)
+        extract_from_reasoning(text, members, enough_agents)
     end
   end
 
-  defp pick_unheard_agent(members, responded) do
+  # Normalizes Response content blocks into a plain text string.
+  defp normalize_content(content) when is_binary(content), do: content
+  defp normalize_content(nil), do: nil
+
+  defp normalize_content(blocks) when is_list(blocks) do
+    blocks
+    |> Enum.filter(fn
+      %{type: :text} -> true
+      _ -> false
+    end)
+    |> Enum.map_join("\n", & &1.text)
+    |> case do
+      "" -> nil
+      text -> text
+    end
+  end
+
+  defp normalize_content(_other), do: nil
+
+  defp pick_unheard_agent(members, responded, reason) do
     case Enum.find(members, fn a -> not MapSet.member?(responded, a.callname) end) do
-      nil -> fallback_to_first(members)
-      agent -> {:ok, agent}
+      nil -> fallback_to_first(members, reason)
+      agent -> {:ok, agent, reason}
     end
   end
 
-  defp resolve_agent(identifier, members) do
+  defp resolve_agent(identifier, members, reason) do
     case find_agent_by_identifier(identifier, members) do
       nil ->
         # Try prefix match for truncated callnames (max_tokens may cut JSON mid-value)
@@ -219,15 +240,15 @@ defmodule Summoner.Swarms.SwarmCoordinator do
               "Coordinator named unknown agent '#{identifier}', falling back to first member"
             )
 
-            fallback_to_first(members)
+            fallback_to_first(members, reason)
 
           agent ->
             Logger.debug("Coordinator prefix-matched '#{identifier}' to @#{agent.callname}")
-            {:ok, agent}
+            {:ok, agent, reason}
         end
 
       agent ->
-        {:ok, agent}
+        {:ok, agent, reason}
     end
   end
 
@@ -302,11 +323,11 @@ defmodule Summoner.Swarms.SwarmCoordinator do
 
       agent != nil ->
         Logger.debug("Coordinator reasoning mentions @#{agent.callname}, routing to it")
-        {:ok, agent}
+        {:ok, agent, nil}
 
       has_done and not enough_agents ->
         Logger.debug("Coordinator reasoning has done signal but not enough agents, continuing")
-        fallback_to_first(members)
+        fallback_to_first(members, nil)
 
       has_done ->
         Logger.debug("Coordinator reasoning contains done signal, treating as :done")
@@ -318,12 +339,12 @@ defmodule Summoner.Swarms.SwarmCoordinator do
             "raw content: #{inspect(content)}, falling back to first member"
         )
 
-        fallback_to_first(members)
+        fallback_to_first(members, nil)
     end
   end
 
   defp extract_from_reasoning(_content, members, _enough_agents),
-    do: fallback_to_first(members)
+    do: fallback_to_first(members, nil)
 
   @done_patterns [
     "task is complete",
@@ -386,6 +407,6 @@ defmodule Summoner.Swarms.SwarmCoordinator do
     end)
   end
 
-  defp fallback_to_first([first | _]), do: {:ok, first}
-  defp fallback_to_first([]), do: :done
+  defp fallback_to_first([first | _], reason), do: {:ok, first, reason}
+  defp fallback_to_first([], _reason), do: :done
 end

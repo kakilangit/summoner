@@ -32,14 +32,14 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
     test "parses valid JSON with next agent by callname" do
       content = ~s({"next": "@creative_muse", "reason": "needs creative input"})
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "parses valid JSON with next agent by display name" do
       content = ~s({"next": "Creative Muse", "reason": "needs creative input"})
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
@@ -58,7 +58,7 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
       ctx = routing_ctx(responded: ["creative_muse"])
 
       # Should pick an unheard agent instead of accepting __done__
-      assert {:ok, agent} = SwarmCoordinator.parse_routing_decision(content, ctx)
+      assert {:ok, agent, _} = SwarmCoordinator.parse_routing_decision(content, ctx)
       refute agent.callname == "creative_muse"
     end
 
@@ -74,33 +74,33 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
     test "parses JSON wrapped in markdown code fences" do
       content = "```json\n{\"next\": \"@summarizer\", \"reason\": \"wrap up\"}\n```"
 
-      assert {:ok, %{name: "Summarizer"}} =
+      assert {:ok, %{name: "Summarizer"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "parses truncated JSON with next field" do
       content = ~s({"next": "@code_review", "reason": "the code needs)
 
-      assert {:ok, %{name: "Code Review"}} =
+      assert {:ok, %{name: "Code Review"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "JSON agent resolution is case-insensitive" do
       content = ~s({"next": "@Creative_Muse", "reason": "test"})
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "falls back when JSON names unknown agent" do
       content = ~s({"next": "@nonexistent", "reason": "test"})
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "handles nil content" do
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(nil, routing_ctx())
     end
   end
@@ -109,14 +109,14 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
     test "extracts agent from plain reasoning when only one callname mentioned" do
       content = "Based on the conversation, I think @creative_muse should respond next."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
     test "case-insensitive callname matching in reasoning" do
       content = "I recommend routing to @Creative_Muse for this task."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
@@ -124,7 +124,7 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
       content =
         "@code_review could help but @creative_muse is the best choice for brainstorming."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
@@ -132,7 +132,7 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
       content =
         ~s(we can set next to "__done__" but @creative_muse should answer first)
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
@@ -140,7 +140,7 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
       content = "The task is complete, no further agents needed."
 
       # With members and not enough responded, done signal is overridden
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
 
@@ -156,7 +156,7 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
     test "falls back to first member when no signal found" do
       content = "I'm not sure what to do here, let me think about it carefully."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, routing_ctx())
     end
   end
@@ -186,14 +186,14 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
     test "routes to agent when no done signal present" do
       content = "@creative_muse should add more creative ideas to complement the list."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, enough_ctx())
     end
 
     test "falls back to first member when nothing matches" do
       content = "I'm not sure what to do here."
 
-      assert {:ok, %{name: "Creative Muse"}} =
+      assert {:ok, %{name: "Creative Muse"}, _} =
                SwarmCoordinator.parse_routing_decision(content, enough_ctx())
     end
 
@@ -211,6 +211,30 @@ defmodule Summoner.Swarms.SwarmCoordinatorTest do
                  ),
                "Expected {:done, _} for pattern: #{pattern}"
       end
+    end
+  end
+
+  describe "parse_routing_decision/2 — content block normalization" do
+    test "handles list of content blocks (Response format)" do
+      content = [%{type: :text, text: ~s({"next": "@code_review", "reason": "needs review"})}]
+
+      assert {:ok, %{callname: "code_review"}, "needs review"} =
+               SwarmCoordinator.parse_routing_decision(content, routing_ctx())
+    end
+
+    test "handles list with multiple text blocks" do
+      content = [
+        %{type: :text, text: ~s({"next": "@summarizer",)},
+        %{type: :text, text: ~s( "reason": "wrap up"})}
+      ]
+
+      assert {:ok, %{callname: "summarizer"}, "wrap up"} =
+               SwarmCoordinator.parse_routing_decision(content, routing_ctx())
+    end
+
+    test "handles nil content gracefully" do
+      assert {:ok, %{callname: "creative_muse"}, nil} =
+               SwarmCoordinator.parse_routing_decision(nil, routing_ctx())
     end
   end
 end

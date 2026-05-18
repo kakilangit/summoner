@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-05-18
+
+### Added
+
+- `Summoner.Orchestration.ToolCallRecovery` module — recovers swarm signal tool calls (`__relay__`, `__done__`, `__complete__`) that lose their name during streaming due to provider quirks
+- Tests for tool call recovery (9 cases covering relay, done, complete, and edge cases)
+- Tests for `normalize_content/1` in SwarmCoordinator (3 cases)
+
+### Fixed
+
+- Swarm relay mode: agents now correctly hand off to the next member instead of terminating after one turn
+- `find_done_call/1` now prefers relay calls with an actual agent target over ones signalling `"__done__"` when the model emits duplicate `__relay__` tool calls
+- `normalize_content/1` in SwarmCoordinator — `Arcanum.Response.content` is a list of content blocks, not a plain string; extraction now handles both formats
+- `__done__` from individual agents no longer terminates the entire swarm in relay/round_robin modes — only the coordinator (directed) or max_turns terminates
+
+### Changed
+
+- Rename swarm modes to fantasy naming (Circle/Chain/Command)
+- Naming consistency: guild/realm terminology throughout
+- `copilot_client_id` now configurable via environment variable
+- Removed debug loggers (coordinator raw response, swarm routing directive, full error body)
+
 ## [0.1.1] - 2026-05-18
 
 ### Changed
@@ -30,5 +52,6 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.2]: https://github.com/kakilangit/summoner/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kakilangit/summoner/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kakilangit/summoner/releases/tag/v0.1.0
