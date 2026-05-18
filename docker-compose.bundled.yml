@@ -1,0 +1,97 @@
+# Summoner Bundled Docker Compose — includes Ollama with Gemma 3
+#
+# Usage:
+#   cp .env.example .env
+#   # Edit .env with your values
+#   docker compose -f docker-compose.bundled.yml up -d
+#
+# First start will pull the Qwen3 0.6B model (~0.5 GB). Subsequent starts are instant.
+
+name: summoner-bundled
+
+services:
+  db:
+    image: pgvector/pgvector:pg18-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-summoner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-summoner}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-summoner}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ollama-pull:
+    image: curlimages/curl:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >
+      sh -c 'curl -sf http://ollama:11434/api/tags | grep -q "qwen3:0.6b" && echo "Model already pulled" || curl -s -X POST http://ollama:11434/api/pull -d "{\"name\": \"qwen3:0.6b\"}" | tail -1'
+
+  app:
+    image: kakilangit/summoner:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://${POSTGRES_USER:-summoner}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-summoner}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
+      CLOAK_KEY: ${CLOAK_KEY:?CLOAK_KEY is required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL is required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      PHX_HOST: ${PHX_HOST:-localhost}
+      PORT: "4000"
+      # SMTP (optional — email features disabled without these)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SSL: ${SMTP_SSL:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    ports:
+      - "${PORT:-4000}:4000"
+
+  seed:
+    image: kakilangit/summoner-seed:latest
+    pull_policy: always
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_started
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-summoner}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-summoner}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      BUNDLED_OLLAMA_URL: http://ollama:11434
+
+volumes:
+  pgdata:
+  ollama_data:
