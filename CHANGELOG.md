@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- `Summoner.Orchestration.ToolCallRecovery` module — recovers swarm signal tool calls (`__relay__`, `__done__`, `__complete__`) that lose their name during streaming due to provider quirks
-- Tests for tool call recovery (9 cases covering relay, done, complete, and edge cases)
+- `Summoner.Orchestration.ToolCallRecovery` module — recovers swarm signal tool calls (`__relay__`, `__done__`) that lose their name during streaming due to provider quirks
+- Tests for tool call recovery (9 cases covering relay, done, and edge cases)
 - Tests for `normalize_content/1` in SwarmCoordinator (3 cases)
 
 ### Fixed
@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - `find_done_call/1` now prefers relay calls with an actual agent target over ones signalling `"__done__"` when the model emits duplicate `__relay__` tool calls
 - `normalize_content/1` in SwarmCoordinator — `Arcanum.Response.content` is a list of content blocks, not a plain string; extraction now handles both formats
 - `__done__` from individual agents no longer terminates the entire swarm in relay/round_robin modes — only the coordinator (directed) or max_turns terminates
+- `ToolCallRecovery` no longer infers `__complete__` from `"result"` arguments — the key is too ambiguous and caused false recoveries that broke provider API calls (HTTP 400)
 
 ### Changed
 

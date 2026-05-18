@@ -9,7 +9,7 @@ defmodule Summoner.Orchestration.ToolCallRecovery do
   normalizer.
 
   This module inspects nameless tool calls and infers the name from known
-  argument shapes (swarm signals: `__relay__`, `__done__`, `__complete__`).
+  argument shapes (swarm signals: `__relay__`, `__done__`).
   """
 
   require Logger
@@ -18,7 +18,6 @@ defmodule Summoner.Orchestration.ToolCallRecovery do
 
   @relay_tool_name "__relay__"
   @done_tool_name "__done__"
-  @complete_tool_name "__complete__"
 
   @doc """
   Recovers nameless tool calls by inferring the name from argument structure.
@@ -65,7 +64,6 @@ defmodule Summoner.Orchestration.ToolCallRecovery do
 
   defp infer_signal_name(%{"next_agent" => _}), do: @relay_tool_name
   defp infer_signal_name(%{"summary" => _}), do: @done_tool_name
-  defp infer_signal_name(%{"result" => _}), do: @complete_tool_name
   defp infer_signal_name(_), do: nil
 
   defp ensure_id(%{id: nil} = tc),

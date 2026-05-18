@@ -53,7 +53,7 @@ defmodule Summoner.Orchestration.ToolCallRecoveryTest do
       assert is_binary(tc.id)
     end
 
-    test "recovers __complete__ from result argument" do
+    test "does not recover __complete__ from result argument (too ambiguous)" do
       tool_calls = [
         %{id: nil, function: %{name: nil, arguments: ~s({"result": "final output"})}}
       ]
@@ -62,7 +62,7 @@ defmodule Summoner.Orchestration.ToolCallRecoveryTest do
       recovered = ToolCallRecovery.recover(response)
 
       assert [tc] = recovered.tool_calls
-      assert tc.function.name == "__complete__"
+      assert tc.function.name == nil
     end
 
     test "does not recover tool calls with unrecognized arguments" do
