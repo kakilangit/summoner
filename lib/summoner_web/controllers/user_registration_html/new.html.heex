@@ -1,0 +1,54 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-sm">
+    <div class="text-center">
+      <.header>
+        Register for {@tenant.name}
+        <:subtitle>
+          Already registered?
+          <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline">
+            Log in
+          </.link>
+          to your account now.
+        </:subtitle>
+      </.header>
+    </div>
+
+    <.form :let={f} for={@changeset} action={~p"/guilds/#{@tenant.id}/register"}>
+      <%= if @mode == :invitation do %>
+        <.input
+          field={f[:invitation_code]}
+          type="text"
+          label="Invitation Code"
+          value={@code}
+          autocomplete="off"
+          spellcheck="false"
+          required
+        />
+      <% end %>
+
+      <.input
+        field={f[:email]}
+        type="email"
+        label="Email"
+        autocomplete="username"
+        spellcheck="false"
+        required
+        phx-mounted={JS.focus()}
+      />
+
+      <%= unless Summoner.Admin.smtp_configured?() do %>
+        <.input
+          field={f[:password]}
+          type="password"
+          label="Password"
+          autocomplete="new-password"
+          required
+        />
+      <% end %>
+
+      <.button phx-disable-with="Creating account..." class="btn btn-primary w-full">
+        Create an account
+      </.button>
+    </.form>
+  </div>
+</Layouts.app>

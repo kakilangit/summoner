@@ -1,1 +1,102 @@
-# summoner
+# Summoner
+
+Local-first, multi-user, multi-workspace AI agent platform.
+
+Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oban.
+
+## Features
+
+- Multi-workspace with role-based access (owner, admin, editor, operator, viewer)
+- AI agent orchestration with ReAct loop, delegation, and tool use
+- Provider support: Ollama, OpenAI, Anthropic, DeepSeek, xAI, OpenRouter, GitHub Copilot
+- MCP server integration (stdio and SSE transports)
+- Pipelines (sequential/orchestrated multi-agent workflows)
+- Swarms (round-robin, relay, directed multi-agent collaboration)
+- Media generation (images, video) via configurable media providers
+- Skill system with vector embeddings (pgvector)
+- Token usage tracking and cost budgeting
+- Custom themes
+
+## Requirements
+
+- Elixir 1.19+ / OTP 28+
+- PostgreSQL 18+ with pgvector extension
+- Rust (for NULID NIF compilation)
+- Node.js (for asset compilation)
+
+## Development Setup
+
+```sh
+# Start PostgreSQL (pgvector on port 25432)
+make infra
+
+# Install deps, create DB, compile assets
+make setup
+
+# Start the dev server
+make server
+
+# Or with IEx shell
+make iex
+```
+
+## Commands
+
+```sh
+make infra          # docker compose up (PostgreSQL)
+make infra.down     # docker compose down
+make infra.logs     # docker compose logs
+
+make setup          # full dev setup
+make server         # start Phoenix server
+make iex            # start with IEx shell
+
+make fmt            # format code
+make lint           # format check + credo strict + compile warnings
+make test           # run tests
+make ci             # lint + test
+
+make db.setup       # create + migrate + seed
+make db.migrate     # run pending migrations
+
+make release        # build production release
+```
+
+## Production Deployment
+
+### Docker Compose
+
+```sh
+cp .env.example .env
+# Edit .env with your values
+make docker.up
+# Or: docker compose -f docker-compose.prod.yml up -d
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | `ecto://USER:PASS@HOST/DATABASE` |
+| `SECRET_KEY_BASE` | Yes | Generate with `mix phx.gen.secret` |
+| `CLOAK_KEY` | Yes | Generate with `32 \|> :crypto.strong_rand_bytes() \|> Base.encode64()` |
+| `ADMIN_EMAIL` | Yes | Initial admin user email |
+| `ADMIN_PASSWORD` | Yes | Initial admin user password |
+| `PHX_HOST` | No | Hostname (default: `localhost`) |
+| `PORT` | No | Host HTTP port (default: `4000`) |
+| `POOL_SIZE` | No | DB connection pool size (default: `10`) |
+| `SMTP_HOST` | No | SMTP server for email delivery |
+| `SMTP_PORT` | No | SMTP port (default: `587`) |
+| `SMTP_USER` | No | SMTP username |
+| `SMTP_PASSWORD` | No | SMTP password |
+| `SMTP_FROM` | No | Sender email address |
+| `SMTP_SSL` | No | Enable SMTP SSL (default: `false`) |
+
+### Docker Build and Push
+
+Multi-arch images (amd64 + arm64) are published to `kakilangit/summoner`:
+
+```sh
+make docker.push                      # push as :latest
+make docker.push DOCKER_TAG=v0.1.0    # push as :v0.1.0
+```
