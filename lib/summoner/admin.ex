@@ -169,6 +169,7 @@ defmodule Summoner.Admin do
   def list_workspaces(opts \\ []) do
     Workspace
     |> order_by([w], asc: w.name)
+    |> preload(:tenant)
     |> Pagination.paginate(opts)
   end
 

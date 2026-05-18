@@ -179,22 +179,26 @@ defmodule Summoner.Providers do
   the token in the background.
   """
   def start_copilot_connect(%Provider{kind: "github-copilot"} = provider) do
-    case CopilotAuth.start_device_flow() do
-      {:ok, device_flow} ->
-        %{
-          "provider_id" => provider.id,
-          "workspace_id" => provider.workspace_id,
-          "device_code" => device_flow.device_code,
-          "interval" => device_flow.interval,
-          "attempt" => 1
-        }
-        |> CopilotPoller.new()
-        |> Oban.insert()
+    if Application.get_env(:arcanum, :copilot_client_id) do
+      case CopilotAuth.start_device_flow() do
+        {:ok, device_flow} ->
+          %{
+            "provider_id" => provider.id,
+            "workspace_id" => provider.workspace_id,
+            "device_code" => device_flow.device_code,
+            "interval" => device_flow.interval,
+            "attempt" => 1
+          }
+          |> CopilotPoller.new()
+          |> Oban.insert()
 
-        {:ok, device_flow}
+          {:ok, device_flow}
 
-      {:error, reason} ->
-        {:error, reason}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, :copilot_not_configured}
     end
   end
 

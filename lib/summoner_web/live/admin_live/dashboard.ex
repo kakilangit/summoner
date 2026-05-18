@@ -39,7 +39,7 @@ defmodule SummonerWeb.AdminLive.Dashboard do
           <div class="stat-value">{@stats.tenant_count}</div>
         </div>
         <div class="stat bg-base-200 rounded-box">
-          <div class="stat-title">Guilds</div>
+          <div class="stat-title">Realms</div>
           <div class="stat-value">{@stats.workspace_count}</div>
         </div>
         <div class="stat bg-base-200 rounded-box">
@@ -53,17 +53,17 @@ defmodule SummonerWeb.AdminLive.Dashboard do
       </div>
 
       <p class="text-sm text-base-content/60">
-        Registration is managed per-realm via each realm's settings.
+        Registration is managed per-guild via each guild's settings.
       </p>
 
       <div class="flex gap-4 flex-wrap">
         <.link navigate="/archon/users" class="btn btn-outline btn-sm">Manage Users</.link>
         <.link navigate="/guilds" class="btn btn-outline btn-sm">Manage Guilds</.link>
-        <.link navigate="/archon/workspaces" class="btn btn-outline btn-sm">
-          Manage Guilds
+        <.link navigate="/archon/realms" class="btn btn-outline btn-sm">
+          Manage Realms
         </.link>
         <.link navigate="/archon/invites" class="btn btn-outline btn-sm">
-          Manage Summons
+          Manage Invites
         </.link>
         <.link navigate="/archon/quotas" class="btn btn-outline btn-sm">
           Manage Quotas
