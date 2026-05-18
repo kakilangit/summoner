@@ -99,6 +99,7 @@ make docker.up
 | `SMTP_PASSWORD` | No | SMTP password |
 | `SMTP_FROM` | No | Sender email address |
 | `SMTP_SSL` | No | Enable SMTP SSL (default: `false`) |
+| `COPILOT_CLIENT_ID` | No | GitHub Copilot OAuth client ID |
 
 ### Docker Build (Local)
 

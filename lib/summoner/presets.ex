@@ -86,13 +86,22 @@ defmodule Summoner.Presets do
 
   @doc """
   Returns provider presets as `{label, key}` options for a select input,
-  sorted alphabetically by label.
+  sorted alphabetically by label. Excludes providers that require
+  configuration not present at runtime (e.g. GitHub Copilot without
+  COPILOT_CLIENT_ID).
   """
   def provider_kind_options do
     @providers
+    |> Enum.reject(fn {k, _v} -> disabled_provider?(k) end)
     |> Enum.map(fn {k, v} -> {v.label, k} end)
     |> Enum.sort_by(&elem(&1, 0))
   end
+
+  defp disabled_provider?("github-copilot") do
+    is_nil(Application.get_env(:arcanum, :copilot_client_id))
+  end
+
+  defp disabled_provider?(_), do: false
 
   # -------------------------------------------------------------------
   # Agent presets

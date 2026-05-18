@@ -30,6 +30,7 @@ defmodule SummonerWeb.Router do
       pipe_through [:browser, :require_authenticated_user]
 
       live "/guilds", TenantLive.Index, :index
+      live "/guilds/new", TenantLive.New, :new
       live "/themes", ThemeLive.Index, :index
     end
   end
@@ -46,7 +47,7 @@ defmodule SummonerWeb.Router do
       live "/", AdminLive.Dashboard, :index
       live "/users", AdminLive.UserIndex, :index
       live "/users/:id", AdminLive.UserShow, :show
-      live "/workspaces", AdminLive.WorkspaceIndex, :index
+      live "/realms", AdminLive.WorkspaceIndex, :index
       live "/invites", AdminLive.InvitationIndex, :index
       live "/quotas", AdminLive.QuotaIndex, :index
     end

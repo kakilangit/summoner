@@ -148,4 +148,8 @@ if config_env() == :prod do
   end
 
   config :summoner, :smtp_configured?, !!smtp_host
+
+  if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
+    config :arcanum, copilot_client_id: copilot_client_id
+  end
 end

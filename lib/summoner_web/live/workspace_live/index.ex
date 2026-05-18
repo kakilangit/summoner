@@ -78,7 +78,7 @@ defmodule SummonerWeb.WorkspaceLive.Index do
     ~H"""
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Guilds</h1>
+        <h1 class="text-2xl font-bold">Realms</h1>
         <.link
           :if={assigns[:tenant]}
           navigate={~p"/guilds/#{@tenant.id}/realms/new"}

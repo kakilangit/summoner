@@ -73,7 +73,7 @@ defmodule SummonerWeb.TenantLive.Index do
         {:noreply, socket |> put_flash(:info, "Guild disabled.") |> load_page()}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to disable realm.")}
+        {:noreply, put_flash(socket, :error, "Failed to disable guild.")}
     end
   end
 
@@ -85,7 +85,7 @@ defmodule SummonerWeb.TenantLive.Index do
         {:noreply, socket |> put_flash(:info, "Guild enabled.") |> load_page()}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to enable realm.")}
+        {:noreply, put_flash(socket, :error, "Failed to enable guild.")}
     end
   end
 
@@ -97,7 +97,7 @@ defmodule SummonerWeb.TenantLive.Index do
         {:noreply, socket |> put_flash(:info, "Guild deleted.") |> load_page()}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete realm.")}
+        {:noreply, put_flash(socket, :error, "Failed to delete guild.")}
     end
   end
 
@@ -118,7 +118,7 @@ defmodule SummonerWeb.TenantLive.Index do
       </div>
 
       <div :if={@tenants == []} class="text-center py-12 text-base-content/60">
-        <p>No realms available. Contact your administrator.</p>
+        <p>No guilds available. Contact your administrator.</p>
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -141,6 +141,9 @@ defmodule SummonerWeb.TenantLive.Index do
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Guilds</h1>
+        <.link navigate={~p"/guilds/new"} class="btn btn-primary btn-sm">
+          New Guild
+        </.link>
       </div>
 
       <.list_controls
@@ -148,12 +151,12 @@ defmodule SummonerWeb.TenantLive.Index do
         sort_by={@sort_by}
         sort_dir={@sort_dir}
         sort_options={@sort_options}
-        placeholder="Search realms..."
+        placeholder="Search guilds..."
       />
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
-        <p :if={@filter == ""}>No realms yet.</p>
-        <p :if={@filter != ""}>No realms match your search.</p>
+        <p :if={@filter == ""}>No guilds yet.</p>
+        <p :if={@filter != ""}>No guilds match your search.</p>
       </div>
 
       <div :if={@page.entries != []} class="overflow-x-auto">
@@ -162,7 +165,7 @@ defmodule SummonerWeb.TenantLive.Index do
             <tr>
               <th>Name</th>
               <th>Members</th>
-              <th>Guilds</th>
+              <th>Realms</th>
               <th>Status</th>
               <th>Created</th>
               <th></th>
@@ -223,8 +226,8 @@ defmodule SummonerWeb.TenantLive.Index do
                 </button>
                 <.confirm_modal
                   id={"delete-tenant-#{tenant.id}"}
-                  title="Delete realm?"
-                  message="This realm and all its data will be permanently removed. This cannot be undone."
+                  title="Delete guild?"
+                  message="This guild and all its data will be permanently removed. This cannot be undone."
                   on_confirm={JS.push("delete", value: %{id: tenant.id})}
                 />
               </td>

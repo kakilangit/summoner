@@ -13,7 +13,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
     socket =
       socket
       |> assign(
-        page_title: "Admin — Guilds",
+        page_title: "Admin — Realms",
         sort_by: @default_sort_by,
         sort_dir: @default_sort_dir,
         filter: "",
@@ -49,7 +49,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
 
     case Admin.delete_workspace(workspace) do
       {:ok, _} ->
-        {:noreply, socket |> put_flash(:info, "Guild deleted.") |> load_page()}
+        {:noreply, socket |> put_flash(:info, "Realm deleted.") |> load_page()}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete realm.")}
@@ -61,7 +61,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
     ~H"""
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Guilds</h1>
+        <h1 class="text-2xl font-bold">Realms</h1>
         <.link navigate="/archon" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
       </div>
 
@@ -83,6 +83,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
           <thead>
             <tr>
               <th>Name</th>
+              <th>Guild</th>
               <th>Members</th>
               <th>Created</th>
               <th></th>
@@ -90,7 +91,22 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
           </thead>
           <tbody>
             <tr :for={workspace <- @page.entries} class="hover">
-              <td>{workspace.name}</td>
+              <td>
+                <.link
+                  navigate={~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"}
+                  class="link link-hover font-medium"
+                >
+                  {workspace.name}
+                </.link>
+              </td>
+              <td>
+                <.link
+                  navigate={~p"/guilds/#{workspace.tenant_id}/realms"}
+                  class="link link-hover text-sm"
+                >
+                  {workspace.tenant.name}
+                </.link>
+              </td>
               <td>{Admin.member_count(workspace)}</td>
               <td class="text-xs text-base-content/60">
                 {Summoner.TimeZone.format(workspace.inserted_at,

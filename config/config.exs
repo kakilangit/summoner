@@ -95,7 +95,7 @@ config :summoner, Oban,
 
 config :summoner, :smtp_configured?, true
 
-config :arcanum, copilot_client_id: "Ov23li8tweQw6odWQebz"
+config :arcanum, copilot_client_id: nil
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
