@@ -64,13 +64,21 @@ make release        # build production release
 
 ## Production Deployment
 
+### Docker
+
+Pre-built multi-arch images (amd64 + arm64) are available on Docker Hub:
+
+```sh
+docker pull kakilangit/summoner:latest
+```
+
 ### Docker Compose
 
 ```sh
 cp .env.example .env
 # Edit .env with your values
 make docker.up
-# Or: docker compose -f docker-compose.prod.yml up -d
+# Or: docker compose -f docker-compose.bundled.yml up -d
 ```
 
 ### Environment Variables
