@@ -84,10 +84,10 @@ docker.logs:
 
 ## Docker images (local platform only)
 
-DOCKER_IMAGE := kakilangit/summoner
-BUILDER_IMAGE := kakilangit/summoner-builder
-BASE_IMAGE := kakilangit/summoner-base
-SEED_IMAGE := kakilangit/summoner-seed
+DOCKER_IMAGE := ghcr.io/kakilangit/summoner
+BUILDER_IMAGE := ghcr.io/kakilangit/summoner-builder
+BASE_IMAGE := ghcr.io/kakilangit/summoner-base
+SEED_IMAGE := ghcr.io/kakilangit/summoner-seed
 DOCKER_TAG ?= latest
 
 build.builder:

@@ -66,10 +66,10 @@ make release        # build production release
 
 ### Docker
 
-Pre-built multi-arch images (amd64 + arm64) are available on Docker Hub:
+Pre-built multi-arch images (amd64 + arm64) are available on GitHub Container Registry:
 
 ```sh
-docker pull kakilangit/summoner:latest
+docker pull ghcr.io/kakilangit/summoner:latest
 ```
 
 ### Docker Compose
@@ -100,11 +100,11 @@ make docker.up
 | `SMTP_FROM` | No | Sender email address |
 | `SMTP_SSL` | No | Enable SMTP SSL (default: `false`) |
 
-### Docker Build and Push
+### Docker Build (Local)
 
-Multi-arch images (amd64 + arm64) are published to `kakilangit/summoner`:
+Multi-arch images (amd64 + arm64) are published to `ghcr.io/kakilangit/summoner`:
 
 ```sh
-make docker.push                      # push as :latest
-make docker.push DOCKER_TAG=v0.1.0    # push as :v0.1.0
+make build                            # build all images locally
+make build DOCKER_TAG=v0.1.1          # build with specific tag
 ```
