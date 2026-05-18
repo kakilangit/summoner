@@ -197,9 +197,9 @@ defmodule SummonerWeb.SwarmLive.Form do
           type="select"
           label="Turn Routing Mode"
           options={[
-            {"Round Robin — summons take turns in order", "round_robin"},
-            {"Relay — @callname routing", "relay"},
-            {"Summoning — coordinator decides", "directed"}
+            {"Circle — summons take turns in fixed order", "round_robin"},
+            {"Chain — summons hand off via @callname", "relay"},
+            {"Command — a coordinator summon commands who speaks next", "directed"}
           ]}
         />
 

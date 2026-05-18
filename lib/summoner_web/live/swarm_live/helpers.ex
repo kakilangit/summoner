@@ -4,9 +4,9 @@ defmodule SummonerWeb.SwarmLive.Helpers do
   """
 
   @doc "Human-readable label for a swarm mode."
-  def mode_label(:round_robin), do: "Round Robin"
-  def mode_label(:relay), do: "Relay"
-  def mode_label(:directed), do: "Directed"
+  def mode_label(:round_robin), do: "Circle"
+  def mode_label(:relay), do: "Chain"
+  def mode_label(:directed), do: "Command"
   def mode_label(mode), do: mode
 
   @doc "CSS classes for the mode badge."
@@ -29,7 +29,7 @@ defmodule SummonerWeb.SwarmLive.Helpers do
 
   @doc "Tooltip description for a swarm mode."
   def mode_description(:round_robin), do: "Summons take turns in fixed order"
-  def mode_description(:relay), do: "Summons hand off via @callname relay"
-  def mode_description(:directed), do: "A coordinator summon decides who speaks next"
+  def mode_description(:relay), do: "Summons hand off via @callname chain"
+  def mode_description(:directed), do: "A coordinator summon commands who speaks next"
   def mode_description(_), do: ""
 end
