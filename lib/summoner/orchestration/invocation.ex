@@ -4,7 +4,7 @@ defmodule Summoner.Orchestration.Invocation do
 
   Each invocation represents a single ReAct loop execution by an Agent.
   Invocations form a tree via `parent_invocation_id` for delegation,
-  and link to conversations, pipelines, and rituals as trigger sources.
+  and link to conversations, pipelines, and quests as trigger sources.
   """
 
   use Summoner.Schema
@@ -39,7 +39,7 @@ defmodule Summoner.Orchestration.Invocation do
     belongs_to :conversation, Conversation
     belongs_to :parent_invocation, {"invocations", __MODULE__}, type: Nulid.Ecto
 
-    # Forward references — schemas defined in later phases
+    # Forseal references — schemas defined in later phases
     field :pipeline_id, Nulid.Ecto
     field :pipeline_stage_position, :integer
 

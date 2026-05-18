@@ -104,7 +104,7 @@ defmodule SummonerWeb.WorkspaceLive.Members do
             <.confirm_modal
               id={"remove-member-#{member.user.id}"}
               title="Remove member?"
-              message="This user will lose access to the sanctum."
+              message="This user will lose access to the realm."
               confirm_text="Remove"
               on_confirm={JS.push("remove_member", value: %{user_id: member.user.id})}
             />

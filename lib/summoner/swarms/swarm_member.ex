@@ -28,7 +28,7 @@ defmodule Summoner.Swarms.SwarmMember do
     |> validate_required(@required_fields)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint([:swarm_id, :agent_id],
-      message: "familiar already in this coven"
+      message: "summon already in this party"
     )
     |> foreign_key_constraint(:swarm_id)
     |> foreign_key_constraint(:agent_id)

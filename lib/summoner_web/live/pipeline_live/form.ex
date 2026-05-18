@@ -45,7 +45,7 @@ defmodule SummonerWeb.PipelineLive.Form do
           agents_by_id: agents_by_id,
           manager_options: manager_agents,
           stages: pipeline.stages,
-          # Pending stages for new rituals (not yet persisted)
+          # Pending stages for new quests (not yet persisted)
           pending_stages: [],
           stage_form_key: 0,
           show_advanced: false,
@@ -115,7 +115,7 @@ defmodule SummonerWeb.PipelineLive.Form do
     {:noreply, socket}
   end
 
-  # --- New ritual: manage pending stages in memory ---
+  # --- New quest: manage pending stages in memory ---
 
   @impl true
   def handle_event("add_pending_stage", %{"agent_id" => agent_id} = params, socket)
@@ -190,10 +190,10 @@ defmodule SummonerWeb.PipelineLive.Form do
           {:noreply, socket |> assign(stages: stages) |> put_flash(:info, "Phase added.")}
 
         {:error, _changeset} ->
-          {:noreply, put_flash(socket, :error, "Could not add verse.")}
+          {:noreply, put_flash(socket, :error, "Could not add phase.")}
       end
     else
-      {:noreply, put_flash(socket, :error, "Save the ritual first before adding verses.")}
+      {:noreply, put_flash(socket, :error, "Save the quest first before adding phases.")}
     end
   end
 
@@ -243,7 +243,7 @@ defmodule SummonerWeb.PipelineLive.Form do
           {:noreply, socket |> assign(stages: stages) |> put_flash(:info, "Phase removed.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not remove verse.")}
+          {:noreply, put_flash(socket, :error, "Could not remove phase.")}
       end
     else
       {:noreply, socket}
@@ -405,12 +405,12 @@ defmodule SummonerWeb.PipelineLive.Form do
         </div>
       </.form>
 
-      <%!-- New ritual: pending stages (in-memory) --%>
+      <%!-- New quest: pending stages (in-memory) --%>
       <div :if={!@editing} class="space-y-4 border-t border-base-300 pt-6">
         <h2 class="text-lg font-semibold">Phases</h2>
 
         <div :if={@pending_stages == []} class="text-sm text-base-content/60 py-4 text-center">
-          Add summons below to define the ritual sequence.
+          Add summons below to define the quest sequence.
         </div>
 
         <div class="space-y-2">
@@ -438,7 +438,7 @@ defmodule SummonerWeb.PipelineLive.Form do
         </div>
 
         <form
-          id={"add-verse-form-#{@stage_form_key}"}
+          id={"add-phase-form-#{@stage_form_key}"}
           phx-submit="add_pending_stage"
           class="space-y-3 p-4 border border-dashed border-base-300 rounded-lg"
         >
@@ -475,7 +475,7 @@ defmodule SummonerWeb.PipelineLive.Form do
         <h2 class="text-lg font-semibold">Phases</h2>
 
         <div :if={@stages == []} class="text-sm text-base-content/60 py-4 text-center">
-          No verses yet. Add summons below to define the ritual sequence.
+          No phases yet. Add summons below to define the quest sequence.
         </div>
 
         <div class="space-y-3">
@@ -516,8 +516,8 @@ defmodule SummonerWeb.PipelineLive.Form do
               </button>
               <.confirm_modal
                 id={"remove-stage-#{stage.id}"}
-                title="Remove verse?"
-                message="This verse will be removed from the ritual."
+                title="Remove phase?"
+                message="This phase will be removed from the quest."
                 confirm_text="Remove"
                 on_confirm={JS.push("remove_stage", value: %{id: stage.id})}
               />

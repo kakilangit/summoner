@@ -431,8 +431,8 @@ defmodule SummonerWeb.ConversationHelpers do
   end
 
   def extract_error_detail(%{"error" => "quota_exceeded"}) do
-    "This sanctum has reached its monthly token quota. " <>
-      "Increase the quota in sanctum settings or wait for the next billing cycle."
+    "This realm has reached its monthly token quota. " <>
+      "Increase the quota in realm settings or wait for the next billing cycle."
   end
 
   def extract_error_detail(%{"error" => error}) when is_binary(error) do

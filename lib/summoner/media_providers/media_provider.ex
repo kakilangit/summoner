@@ -4,8 +4,8 @@ defmodule Summoner.MediaProviders.MediaProvider do
 
   A Forge references an existing Gateway (Provider) for API access
   and declares default image/video models (souls) for media generation.
-  This allows an agent using one vessel for chat to generate media
-  via a different vessel.
+  This allows an agent using one gateway for chat to generate media
+  via a different gateway.
 
   A media provider belongs to exactly one of a workspace or a tenant (XOR).
   Tenant-scoped media providers are shared across all workspaces in the tenant.

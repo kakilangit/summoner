@@ -6,7 +6,7 @@ defmodule Summoner.Orchestration.BuiltinTools do
   trained on: `bash`, `read`, `write`, `edit`, `grep`, `glob`, `webfetch`.
 
   These are always available to agents regardless of MCP server
-  configuration, giving models familiar tool names that produce
+  configuration, giving models summon tool names that produce
   reliable native tool calls.
 
   ## Security

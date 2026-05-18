@@ -57,7 +57,7 @@ defmodule SummonerWeb.PipelineLive.Show do
           {:noreply, put_flash(socket, :info, "Run already finished.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not cancel casting.")}
+          {:noreply, put_flash(socket, :error, "Could not cancel run.")}
       end
     end)
   end
@@ -74,10 +74,10 @@ defmodule SummonerWeb.PipelineLive.Show do
         {:noreply, socket |> assign(runs_page: runs_page) |> put_flash(:info, "Run deleted.")}
 
       {:error, :still_running} ->
-        {:noreply, put_flash(socket, :error, "Cannot delete a running casting.")}
+        {:noreply, put_flash(socket, :error, "Cannot delete a running run.")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not delete casting.")}
+        {:noreply, put_flash(socket, :error, "Could not delete run.")}
     end
   end
 
@@ -96,7 +96,7 @@ defmodule SummonerWeb.PipelineLive.Show do
 
     case Enum.find(pipeline.stages, &(&1.agent.id == agent_id)) do
       nil ->
-        {:noreply, put_flash(socket, :error, "Summon not found in ritual.")}
+        {:noreply, put_flash(socket, :error, "Summon not found in quest.")}
 
       stage ->
         switch_stage_model(socket, scope, pipeline, stage, model)
@@ -137,7 +137,7 @@ defmodule SummonerWeb.PipelineLive.Show do
     workspace = socket.assigns.workspace
 
     if Pipelines.has_active_run?(pipeline.id) do
-      {:noreply, put_flash(socket, :error, "A casting is already running.")}
+      {:noreply, put_flash(socket, :error, "A run is already running.")}
     else
       case PipelineRunnerJob.new(%{
              pipeline_id: pipeline.id,
@@ -152,7 +152,7 @@ defmodule SummonerWeb.PipelineLive.Show do
            |> put_flash(:info, "Run enqueued.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not enqueue casting.")}
+          {:noreply, put_flash(socket, :error, "Could not enqueue run.")}
       end
     end
   end
@@ -230,8 +230,8 @@ defmodule SummonerWeb.PipelineLive.Show do
           <.confirm_modal
             :if={@pipeline.stages != [] && @can?.(:operate)}
             id="run-pipeline-show"
-            title="Cast ritual?"
-            message="This will start executing the ritual verses sequentially."
+            title="Cast quest?"
+            message="This will start executing the quest phases sequentially."
             confirm_text="Cast Now"
             variant="warning"
             on_confirm={JS.push("run")}
@@ -252,7 +252,7 @@ defmodule SummonerWeb.PipelineLive.Show do
         <div class="card-body">
           <h2 class="card-title text-lg">Phases</h2>
           <div :if={@pipeline.stages == []} class="text-base-content/60">
-            No verses configured.
+            No phases configured.
           </div>
           <div class="space-y-2">
             <div
@@ -282,7 +282,7 @@ defmodule SummonerWeb.PipelineLive.Show do
       <div>
         <h2 class="text-lg font-bold mb-3">Run History</h2>
         <div :if={@runs_page.entries == []} class="text-center py-8 text-base-content/60">
-          No castings yet.
+          No runs yet.
         </div>
         <div class="overflow-x-auto">
           <table :if={@runs_page.entries != []} class="table table-sm">
@@ -325,8 +325,8 @@ defmodule SummonerWeb.PipelineLive.Show do
                   <.confirm_modal
                     :if={run.status in [:completed, :failed, :cancelled]}
                     id={"delete-run-#{run.id}"}
-                    title="Delete this casting?"
-                    message="This casting record will be permanently removed."
+                    title="Delete this run?"
+                    message="This run record will be permanently removed."
                     confirm_text="Delete Run"
                     variant="error"
                     on_confirm={JS.push("delete_run", value: %{run_id: run.id})}
@@ -341,8 +341,8 @@ defmodule SummonerWeb.PipelineLive.Show do
                   <.confirm_modal
                     :if={run.status == :running && @can?.(:operate)}
                     id={"cancel-run-show-#{run.id}"}
-                    title="Cancel this casting?"
-                    message="The running ritual will be stopped."
+                    title="Cancel this run?"
+                    message="The running quest will be stopped."
                     confirm_text="Cancel Run"
                     variant="warning"
                     on_confirm={JS.push("cancel_run", value: %{run_id: run.id})}

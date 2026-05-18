@@ -49,7 +49,7 @@ defmodule SummonerWeb.WorkspaceAuth do
 
           socket =
             socket
-            |> put_flash(:info, "The requested sanctum is not available. Here are your sanctums.")
+            |> put_flash(:info, "The requested realm is not available. Here are your realms.")
             |> redirect(to: redirect_path)
 
           {:halt, socket}

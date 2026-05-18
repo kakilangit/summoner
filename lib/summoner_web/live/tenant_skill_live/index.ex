@@ -110,7 +110,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
         <p :if={@filter == ""}>
-          No realm spells yet. Add knowledge documents shared across sanctums.
+          No realm spells yet. Add knowledge documents shared across realms.
         </p>
         <p :if={@filter != ""}>No spells match your search.</p>
       </div>

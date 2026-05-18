@@ -111,7 +111,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
            |> push_navigate(to: ~p"/guilds")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not delete sanctum.")}
+          {:noreply, put_flash(socket, :error, "Could not delete realm.")}
       end
     else
       {:noreply, put_flash(socket, :error, "Name does not match. Deletion cancelled.")}
@@ -232,7 +232,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
       <section class="space-y-3">
         <h2 class="text-lg font-semibold border-b border-base-300 pb-2">Harness</h2>
         <p class="text-sm text-base-content/60">
-          Global operational guidelines prepended to every summon's system prompt in this sanctum.
+          Global operational guidelines prepended to every summon's system prompt in this realm.
         </p>
         <.form
           for={@form}
@@ -284,7 +284,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
           </div>
         </div>
         <p class="text-xs text-base-content/60">
-          {@pending_jobs} conjuration(s) currently channeling.
+          {@pending_jobs} artifact(s) currently channeling.
           <.link
             navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gallery"}
             class="link link-primary"
@@ -300,8 +300,8 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
         </h2>
         <div class="border border-error/30 rounded-lg p-4 space-y-3">
           <p class="text-sm">
-            Permanently delete this sanctum and <strong>all</strong> its resources:
-            summons, gateways, runes, channels, rituals, partys, seals, and grimoire entries.
+            Permanently delete this realm and <strong>all</strong> its resources:
+            summons, gateways, runes, channels, quests, partys, seals, and grimoire entries.
             This action cannot be undone.
           </p>
           <form phx-change="validate_delete" phx-submit="delete_workspace" class="space-y-3">

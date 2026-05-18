@@ -3,7 +3,7 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
   Schema for workspace-level settings.
 
   Controls context window size, tool output limits, quotas/budgets,
-  operational harness, and default timeout values for familiars.
+  operational harness, and default timeout values for summons.
   """
 
   use Summoner.Schema

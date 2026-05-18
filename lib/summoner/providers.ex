@@ -78,7 +78,7 @@ defmodule Summoner.Providers do
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.foreign_key_constraint(:agents,
       name: :agents_provider_id_fkey,
-      message: "vessel is still used by one or more familiars"
+      message: "gateway is still used by one or more summons"
     )
     |> Repo.delete()
   end

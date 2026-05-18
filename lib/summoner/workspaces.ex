@@ -222,7 +222,7 @@ defmodule Summoner.Workspaces do
   Deletes a workspace and all its resources (cascading).
 
   This is a destructive operation. All agents, providers, MCP servers,
-  conversations, pipelines, covens, secrets, skills, memberships, and
+  conversations, pipelines, parties, secrets, skills, memberships, and
   settings belonging to the workspace will be permanently removed.
   """
   def delete_workspace(%{user: _user}, %Workspace{} = workspace) do

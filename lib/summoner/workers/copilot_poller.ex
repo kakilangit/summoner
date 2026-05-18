@@ -35,7 +35,7 @@ defmodule Summoner.Workers.CopilotPoller do
   require Logger
 
   @max_attempts 60
-  @ward_name_prefix "COPILOT_TOKEN"
+  @seal_name_prefix "COPILOT_TOKEN"
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -106,15 +106,15 @@ defmodule Summoner.Workers.CopilotPoller do
 
   defp handle_token(workspace_id, provider_id, token) do
     Repo.transaction(fn ->
-      ward_name = ward_name(provider_id)
+      seal_name = seal_name(provider_id)
 
       secret =
-        case upsert_ward(workspace_id, ward_name, token) do
+        case upsert_seal(workspace_id, seal_name, token) do
           {:ok, secret} -> secret
           {:error, reason} -> Repo.rollback(reason)
         end
 
-      case link_ward_to_provider(provider_id, secret.id) do
+      case link_seal_to_provider(provider_id, secret.id) do
         {:ok, _provider} -> :ok
         {:error, reason} -> Repo.rollback(reason)
       end
@@ -131,7 +131,7 @@ defmodule Summoner.Workers.CopilotPoller do
     end
   end
 
-  defp upsert_ward(workspace_id, name, value) do
+  defp upsert_seal(workspace_id, name, value) do
     import Ecto.Query, warn: false
 
     case Repo.get_by(Summoner.Secrets.Secret,
@@ -151,15 +151,15 @@ defmodule Summoner.Workers.CopilotPoller do
     end
   end
 
-  defp link_ward_to_provider(provider_id, secret_id) do
+  defp link_seal_to_provider(provider_id, secret_id) do
     provider = Repo.get!(Provider, provider_id) |> Repo.preload(:api_key_secret)
     Providers.update_provider(%{user: nil}, provider, %{api_key_secret_id: secret_id})
   end
 
-  defp ward_name(provider_id) do
+  defp seal_name(provider_id) do
     # Take last 8 chars of NULID for uniqueness
     suffix = provider_id |> String.slice(-8, 8) |> String.upcase()
-    "#{@ward_name_prefix}_#{suffix}"
+    "#{@seal_name_prefix}_#{suffix}"
   end
 
   # -------------------------------------------------------------------

@@ -73,7 +73,7 @@ defmodule Summoner.Skills do
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.foreign_key_constraint(:agent_skills,
       name: :agent_skills_skill_id_fkey,
-      message: "skill is still equipped by one or more familiars"
+      message: "skill is still equipped by one or more summons"
     )
     |> Repo.delete()
   end

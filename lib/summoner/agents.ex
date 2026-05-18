@@ -99,23 +99,23 @@ defmodule Summoner.Agents do
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.foreign_key_constraint(:conversations,
       name: :conversations_primary_agent_id_fkey,
-      message: "familiar is still used by séances"
+      message: "summon is still used by channels"
     )
     |> Ecto.Changeset.foreign_key_constraint(:conversation_participants,
       name: :conversation_participants_agent_id_fkey,
-      message: "familiar is still a participant in séances"
+      message: "summon is still a participant in channels"
     )
     |> Ecto.Changeset.foreign_key_constraint(:pipeline_stages,
       name: :pipeline_stages_agent_id_fkey,
-      message: "familiar is still used by pipeline stages"
+      message: "summon is still used by pipeline stages"
     )
     |> Ecto.Changeset.foreign_key_constraint(:swarm_members,
       name: :swarm_members_agent_id_fkey,
-      message: "familiar is still a member of a coven"
+      message: "summon is still a member of a party"
     )
     |> Ecto.Changeset.foreign_key_constraint(:agent_skills,
       name: :agent_skills_agent_id_fkey,
-      message: "familiar still has skills equipped"
+      message: "summon still has skills equipped"
     )
     |> Repo.delete()
   end

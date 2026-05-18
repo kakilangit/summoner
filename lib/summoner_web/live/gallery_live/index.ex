@@ -143,7 +143,7 @@ defmodule SummonerWeb.GalleryLive.Index do
 
       <div :if={@attachments == []} class="text-center py-12 text-base-content/60">
         <span class="hero-photo size-12 mx-auto mb-3 block opacity-40"></span>
-        <p>No conjurations yet.</p>
+        <p>No artifacts yet.</p>
       </div>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -260,7 +260,7 @@ defmodule SummonerWeb.GalleryLive.Index do
           <.confirm_modal
             :if={@can_configure}
             id={"delete-media-#{@attachment.id}"}
-            title="Delete this conjuration?"
+            title="Delete this artifact?"
             message="The file will be permanently removed."
             confirm_text="Delete"
             on_confirm={JS.push("delete", value: %{id: @attachment.id})}
@@ -342,7 +342,7 @@ defmodule SummonerWeb.GalleryLive.Index do
       |> assign(selected: MapSet.new())
       |> load_attachments()
       |> load_quota()
-      |> put_flash(:info, "Deleted #{length(ids)} conjuration(s).")
+      |> put_flash(:info, "Deleted #{length(ids)} artifact(s).")
 
     {:noreply, socket}
   end

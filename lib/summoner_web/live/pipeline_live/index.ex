@@ -85,7 +85,7 @@ defmodule SummonerWeb.PipelineLive.Index do
            |> put_flash(:info, "Quest deleted.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not delete ritual.")}
+          {:noreply, put_flash(socket, :error, "Could not delete quest.")}
       end
     end)
   end
@@ -105,7 +105,7 @@ defmodule SummonerWeb.PipelineLive.Index do
           {:noreply, put_flash(socket, :info, "Run enqueued.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not enqueue casting.")}
+          {:noreply, put_flash(socket, :error, "Could not enqueue run.")}
       end
     end)
   end
@@ -121,7 +121,7 @@ defmodule SummonerWeb.PipelineLive.Index do
            socket |> assign(latest_runs: latest_runs) |> put_flash(:info, "Run cancelled.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not cancel casting.")}
+          {:noreply, put_flash(socket, :error, "Could not cancel run.")}
       end
     end)
   end
@@ -187,12 +187,12 @@ defmodule SummonerWeb.PipelineLive.Index do
         sort_by={@sort_by}
         sort_dir={@sort_dir}
         sort_options={@sort_options}
-        placeholder="Search rituals..."
+        placeholder="Search quests..."
       />
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
-        <p :if={@filter == ""}>No rituals yet. Create one to chain summons together.</p>
-        <p :if={@filter != ""}>No rituals match your search.</p>
+        <p :if={@filter == ""}>No quests yet. Create one to chain summons together.</p>
+        <p :if={@filter != ""}>No quests match your search.</p>
       </div>
 
       <div class="space-y-2">
@@ -220,7 +220,7 @@ defmodule SummonerWeb.PipelineLive.Index do
               <.run_status_indicator run={@latest_runs[pipeline.id]} />
             </div>
             <div class="text-sm text-base-content/60">
-              {length(pipeline.stages)} verse(s)
+              {length(pipeline.stages)} phase(s)
               <span :if={pipeline.cron_expression}>
                 &middot; {Summoner.Pipelines.CronBuilder.to_human(pipeline.cron_expression)}
               </span>
@@ -240,8 +240,8 @@ defmodule SummonerWeb.PipelineLive.Index do
             <.confirm_modal
               :if={running?(@latest_runs[pipeline.id]) && @can?.(:operate)}
               id={"cancel-run-#{pipeline.id}"}
-              title="Cancel casting?"
-              message="The currently running ritual will be stopped."
+              title="Cancel run?"
+              message="The currently running quest will be stopped."
               confirm_text="Cancel Run"
               variant="warning"
               on_confirm={
@@ -260,8 +260,8 @@ defmodule SummonerWeb.PipelineLive.Index do
             <.confirm_modal
               :if={pipeline.stages != [] && !running?(@latest_runs[pipeline.id]) && @can?.(:operate)}
               id={"run-pipeline-#{pipeline.id}"}
-              title="Cast ritual?"
-              message="This will start executing the ritual verses sequentially."
+              title="Cast quest?"
+              message="This will start executing the quest phases sequentially."
               confirm_text="Cast Now"
               variant="warning"
               on_confirm={JS.push("run", value: %{id: pipeline.id})}
@@ -285,8 +285,8 @@ defmodule SummonerWeb.PipelineLive.Index do
             <.confirm_modal
               :if={@can?.(:configure)}
               id={"delete-pipeline-#{pipeline.id}"}
-              title="Delete ritual?"
-              message="This ritual, its verses, and all casting history will be permanently removed."
+              title="Delete quest?"
+              message="This quest, its phases, and all run history will be permanently removed."
               confirm_text="Delete"
               on_confirm={JS.push("delete", value: %{id: pipeline.id})}
             />

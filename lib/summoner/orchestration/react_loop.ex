@@ -979,7 +979,7 @@ defmodule Summoner.Orchestration.ReactLoop do
         function: %{
           name: @relay_tool_name,
           description:
-            "Hand off to the next coven member, or signal completion with \"__done__\". " <>
+            "Hand off to the next party member, or signal completion with \"__done__\". " <>
               "You MUST call this exactly once at the end of your response. Prefer \"__done__\" when the task is addressed.",
           parameters: %{
             "type" => "object",
@@ -1063,7 +1063,7 @@ defmodule Summoner.Orchestration.ReactLoop do
             You are @#{current_agent.callname}. Other members:
             #{member_list}
 
-            The coven cycles through all members automatically. Just respond to the conversation
+            The party cycles through all members automatically. Just respond to the conversation
             with your contribution. Do NOT try to complete the entire task alone — other members
             will take their turns after you. Focus on YOUR area of expertise and build on what
             others have said.\
@@ -1355,7 +1355,7 @@ defmodule Summoner.Orchestration.ReactLoop do
         role: :system,
         content:
           "#{state.agent.name} timed out after #{state.agent.total_timeout_s}s. " <>
-            "You can adjust the timeout in familiar or sanctum settings.",
+            "You can adjust the timeout in summon or realm settings.",
         visibility: :public,
         provider_name: state.provider.name,
         model_name: state.agent.model

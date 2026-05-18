@@ -56,7 +56,7 @@ defmodule SummonerWeb.ConversationLiveTest do
     test "shows empty state", %{conn: conn, workspace: ws} do
       {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels")
 
-      assert html =~ "No séances yet"
+      assert html =~ "No channels yet"
     end
 
     test "creates a new conversation", %{conn: conn, workspace: ws, agent: fam} do
@@ -128,7 +128,7 @@ defmodule SummonerWeb.ConversationLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
 
-      assert html =~ "Begin the séance"
+      assert html =~ "Begin one to commune"
     end
   end
 end

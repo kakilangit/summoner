@@ -36,7 +36,7 @@ defmodule SummonerWeb.AgentLiveTest do
   end
 
   describe "Index" do
-    test "lists familiars", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
+    test "lists summons", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
       {:ok, _fam} =
         Agents.create_agent(scope, %{
           name: "My Agent",
@@ -56,10 +56,10 @@ defmodule SummonerWeb.AgentLiveTest do
     test "shows empty state", %{conn: conn, workspace: ws} do
       {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons")
 
-      assert html =~ "No familiars yet"
+      assert html =~ "No summons yet"
     end
 
-    test "deletes a familiar", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
+    test "deletes a summon", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
       {:ok, agent} =
         Agents.create_agent(scope, %{
           name: "To Delete",
@@ -79,7 +79,7 @@ defmodule SummonerWeb.AgentLiveTest do
   end
 
   describe "Form - New" do
-    test "creates a familiar", %{conn: conn, workspace: ws, provider: prov} do
+    test "creates a summon", %{conn: conn, workspace: ws, provider: prov} do
       {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
 
       view
@@ -96,7 +96,7 @@ defmodule SummonerWeb.AgentLiveTest do
       assert_redirect(view)
     end
 
-    test "validates familiar form", %{conn: conn, workspace: ws} do
+    test "validates summon form", %{conn: conn, workspace: ws} do
       {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
 
       html =
@@ -109,7 +109,7 @@ defmodule SummonerWeb.AgentLiveTest do
   end
 
   describe "Form - Edit" do
-    test "updates a familiar", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
+    test "updates a summon", %{conn: conn, scope: scope, workspace: ws, provider: prov} do
       {:ok, agent} =
         Agents.create_agent(scope, %{
           name: "Old Name",

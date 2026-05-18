@@ -88,7 +88,7 @@ defmodule Summoner.Secrets do
       end)
 
     if in_use do
-      {:error, :in_use, "ward is still referenced by one or more ingredients"}
+      {:error, :in_use, "seal is still referenced by one or more runes"}
     else
       Repo.delete(secret)
     end

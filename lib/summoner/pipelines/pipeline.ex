@@ -49,7 +49,7 @@ defmodule Summoner.Pipelines.Pipeline do
     |> validate_cron_expression()
     |> validate_orchestrator()
     |> unique_constraint([:workspace_id, :name],
-      message: "pipeline name already exists in this sanctum"
+      message: "pipeline name already exists in this realm"
     )
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:orchestrator_agent_id)

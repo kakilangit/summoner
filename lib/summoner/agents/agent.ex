@@ -59,7 +59,7 @@ defmodule Summoner.Agents.Agent do
   end
 
   def role_description(:worker) do
-    "Receives delegated tasks from other familiars. Works in isolation " <>
+    "Receives delegated tasks from other summons. Works in isolation " <>
       "with only the task description (no parent conversation). " <>
       "Writes internal messages only."
   end

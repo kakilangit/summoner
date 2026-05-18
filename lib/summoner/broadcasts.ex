@@ -1,6 +1,6 @@
 defmodule Summoner.Broadcasts do
   @moduledoc """
-  PubSub broadcasting helpers.
+  PubSub broadcast helpers.
 
   Provides topic builders, subscribe/broadcast wrappers, and typed
   message constructors for the invocation and agent event system.

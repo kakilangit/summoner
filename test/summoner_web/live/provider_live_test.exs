@@ -38,7 +38,7 @@ defmodule SummonerWeb.ProviderLiveTest do
     test "shows empty state", %{conn: conn, workspace: ws} do
       {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways")
 
-      assert html =~ "No vessels configured"
+      assert html =~ "No gateways configured yet."
     end
 
     test "deletes a provider", %{conn: conn, scope: scope, workspace: ws} do

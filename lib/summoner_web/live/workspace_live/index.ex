@@ -93,12 +93,12 @@ defmodule SummonerWeb.WorkspaceLive.Index do
         sort_by={@sort_by}
         sort_dir={@sort_dir}
         sort_options={@sort_options}
-        placeholder="Search sanctums..."
+        placeholder="Search realms..."
       />
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
-        <p :if={@filter == ""}>No sanctums yet. Create one to get started.</p>
-        <p :if={@filter != ""}>No sanctums match your search.</p>
+        <p :if={@filter == ""}>No realms yet. Create one to get started.</p>
+        <p :if={@filter != ""}>No realms match your search.</p>
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

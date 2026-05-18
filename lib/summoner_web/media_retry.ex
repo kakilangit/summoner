@@ -26,7 +26,7 @@ defmodule SummonerWeb.MediaRetry do
         enqueue_retry(attachment, new_attachment, socket)
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not retry conjuration.")}
+        {:noreply, put_flash(socket, :error, "Could not retry artifact.")}
     end
   end
 
@@ -46,7 +46,7 @@ defmodule SummonerWeb.MediaRetry do
         |> MediaGeneration.new()
         |> Oban.insert()
 
-        {:noreply, put_flash(socket, :info, "Retrying conjuration...")}
+        {:noreply, put_flash(socket, :info, "Retrying artifact...")}
     end
   end
 end

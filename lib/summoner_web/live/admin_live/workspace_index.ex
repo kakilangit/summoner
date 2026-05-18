@@ -52,7 +52,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
         {:noreply, socket |> put_flash(:info, "Guild deleted.") |> load_page()}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete sanctum.")}
+        {:noreply, put_flash(socket, :error, "Failed to delete realm.")}
     end
   end
 
@@ -70,12 +70,12 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
         sort_by={@sort_by}
         sort_dir={@sort_dir}
         sort_options={@sort_options}
-        placeholder="Search sanctums..."
+        placeholder="Search realms..."
       />
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
-        <p :if={@filter == ""}>No sanctums yet.</p>
-        <p :if={@filter != ""}>No sanctums match your search.</p>
+        <p :if={@filter == ""}>No realms yet.</p>
+        <p :if={@filter != ""}>No realms match your search.</p>
       </div>
 
       <div :if={@page.entries != []} class="overflow-x-auto">
@@ -103,7 +103,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
                   phx-click="delete"
                   phx-value-id={workspace.id}
                   class="btn btn-ghost btn-xs btn-error"
-                  data-confirm="Delete this sanctum and all its data? This cannot be undone."
+                  data-confirm="Delete this realm and all its data? This cannot be undone."
                 >
                   Delete
                 </button>

@@ -105,7 +105,7 @@ defmodule SummonerWeb.TenantSecretLive.Index do
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
         <p :if={@filter == ""}>
-          No realm seals set. Add secrets shared across all sanctums.
+          No realm seals set. Add secrets shared across all realms.
         </p>
         <p :if={@filter != ""}>No seals match your search.</p>
       </div>

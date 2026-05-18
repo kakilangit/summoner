@@ -37,7 +37,7 @@ defmodule Summoner.Swarms.Swarm do
     |> validate_number(:max_turns, greater_than: 0, less_than_or_equal_to: 100)
     |> validate_coordinator()
     |> unique_constraint([:workspace_id, :name],
-      message: "coven name already exists in this sanctum"
+      message: "party name already exists in this realm"
     )
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:coordinator_agent_id)

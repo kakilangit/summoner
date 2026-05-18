@@ -269,7 +269,7 @@ defmodule Summoner.Swarms.SwarmRunner do
             role: :system,
             content:
               "#{agent.name} timed out after #{agent.total_timeout_s}s. " <>
-                "Skipping to next member. You can adjust the timeout in the familiar's settings.",
+                "Skipping to next member. You can adjust the timeout in the summon's settings.",
             visibility: :public
           })
 

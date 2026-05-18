@@ -197,7 +197,7 @@ defmodule SummonerWeb.AdminLive.UserShow do
       <div class="space-y-2">
         <h2 class="text-lg font-semibold">Guild Memberships</h2>
         <div :if={@memberships == []} class="text-sm text-base-content/60">
-          This user is not a member of any sanctums.
+          This user is not a member of any realms.
         </div>
         <div :if={@memberships != []} class="overflow-x-auto">
           <table class="table table-sm">

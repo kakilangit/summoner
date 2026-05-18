@@ -38,10 +38,10 @@ defmodule Summoner.Secrets.Secret do
     |> validate_length(:name, min: 1, max: 255)
     |> validate_scope()
     |> unique_constraint([:workspace_id, :name],
-      message: "a ward with this name already exists"
+      message: "a seal with this name already exists"
     )
     |> unique_constraint([:tenant_id, :name],
-      message: "a ward with this name already exists"
+      message: "a seal with this name already exists"
     )
   end
 

@@ -27,7 +27,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
       tenant = tenant_fixture(scope)
       {:ok, _view, html} = live(conn, ~p"/guilds/#{tenant.id}/realms")
 
-      assert html =~ "No sanctums yet"
+      assert html =~ "No realms yet"
     end
 
     test "links to new workspace form", %{conn: conn, scope: scope} do

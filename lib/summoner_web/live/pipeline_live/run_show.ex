@@ -48,7 +48,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
         {:noreply, put_flash(socket, :info, "Run already finished.")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not cancel casting.")}
+        {:noreply, put_flash(socket, :error, "Could not cancel run.")}
     end
   end
 
@@ -158,8 +158,8 @@ defmodule SummonerWeb.PipelineLive.RunShow do
         <.confirm_modal
           :if={@run.status == :running}
           id="cancel-run-detail"
-          title="Cancel this casting?"
-          message="The running ritual will be stopped."
+          title="Cancel this run?"
+          message="The running quest will be stopped."
           confirm_text="Cancel Run"
           variant="warning"
           on_confirm={JS.push("cancel_run")}
@@ -187,7 +187,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
       <div>
         <h2 class="text-lg font-bold mb-3">Phases</h2>
         <div :if={@run.stages == []} class="text-base-content/60">
-          No verse data yet.
+          No phase data yet.
         </div>
         <div class="space-y-2">
           <div

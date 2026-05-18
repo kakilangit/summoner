@@ -108,7 +108,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
         <p :if={@filter == ""}>
-          No realm runes configured. Add one to share tools across sanctums.
+          No realm runes configured. Add one to share tools across realms.
         </p>
         <p :if={@filter != ""}>No runes match your search.</p>
       </div>

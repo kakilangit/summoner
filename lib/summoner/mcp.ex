@@ -75,7 +75,7 @@ defmodule Summoner.MCP do
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.foreign_key_constraint(:agent_mcp_servers,
       name: :agent_mcp_servers_mcp_server_id_fkey,
-      message: "ingredient is still equipped by one or more familiars"
+      message: "rune is still equipped by one or more summons"
     )
     |> Repo.delete()
   end

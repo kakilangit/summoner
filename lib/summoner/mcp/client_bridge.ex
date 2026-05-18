@@ -313,7 +313,7 @@ defmodule Summoner.MCP.ClientBridge do
 
       {:error, {:missing_secrets, names}} ->
         Logger.warning(
-          "MCP server #{server.name}: unresolved ward(s) #{inspect(names)}, passing raw values"
+          "MCP server #{server.name}: unresolved seal(s) #{inspect(names)}, passing raw values"
         )
 
         raw_env

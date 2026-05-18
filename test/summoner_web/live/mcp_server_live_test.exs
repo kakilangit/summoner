@@ -49,7 +49,7 @@ defmodule SummonerWeb.McpServerLiveTest do
     test "shows empty state", %{conn: conn, workspace: ws} do
       {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes")
 
-      assert html =~ "No ingredients configured"
+      assert html =~ "No runes configured"
     end
 
     test "deletes a server", %{conn: conn, scope: scope, workspace: ws} do
