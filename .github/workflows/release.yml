@@ -22,7 +22,7 @@ jobs:
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Get version from mix.exs
         id: get-version
@@ -65,7 +65,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -74,7 +74,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             deps
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-version, test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -173,7 +173,7 @@ jobs:
     outputs:
       release-exists: ${{ steps.check-release.outputs.release-exists }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check if GitHub release exists
         id: check-release
@@ -203,7 +203,7 @@ jobs:
     needs: [check-version, check-release, docker]
     if: always() && needs.check-release.outputs.release-exists == 'false' && needs.docker.result != 'failure'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
