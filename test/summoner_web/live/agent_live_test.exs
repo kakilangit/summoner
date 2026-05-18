@@ -46,7 +46,7 @@ defmodule SummonerWeb.AgentLiveTest do
           provider_id: prov.id
         })
 
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons")
 
       assert html =~ "Summons"
       assert html =~ "My Agent"
@@ -54,7 +54,7 @@ defmodule SummonerWeb.AgentLiveTest do
     end
 
     test "shows empty state", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons")
 
       assert html =~ "No familiars yet"
     end
@@ -69,7 +69,7 @@ defmodule SummonerWeb.AgentLiveTest do
           provider_id: prov.id
         })
 
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons")
 
       render_click(view, "delete", %{"id" => agent.id})
 
@@ -80,7 +80,7 @@ defmodule SummonerWeb.AgentLiveTest do
 
   describe "Form - New" do
     test "creates a familiar", %{conn: conn, workspace: ws, provider: prov} do
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
 
       view
       |> form("#agent-form",
@@ -97,7 +97,7 @@ defmodule SummonerWeb.AgentLiveTest do
     end
 
     test "validates familiar form", %{conn: conn, workspace: ws} do
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/new")
 
       html =
         view
@@ -120,7 +120,7 @@ defmodule SummonerWeb.AgentLiveTest do
         })
 
       {:ok, view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons/#{agent.id}/edit")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/#{agent.id}/edit")
 
       assert html =~ "Edit Summon"
 

@@ -28,7 +28,7 @@ defmodule SummonerWeb.ProviderLiveTest do
           workspace_id: ws.id
         })
 
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways")
 
       assert html =~ "Gateways"
       assert html =~ "My Ollama"
@@ -36,7 +36,7 @@ defmodule SummonerWeb.ProviderLiveTest do
     end
 
     test "shows empty state", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways")
 
       assert html =~ "No vessels configured"
     end
@@ -52,7 +52,7 @@ defmodule SummonerWeb.ProviderLiveTest do
           workspace_id: ws.id
         })
 
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways")
 
       render_click(view, "delete", %{"id" => provider.id})
 
@@ -63,7 +63,7 @@ defmodule SummonerWeb.ProviderLiveTest do
 
   describe "Form - New" do
     test "creates a provider", %{conn: conn, workspace: ws} do
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways/new")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways/new")
 
       view
       |> form("#provider-form",
@@ -81,7 +81,7 @@ defmodule SummonerWeb.ProviderLiveTest do
     end
 
     test "validates provider form", %{conn: conn, workspace: ws} do
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways/new")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways/new")
 
       html =
         view
@@ -106,7 +106,7 @@ defmodule SummonerWeb.ProviderLiveTest do
         })
 
       {:ok, view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/gateways/#{provider.id}/edit")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/gateways/#{provider.id}/edit")
 
       assert html =~ "Edit Gateway"
 

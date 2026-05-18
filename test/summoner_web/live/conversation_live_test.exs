@@ -47,20 +47,20 @@ defmodule SummonerWeb.ConversationLiveTest do
           title: "Hello World"
         })
 
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/channels")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels")
 
       assert html =~ "Channels"
       assert html =~ "Hello World"
     end
 
     test "shows empty state", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/channels")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels")
 
       assert html =~ "No séances yet"
     end
 
     test "creates a new conversation", %{conn: conn, workspace: ws, agent: fam} do
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/channels")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels")
 
       view |> element("button", "New Channel") |> render_click()
 
@@ -105,7 +105,7 @@ defmodule SummonerWeb.ConversationLiveTest do
         })
 
       {:ok, _view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
 
       assert html =~ "Test Chat"
       assert html =~ "Hello there!"
@@ -126,7 +126,7 @@ defmodule SummonerWeb.ConversationLiveTest do
         })
 
       {:ok, _view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
 
       assert html =~ "Begin the séance"
     end

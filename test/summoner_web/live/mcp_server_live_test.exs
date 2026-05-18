@@ -39,7 +39,7 @@ defmodule SummonerWeb.McpServerLiveTest do
           workspace_id: ws.id
         })
 
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/runes")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes")
 
       assert html =~ "Runes"
       assert html =~ "Everything Server"
@@ -47,7 +47,7 @@ defmodule SummonerWeb.McpServerLiveTest do
     end
 
     test "shows empty state", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/runes")
+      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes")
 
       assert html =~ "No ingredients configured"
     end
@@ -61,7 +61,7 @@ defmodule SummonerWeb.McpServerLiveTest do
           workspace_id: ws.id
         })
 
-      {:ok, view, _html} = live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/runes")
+      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes")
 
       render_click(view, "delete", %{"id" => mcp_server.id})
 
@@ -73,7 +73,7 @@ defmodule SummonerWeb.McpServerLiveTest do
   describe "Form - New" do
     test "creates an MCP server", %{conn: conn, workspace: ws} do
       {:ok, view, _html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/runes/new")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes/new")
 
       view
       |> form("#mcp-server-form",
@@ -100,7 +100,7 @@ defmodule SummonerWeb.McpServerLiveTest do
         })
 
       {:ok, view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/runes/#{server.id}/edit")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/runes/#{server.id}/edit")
 
       assert html =~ "Edit Rune"
 
@@ -141,7 +141,7 @@ defmodule SummonerWeb.McpServerLiveTest do
       server: server
     } do
       {:ok, _view, html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons/#{fam.id}/runes")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/#{fam.id}/runes")
 
       assert html =~ "Runes for #{fam.name}"
       assert html =~ server.name
@@ -154,7 +154,7 @@ defmodule SummonerWeb.McpServerLiveTest do
       agent: fam
     } do
       {:ok, view, _html} =
-        live(conn, ~p"/realms/#{ws.tenant_id}/realms/#{ws.id}/summons/#{fam.id}/runes")
+        live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/summons/#{fam.id}/runes")
 
       # Equip
       view |> element("button", "Equip") |> render_click()
