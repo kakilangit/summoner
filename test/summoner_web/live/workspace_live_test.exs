@@ -99,7 +99,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
       {:ok, other_ws} =
         Workspaces.create_workspace(other_scope, other_tenant.id, %{name: "Other WS"})
 
-      assert {:error, {:redirect, %{to: "/realms"}}} =
+      assert {:error, {:redirect, %{to: "/guilds"}}} =
                live(conn, ~p"/guilds/#{other_ws.tenant_id}/realms/#{other_ws.id}")
     end
   end

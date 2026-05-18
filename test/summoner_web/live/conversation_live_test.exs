@@ -128,7 +128,7 @@ defmodule SummonerWeb.ConversationLiveTest do
       {:ok, _view, html} =
         live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/channels/#{conv.id}")
 
-      assert html =~ "Begin one to commune"
+      assert html =~ "Begin the channel"
     end
   end
 end
