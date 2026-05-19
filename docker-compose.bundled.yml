@@ -46,6 +46,19 @@ services:
     entrypoint: >
       sh -c 'curl -sf http://ollama:11434/api/tags | grep -q "qwen3:0.6b" && echo "Model already pulled" || curl -s -X POST http://ollama:11434/api/pull -d "{\"name\": \"qwen3:0.6b\"}" | tail -1'
 
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+    volumes:
+      - searxng_data:/etc/searxng
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     image: ghcr.io/kakilangit/summoner:latest
     pull_policy: always
@@ -95,3 +108,4 @@ services:
 volumes:
   pgdata:
   ollama_data:
+  searxng_data:

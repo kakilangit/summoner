@@ -17,6 +17,15 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Token usage tracking and cost budgeting
 - Custom themes
 
+## Documentation
+
+See the [`docs/`](docs/) directory for full documentation, or generate a standalone HTML site:
+
+```sh
+make docs
+# Output: docs/_site/index.html
+```
+
 ## Requirements
 
 - Elixir 1.19+ / OTP 28+
@@ -58,6 +67,8 @@ make ci             # lint + test
 
 make db.setup       # create + migrate + seed
 make db.migrate     # run pending migrations
+
+make docs           # generate HTML docs from docs/*.md
 
 make release        # build production release
 ```
@@ -107,5 +118,5 @@ Multi-arch images (amd64 + arm64) are published to `ghcr.io/kakilangit/summoner`
 
 ```sh
 make build                            # build all images locally
-make build DOCKER_TAG=v0.1.1          # build with specific tag
+make build DOCKER_TAG=v0.1.3          # build with specific tag
 ```

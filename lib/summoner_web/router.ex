@@ -166,15 +166,6 @@ defmodule SummonerWeb.Router do
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
-
-    live_session :dev,
-      on_mount: [{SummonerWeb.UserAuth, :ensure_authenticated}] do
-      scope "/dev", SummonerWeb do
-        pipe_through [:browser, :require_authenticated_user]
-
-        live "/docs", DevLive.Docs, :index
-      end
-    end
   end
 
   ## Authentication routes

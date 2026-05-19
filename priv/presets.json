@@ -32,7 +32,7 @@
       "name": "SearXNG",
       "transport": "stdio",
       "command_or_url": "npx -y mcp-searxng",
-      "env_hint": "SEARXNG_URL=http://localhost:8080"
+      "env_hint": "SEARXNG_URL=http://searxng:8080"
     }
   },
   "agents": {
