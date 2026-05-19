@@ -25,9 +25,11 @@ defmodule Summoner.Orchestration.ReactLoop do
   alias Arcanum.Response.Normalizer
   alias Summoner.Broadcasts
   alias Summoner.Conversations
+  alias Summoner.Harness
   alias Summoner.Inference
   alias Summoner.Ledger
   alias Summoner.Orchestration
+  alias Summoner.Orchestration.BuiltinTools
   alias Summoner.Orchestration.ToolCallRecovery
   alias Summoner.Workers.CompactorJob
 
@@ -86,6 +88,7 @@ defmodule Summoner.Orchestration.ReactLoop do
     swarm_members = Keyword.get(opts, :swarm_members, [])
     swarm_mode = Keyword.get(opts, :swarm_mode)
     max_tool_output = Keyword.get(opts, :max_tool_output_chars, @default_max_tool_output_chars)
+    max_tool_concurrency = Keyword.get(opts, :max_tool_concurrency, 1)
 
     context_length = agent.local_agent.context_length || @default_context_length
     context_budget = trunc(context_length * (1.0 - @completion_reserve_ratio))
@@ -108,6 +111,7 @@ defmodule Summoner.Orchestration.ReactLoop do
       swarm_mode: swarm_mode,
       swarm_members: swarm_members,
       max_tool_output_chars: max_tool_output,
+      max_tool_concurrency: max_tool_concurrency,
       context_budget: context_budget,
       step_number: 0,
       token_count: 0,
@@ -604,11 +608,7 @@ defmodule Summoner.Orchestration.ReactLoop do
   end
 
   defp do_execute_tool_calls(state, valid_calls, invalid_calls, invalid_results, response) do
-    {state, valid_results} =
-      Enum.reduce(valid_calls, {state, []}, fn tool_call, {acc_state, acc_results} ->
-        {new_state, result} = execute_single_tool(acc_state, tool_call)
-        {new_state, acc_results ++ [result]}
-      end)
+    {state, valid_results} = execute_tool_batch(state, valid_calls)
 
     # Record step with first tool call info
     first_call = hd(valid_calls)
@@ -868,6 +868,165 @@ defmodule Summoner.Orchestration.ReactLoop do
   defp handle_tool_failure(state, _tool_call, tool_name, error, failure_count) do
     {state,
      {:error, "#{tool_name} failed #{failure_count} consecutive times: #{stringify_error(error)}"}}
+  end
+
+  # -------------------------------------------------------------------
+  # Parallel Tool Execution
+  # -------------------------------------------------------------------
+
+  @terminal_tools MapSet.new([@done_tool_name, @relay_tool_name, @complete_tool_name])
+
+  defp execute_tool_batch(state, [single_call]) do
+    {state, result} = execute_single_tool(state, single_call)
+    {state, [result]}
+  end
+
+  defp execute_tool_batch(state, valid_calls) when state.max_tool_concurrency <= 1 do
+    Enum.reduce(valid_calls, {state, []}, fn tool_call, {acc_state, acc_results} ->
+      {new_state, result} = execute_single_tool(acc_state, tool_call)
+      {new_state, acc_results ++ [result]}
+    end)
+  end
+
+  defp execute_tool_batch(state, valid_calls) do
+    {terminal, parallel} = split_terminal_tools(valid_calls)
+
+    # Execute parallelizable tools via Harness
+    parallel_results = execute_parallel_tools(state, parallel)
+
+    # Execute terminal tools sequentially after
+    {state, terminal_results} =
+      Enum.reduce(terminal, {state, []}, fn tool_call, {acc_state, acc_results} ->
+        {new_state, result} = execute_single_tool(acc_state, tool_call)
+        {new_state, acc_results ++ [result]}
+      end)
+
+    # Reconcile failure counts from parallel results
+    state = reconcile_parallel_failures(state, parallel_results)
+
+    # Merge results in original order
+    result_map = build_result_map(parallel_results, terminal, terminal_results)
+    ordered = Enum.map(valid_calls, fn tc -> Map.fetch!(result_map, tc.id) end)
+
+    {state, ordered}
+  end
+
+  defp split_terminal_tools(tool_calls) do
+    Enum.split_with(tool_calls, fn tc ->
+      not MapSet.member?(@terminal_tools, tc.function.name)
+    end)
+  end
+
+  defp execute_parallel_tools(_state, []), do: []
+
+  defp execute_parallel_tools(state, parallel_calls) do
+    units =
+      Enum.map(parallel_calls, fn tool_call ->
+        group = tool_group_key(tool_call)
+        {group, {tool_call.id, fn -> execute_tool_stateless(state, tool_call) end}}
+      end)
+
+    case Harness.run_grouped(units,
+           max_concurrency: state.max_tool_concurrency,
+           timeout: state.agent.local_agent.step_timeout_s * 1_000,
+           surface: :react_tools
+         ) do
+      {:ok, results} -> results
+      {:partial, successes, _failures} -> successes
+    end
+  end
+
+  defp execute_tool_stateless(state, tool_call) do
+    tool_name = tool_call.function.name
+
+    {:ok, _} =
+      Orchestration.add_event(%{
+        invocation_id: state.invocation.id,
+        workspace_id: state.invocation.workspace_id,
+        agent_id: state.agent.id,
+        event_type: :tool_started,
+        summary: "Calling #{tool_name}",
+        payload: %{"tool_call_id" => tool_call.id, "tool_name" => tool_name}
+      })
+
+    Summoner.EventLog.append(:tool_started, %{
+      agent_id: state.agent.id,
+      invocation_id: state.invocation.id,
+      tool_name: tool_name
+    })
+
+    result = call_tool_with_timeout(state, tool_call)
+
+    case result do
+      {:ok, output} ->
+        {:ok, _} =
+          Orchestration.add_event(%{
+            invocation_id: state.invocation.id,
+            workspace_id: state.invocation.workspace_id,
+            agent_id: state.agent.id,
+            event_type: :tool_finished,
+            summary: "#{tool_name} completed",
+            payload: %{"tool_call_id" => tool_call.id}
+          })
+
+        {:ok, tool_name, {:ok, output}}
+
+      {:error, error} ->
+        {:ok, _} =
+          Orchestration.add_event(%{
+            invocation_id: state.invocation.id,
+            workspace_id: state.invocation.workspace_id,
+            agent_id: state.agent.id,
+            event_type: :tool_failed,
+            summary: "#{tool_name} failed: #{stringify_error(error)}",
+            payload: %{"tool_call_id" => tool_call.id, "error" => stringify_error(error)}
+          })
+
+        {:error, tool_name, error}
+    end
+  end
+
+  defp tool_group_key(tool_call) do
+    name = tool_call.function.name
+
+    cond do
+      MapSet.member?(@terminal_tools, name) -> {:terminal, name}
+      name in ~w(__generate_image__ __generate_video__) -> {:media, name}
+      BuiltinTools.builtin?(name) -> {:builtin, name}
+      true -> {:mcp, mcp_server_prefix(name)}
+    end
+  end
+
+  defp mcp_server_prefix(name) do
+    case String.split(name, "_", parts: 2) do
+      [server, _tool] -> server
+      _ -> name
+    end
+  end
+
+  defp reconcile_parallel_failures(state, results) do
+    Enum.reduce(results, state, fn
+      {:ok, _id, {:ok, tool_name, _output}}, acc -> clear_failure_count(acc, tool_name)
+      {:ok, _id, {:error, tool_name, _error}}, acc -> increment_failure_count(acc, tool_name)
+      _, acc -> acc
+    end)
+  end
+
+  defp build_result_map(parallel_results, terminal_calls, terminal_results) do
+    parallel_map =
+      Map.new(parallel_results, fn {:ok, tc_id, result} ->
+        case result do
+          {:ok, _tool_name, output} -> {tc_id, {:ok, output}}
+          {:error, _tool_name, error} -> {tc_id, {:error, stringify_error(error)}}
+        end
+      end)
+
+    terminal_map =
+      Map.new(Enum.zip(terminal_calls, terminal_results), fn {tc, result} ->
+        {tc.id, result}
+      end)
+
+    Map.merge(parallel_map, terminal_map)
   end
 
   # -------------------------------------------------------------------

@@ -16,6 +16,7 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
   @default_max_tool_output_chars 32_000
   @default_step_timeout_s 60
   @default_total_timeout_s 300
+  @default_max_tool_concurrency 5
 
   schema "workspace_settings" do
     field :context_window_messages, :integer, default: @default_context_window_messages
@@ -25,6 +26,7 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
     field :harness, :string
     field :default_step_timeout_s, :integer, default: @default_step_timeout_s
     field :default_total_timeout_s, :integer, default: @default_total_timeout_s
+    field :default_max_tool_concurrency, :integer, default: @default_max_tool_concurrency
 
     belongs_to :workspace, Workspace
 
@@ -52,6 +54,11 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
   def default_total_timeout_s, do: @default_total_timeout_s
 
   @doc """
+  Returns the default max tool concurrency.
+  """
+  def default_max_tool_concurrency, do: @default_max_tool_concurrency
+
+  @doc """
   Changeset for creating or updating workspace settings.
   """
   def changeset(settings, attrs) do
@@ -64,6 +71,7 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
       :harness,
       :default_step_timeout_s,
       :default_total_timeout_s,
+      :default_max_tool_concurrency,
       :workspace_id
     ])
     |> validate_required([:context_window_messages, :workspace_id])
@@ -73,6 +81,7 @@ defmodule Summoner.Workspaces.WorkspaceSettings do
     |> validate_number(:budget_usd_monthly, greater_than: 0)
     |> validate_number(:default_step_timeout_s, greater_than: 0, less_than_or_equal_to: 600)
     |> validate_number(:default_total_timeout_s, greater_than: 0, less_than_or_equal_to: 3_600)
+    |> validate_number(:default_max_tool_concurrency, greater_than: 0)
     |> unique_constraint(:workspace_id)
     |> foreign_key_constraint(:workspace_id)
   end

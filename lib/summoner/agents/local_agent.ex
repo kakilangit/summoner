@@ -34,6 +34,7 @@ defmodule Summoner.Agents.LocalAgent do
     field :total_timeout_s, :integer, default: 300
     field :stream_tokens_to_observability, :boolean, default: false
     field :budget_usd, :decimal
+    field :max_tool_concurrency, :integer
 
     belongs_to :agent, Agent, references: :id, define_field: false
     belongs_to :provider, Provider
@@ -53,6 +54,7 @@ defmodule Summoner.Agents.LocalAgent do
     :total_timeout_s,
     :stream_tokens_to_observability,
     :budget_usd,
+    :max_tool_concurrency,
     :provider_id,
     :media_provider_id
   ]
@@ -74,6 +76,7 @@ defmodule Summoner.Agents.LocalAgent do
     |> validate_number(:step_timeout_s, greater_than: 0, less_than_or_equal_to: 600)
     |> validate_number(:total_timeout_s, greater_than: 0, less_than_or_equal_to: 3_600)
     |> validate_number(:budget_usd, greater_than: 0)
+    |> validate_number(:max_tool_concurrency, greater_than: 0)
     |> foreign_key_constraint(:provider_id)
     |> foreign_key_constraint(:media_provider_id)
   end

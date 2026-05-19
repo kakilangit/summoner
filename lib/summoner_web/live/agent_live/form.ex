@@ -288,7 +288,8 @@ defmodule SummonerWeb.AgentLive.Form do
     context_length: :integer,
     step_timeout_s: :integer,
     total_timeout_s: :integer,
-    stream_tokens_to_observability: :boolean
+    stream_tokens_to_observability: :boolean,
+    max_tool_concurrency: :integer
   }
 
   defp flat_changeset(data, params) do
@@ -317,7 +318,8 @@ defmodule SummonerWeb.AgentLive.Form do
       context_length: local.context_length,
       step_timeout_s: local.step_timeout_s,
       total_timeout_s: local.total_timeout_s,
-      stream_tokens_to_observability: local.stream_tokens_to_observability
+      stream_tokens_to_observability: local.stream_tokens_to_observability,
+      max_tool_concurrency: local.max_tool_concurrency
     }
   end
 
@@ -425,6 +427,16 @@ defmodule SummonerWeb.AgentLive.Form do
               label="Max Delegation Concurrency"
               min="1"
             />
+            <.input
+              field={@form[:max_tool_concurrency]}
+              type="number"
+              label="Max Tool Concurrency"
+              placeholder="Inherits workspace default"
+              min="1"
+            />
+            <p class="text-xs text-base-content/50 -mt-2">
+              Maximum parallel tool executions per step. Leave blank to use the workspace default.
+            </p>
             <.input
               field={@form[:max_tokens_per_invocation]}
               type="number"

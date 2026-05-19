@@ -229,7 +229,8 @@ defmodule Summoner.Agents.Server do
             [
               tool_executor: tool_executor,
               tools: intent_tools,
-              max_tool_output_chars: settings.max_tool_output_chars
+              max_tool_output_chars: settings.max_tool_output_chars,
+              max_tool_concurrency: effective_tool_concurrency(state.agent, settings)
             ] ++ maybe_adapter_opt(state)
           )
         end)
@@ -391,7 +392,8 @@ defmodule Summoner.Agents.Server do
               swarm: Map.get(react_opts, :swarm, false),
               swarm_members: Map.get(react_opts, :swarm_members, []),
               swarm_mode: Map.get(react_opts, :swarm_mode),
-              max_tool_output_chars: settings.max_tool_output_chars
+              max_tool_output_chars: settings.max_tool_output_chars,
+              max_tool_concurrency: effective_tool_concurrency(state.agent, settings)
             ] ++ maybe_adapter_opt(state)
           )
         end)
@@ -508,7 +510,8 @@ defmodule Summoner.Agents.Server do
             swarm: Map.get(react_opts, :swarm, false),
             swarm_members: Map.get(react_opts, :swarm_members, []),
             swarm_mode: Map.get(react_opts, :swarm_mode),
-            max_tool_output_chars: settings.max_tool_output_chars
+            max_tool_output_chars: settings.max_tool_output_chars,
+            max_tool_concurrency: effective_tool_concurrency(state.agent, settings)
           ] ++ maybe_adapter_opt(state)
         )
       end)
@@ -578,6 +581,10 @@ defmodule Summoner.Agents.Server do
 
   defp load_workspace_settings(workspace_id) do
     Summoner.Workspaces.get_settings!(workspace_id)
+  end
+
+  defp effective_tool_concurrency(agent, settings) do
+    agent.local_agent.max_tool_concurrency || settings.default_max_tool_concurrency
   end
 
   defp load_tools(test_executor, _workspace_id, _agent_id) when not is_nil(test_executor) do

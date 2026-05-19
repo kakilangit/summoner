@@ -221,6 +221,16 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
             — max time per tool call. <strong>Invocation Timeout</strong>
             — max total time for a summon's full response (also used as the per-turn timeout in partys).
           </p>
+          <.input
+            field={@form[:default_max_tool_concurrency]}
+            type="number"
+            label="Default Tool Concurrency"
+            min="1"
+            required
+          />
+          <p class="text-xs text-base-content/50">
+            Maximum parallel tool executions per step. Individual summons can override this.
+          </p>
           <div>
             <.button phx-disable-with="Saving..." class="btn btn-primary btn-sm">
               Save Timeouts
