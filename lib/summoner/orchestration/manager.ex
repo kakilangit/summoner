@@ -19,6 +19,7 @@ defmodule Summoner.Orchestration.Manager do
   require Logger
 
   alias Summoner.Agents
+  alias Summoner.Harness
   alias Summoner.Orchestration
   alias Summoner.Orchestration.{Dispatcher, FailurePolicy, Invocation, SubtaskPlan}
   alias Summoner.Orchestration.Subtask
@@ -51,6 +52,18 @@ defmodule Summoner.Orchestration.Manager do
       {:error, reason} = error ->
         Logger.error("Plan execution failed: #{inspect(reason)}")
         error
+    end
+  end
+
+  defp check_terminal_or_wait(invocation_id, max_concurrency, manager_state, results) do
+    all = Orchestration.list_subtasks(invocation_id)
+    all_terminal? = Enum.all?(all, &(&1.status in [:completed, :failed, :skipped]))
+
+    if all_terminal? do
+      finalize_dispatch(all, results)
+    else
+      Process.sleep(@dispatch_retry_backoff_ms)
+      dispatch_loop(invocation_id, max_concurrency, manager_state, results)
     end
   end
 
@@ -127,18 +140,6 @@ defmodule Summoner.Orchestration.Manager do
     end
   end
 
-  defp check_terminal_or_wait(invocation_id, max_concurrency, manager_state, results) do
-    all = Orchestration.list_subtasks(invocation_id)
-    all_terminal? = Enum.all?(all, &(&1.status in [:completed, :failed, :skipped]))
-
-    if all_terminal? do
-      finalize_dispatch(all, results)
-    else
-      Process.sleep(500)
-      dispatch_loop(invocation_id, max_concurrency, manager_state, results)
-    end
-  end
-
   defp finalize_dispatch(all_subtasks, results) do
     any_failed? = Enum.any?(all_subtasks, &(&1.status in [:failed, :skipped]))
 
@@ -152,23 +153,32 @@ defmodule Summoner.Orchestration.Manager do
   defp dispatch_batch(ready, invocation_id, max_concurrency, manager_state, results) do
     batch = Enum.take(ready, max_concurrency)
 
-    batch_results =
-      batch
-      |> Task.async_stream(
-        fn subtask ->
-          notify_subtask_dispatched(manager_state, subtask)
-          enriched = enrich_with_dependency_outputs(subtask)
-          result = Dispatcher.dispatch(enriched, manager_state)
-          notify_subtask_result(manager_state, subtask, result)
-          result
-        end,
-        max_concurrency: max_concurrency,
-        timeout: :infinity
-      )
-      |> Enum.map(fn
-        {:ok, result} -> result
-        {:exit, reason} -> {:error, nil, reason}
+    units =
+      Enum.map(batch, fn subtask ->
+        {subtask.id,
+         fn ->
+           notify_subtask_dispatched(manager_state, subtask)
+           enriched = enrich_with_dependency_outputs(subtask)
+           result = Dispatcher.dispatch(enriched, manager_state)
+           notify_subtask_result(manager_state, subtask, result)
+           result
+         end}
       end)
+
+    batch_results =
+      case Harness.run(units,
+             max_concurrency: max_concurrency,
+             timeout: :infinity,
+             surface: :manager
+           ) do
+        {:ok, harness_results} ->
+          Enum.map(harness_results, fn {:ok, _key, result} -> result end)
+
+        {:partial, successes, failures} ->
+          ok = Enum.map(successes, fn {:ok, _key, result} -> result end)
+          err = Enum.map(failures, fn {:error, _key, reason} -> {:error, nil, reason} end)
+          ok ++ err
+      end
 
     # Handle dispatch-level failures (subtask never claimed, still :pending)
     needs_backoff? = handle_dispatch_failures(batch, batch_results, manager_state)
