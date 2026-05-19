@@ -69,7 +69,7 @@ defmodule Summoner.Orchestration.Dispatcher do
   defp notify_subtask_started(_, _), do: :ok
 
   defp monitor_and_wait(subtask, workspace_id, agent_id, manager_state) do
-    timeout_s = manager_state.agent.total_timeout_s || @default_subtask_timeout_s
+    timeout_s = manager_state.agent.local_agent.total_timeout_s || @default_subtask_timeout_s
     timeout_ms = timeout_s * 1_000
     ref = monitor_worker(workspace_id, agent_id)
 

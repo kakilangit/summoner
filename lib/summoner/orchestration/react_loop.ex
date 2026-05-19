@@ -87,7 +87,7 @@ defmodule Summoner.Orchestration.ReactLoop do
     swarm_mode = Keyword.get(opts, :swarm_mode)
     max_tool_output = Keyword.get(opts, :max_tool_output_chars, @default_max_tool_output_chars)
 
-    context_length = agent.context_length || @default_context_length
+    context_length = agent.local_agent.context_length || @default_context_length
     context_budget = trunc(context_length * (1.0 - @completion_reserve_ratio))
 
     tools =
@@ -140,7 +140,7 @@ defmodule Summoner.Orchestration.ReactLoop do
 
   defp loop(state) do
     cond do
-      state.step_number >= state.agent.max_steps ->
+      state.step_number >= state.agent.local_agent.max_steps ->
         output = last_tool_output(state.context)
         finish(state, :completed, :step_limit_reached, %{"response" => output})
 
@@ -163,10 +163,10 @@ defmodule Summoner.Orchestration.ReactLoop do
 
     intent = %Intent{
       messages: messages,
-      model: state.agent.model,
+      model: state.agent.local_agent.model,
       tools: state.tools,
       max_tokens: max_completion_tokens(state),
-      context_length: state.agent.context_length
+      context_length: state.agent.local_agent.context_length
     }
 
     case call_inference_with_retries(state, intent) do
@@ -205,7 +205,9 @@ defmodule Summoner.Orchestration.ReactLoop do
         # Recover swarm signal tool calls that lost their name during streaming
         merged = ToolCallRecovery.recover(merged)
         # Normalize the final merged response (XML tool-call extraction, etc.)
-        profile = ModelProfile.Resolver.resolve(state.provider.kind, state.agent.model)
+        profile =
+          ModelProfile.Resolver.resolve(state.provider.kind, state.agent.local_agent.model)
+
         {:ok, Normalizer.normalize(merged, profile)}
 
       {:error, _reason} = error ->
@@ -936,15 +938,18 @@ defmodule Summoner.Orchestration.ReactLoop do
   end
 
   defp call_tool_with_timeout(state, tool_call) do
-    timeout = state.agent.step_timeout_s * 1_000
+    timeout = state.agent.local_agent.step_timeout_s * 1_000
 
     if state.tool_executor do
       context = %{agent_id: state.agent.id, workspace_id: state.agent.workspace_id}
       task = Task.async(fn -> state.tool_executor.execute(tool_call, context) end)
 
       case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-        {:ok, result} -> result
-        nil -> {:error, "tool execution timed out after #{state.agent.step_timeout_s}s"}
+        {:ok, result} ->
+          result
+
+        nil ->
+          {:error, "tool execution timed out after #{state.agent.local_agent.step_timeout_s}s"}
       end
     else
       {:error, "no tool executor configured"}
@@ -1027,12 +1032,7 @@ defmodule Summoner.Orchestration.ReactLoop do
     other_members =
       members
       |> Enum.reject(&(&1.id == current_agent.id))
-      |> Enum.map(fn agent ->
-        desc =
-          if agent.personality && agent.personality != "", do: " — #{agent.personality}", else: ""
-
-        "  - @#{agent.callname}#{desc}"
-      end)
+      |> Enum.map(&format_member_line/1)
 
     if other_members == [] do
       context
@@ -1099,6 +1099,12 @@ defmodule Summoner.Orchestration.ReactLoop do
         _ -> [swarm_msg | context]
       end
     end
+  end
+
+  defp format_member_line(agent) do
+    personality = agent.local_agent && agent.local_agent.personality
+    desc = if personality && personality != "", do: " — #{personality}", else: ""
+    "  - @#{agent.callname}#{desc}"
   end
 
   # Appends a trailing reminder for relay-mode swarms so the LLM sees
@@ -1216,7 +1222,7 @@ defmodule Summoner.Orchestration.ReactLoop do
   end
 
   defp max_completion_tokens(state) do
-    context_length = state.agent.context_length || @default_context_length
+    context_length = state.agent.local_agent.context_length || @default_context_length
     estimated_prompt = Ledger.estimate_context_tokens(state.context)
     available = context_length - estimated_prompt
 
@@ -1253,7 +1259,7 @@ defmodule Summoner.Orchestration.ReactLoop do
           visibility: visibility,
           token_count: token_count,
           provider_name: state.provider.name,
-          model_name: state.agent.model
+          model_name: state.agent.local_agent.model
         })
     end
   end
@@ -1332,7 +1338,7 @@ defmodule Summoner.Orchestration.ReactLoop do
     if state.token_count > 0 do
       cost_usd =
         Ledger.estimate_cost(
-          state.agent.model,
+          state.agent.local_agent.model,
           state.prompt_tokens,
           state.completion_tokens
         )
@@ -1342,7 +1348,7 @@ defmodule Summoner.Orchestration.ReactLoop do
         agent_id: state.agent.id,
         provider_id: state.provider.id,
         invocation_id: invocation.id,
-        model: state.agent.model,
+        model: state.agent.local_agent.model,
         prompt_tokens: state.prompt_tokens,
         completion_tokens: state.completion_tokens,
         total_tokens: state.token_count,
@@ -1354,7 +1360,7 @@ defmodule Summoner.Orchestration.ReactLoop do
 
   defp total_timeout_exceeded?(state) do
     elapsed = System.monotonic_time(:millisecond) - state.started_at
-    elapsed >= state.agent.total_timeout_s * 1_000
+    elapsed >= state.agent.local_agent.total_timeout_s * 1_000
   end
 
   defp add_timeout_message(state) do
@@ -1364,17 +1370,20 @@ defmodule Summoner.Orchestration.ReactLoop do
         agent_id: state.agent.id,
         role: :system,
         content:
-          "#{state.agent.name} timed out after #{state.agent.total_timeout_s}s. " <>
+          "#{state.agent.name} timed out after #{state.agent.local_agent.total_timeout_s}s. " <>
             "You can adjust the timeout in summon or realm settings.",
         visibility: :public,
         provider_name: state.provider.name,
-        model_name: state.agent.model
+        model_name: state.agent.local_agent.model
       })
     end
   end
 
   defp check_token_cap(state) do
-    Ledger.check_invocation_cap(state.invocation.id, state.agent.max_tokens_per_invocation)
+    Ledger.check_invocation_cap(
+      state.invocation.id,
+      state.agent.local_agent.max_tokens_per_invocation
+    )
   end
 
   defp track_tokens(state, %Response{usage: nil} = response) do

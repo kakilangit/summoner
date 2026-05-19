@@ -37,7 +37,7 @@ defmodule Summoner.Swarms.SwarmCoordinator do
 
     intent = %Intent{
       messages: context,
-      model: coordinator.model,
+      model: coordinator.local_agent.model,
       tools: nil,
       max_tokens: 1024
     }
@@ -48,7 +48,7 @@ defmodule Summoner.Swarms.SwarmCoordinator do
       members: members
     }
 
-    call_coordinator(coordinator.provider, intent, routing_ctx)
+    call_coordinator(coordinator.local_agent.provider, intent, routing_ctx)
   end
 
   defp call_coordinator(provider, intent, routing_ctx) do
@@ -112,7 +112,8 @@ defmodule Summoner.Swarms.SwarmCoordinator do
   defp build_meta_prompt(members, responded, min_agents) do
     member_list =
       Enum.map_join(members, "\n", fn agent ->
-        description = agent.system_prompt || agent.personality || "No description"
+        la = agent.local_agent
+        description = (la && la.system_prompt) || (la && la.personality) || "No description"
         truncated = String.slice(description, 0, 200)
         status = if MapSet.member?(responded, agent.callname), do: " [HAS RESPONDED]", else: ""
         "- @#{agent.callname} (#{agent.name})#{status}: #{truncated}"

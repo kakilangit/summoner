@@ -160,7 +160,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   defp switch_stage_model(socket, scope, pipeline, stage, model) do
     case Agents.update_agent(scope, stage.agent, %{model: model}) do
       {:ok, updated_agent} ->
-        updated_agent = Summoner.Repo.preload(updated_agent, :provider)
+        updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
         pipeline = replace_stage_agent(pipeline, stage.id, updated_agent)
 
         {:noreply,

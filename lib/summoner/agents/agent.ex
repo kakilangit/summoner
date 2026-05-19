@@ -1,45 +1,42 @@
 defmodule Summoner.Agents.Agent do
   @moduledoc """
-  Schema for Agents — the AI agents within a workspace.
+  Schema for Agents — the universal identity for anything that can act
+  in an orchestration context (local inference agent, remote A2A agent).
 
-  Each Agent is bound to a provider and model, has a role
-  (manager, worker, or autonomous), and carries configuration
-  for the ReAct loop (steps, timeouts, token limits).
+  The `agents` table is thin: identity (name, callname), type, role,
+  workspace, and soft-delete. Type-specific configuration lives in
+  detail tables: `local_agents` for inference/ReAct config, and
+  `remote_agents` for A2A client config.
   """
 
   use Summoner.Schema
 
   import Ecto.Changeset
 
-  alias Summoner.MediaProviders.MediaProvider
-  alias Summoner.Providers.Provider
+  alias Summoner.Agents.LocalAgent
+  alias Summoner.Agents.RemoteAgent
   alias Summoner.Workspaces.Workspace
 
+  @types ~w(local remote)a
   @roles ~w(autonomous worker)a
 
   schema "agents" do
     field :name, :string
     field :callname, :string
-    field :system_prompt, :string
-    field :personality, :string
-    field :model, :string
+    field :type, Ecto.Enum, values: @types, default: :local
     field :role, Ecto.Enum, values: @roles, default: :autonomous
-    field :max_steps, :integer, default: 10
-    field :max_concurrent_invocations, :integer, default: 1
-    field :max_delegation_concurrency, :integer, default: 3
-    field :max_tokens_per_invocation, :integer, default: 50_000
-    field :context_length, :integer
-    field :step_timeout_s, :integer, default: 60
-    field :total_timeout_s, :integer, default: 300
-    field :stream_tokens_to_observability, :boolean, default: false
-    field :budget_usd, :decimal
+    field :deleted_at, :utc_datetime_usec
 
     belongs_to :workspace, Workspace
-    belongs_to :provider, Provider
-    belongs_to :media_provider, MediaProvider
+
+    has_one :local_agent, LocalAgent
+    has_one :remote_agent, RemoteAgent
 
     timestamps()
   end
+
+  @doc "All supported types."
+  def types, do: @types
 
   @doc "All supported roles."
   def roles, do: @roles
@@ -66,28 +63,8 @@ defmodule Summoner.Agents.Agent do
 
   def role_description(_), do: ""
 
-  @cast_fields [
-    :name,
-    :callname,
-    :system_prompt,
-    :personality,
-    :model,
-    :role,
-    :max_steps,
-    :max_concurrent_invocations,
-    :max_delegation_concurrency,
-    :max_tokens_per_invocation,
-    :context_length,
-    :step_timeout_s,
-    :total_timeout_s,
-    :stream_tokens_to_observability,
-    :budget_usd,
-    :workspace_id,
-    :provider_id,
-    :media_provider_id
-  ]
-
-  @required_fields [:name, :model, :role, :workspace_id, :provider_id]
+  @cast_fields [:name, :callname, :type, :role, :workspace_id]
+  @required_fields [:name, :role, :workspace_id]
 
   @doc """
   Changeset for creating or updating an agent.
@@ -98,18 +75,10 @@ defmodule Summoner.Agents.Agent do
     |> validate_required(@required_fields)
     |> validate_length(:name, min: 1, max: 100)
     |> validate_callname_if_present()
-    |> validate_number(:max_steps, greater_than: 0)
-    |> validate_number(:max_concurrent_invocations, greater_than: 0)
-    |> validate_number(:max_delegation_concurrency, greater_than: 0)
-    |> validate_number(:max_tokens_per_invocation, greater_than: 0)
-    |> validate_number(:context_length, greater_than: 0)
-    |> validate_number(:step_timeout_s, greater_than: 0, less_than_or_equal_to: 600)
-    |> validate_number(:total_timeout_s, greater_than: 0, less_than_or_equal_to: 3_600)
-    |> validate_number(:budget_usd, greater_than: 0)
-    |> unique_constraint([:workspace_id, :callname])
+    |> unique_constraint([:workspace_id, :callname],
+      name: :agents_workspace_id_callname_active_index
+    )
     |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:provider_id)
-    |> foreign_key_constraint(:media_provider_id)
   end
 
   # Only validate callname format when it has a value.
@@ -145,18 +114,24 @@ defmodule Summoner.Agents.Agent do
   defp blank?(_), do: false
 
   @doc """
-  Extracts an inference snapshot map from an agent with its provider preloaded.
+  Extracts an inference snapshot map from a local agent with its provider preloaded.
 
   Returns `%{provider_name: ..., model_name: ...}` for embedding in
   conversations, invocations, messages, and pipeline run stages.
+
+  Only meaningful for local agents. Returns nil provider/model for remote agents.
   """
-  def inference_snapshot(%__MODULE__{} = agent) do
+  def inference_snapshot(%__MODULE__{local_agent: %LocalAgent{} = local}) do
     provider_name =
-      case agent.provider do
-        %Provider{name: name} -> name
+      case local.provider do
+        %Summoner.Providers.Provider{name: name} -> name
         _ -> nil
       end
 
-    %{provider_name: provider_name, model_name: agent.model}
+    %{provider_name: provider_name, model_name: local.model}
+  end
+
+  def inference_snapshot(%__MODULE__{}) do
+    %{provider_name: nil, model_name: nil}
   end
 end

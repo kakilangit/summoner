@@ -3,6 +3,7 @@ defmodule SummonerWeb.AgentLive.Form do
 
   alias Summoner.Agents
   alias Summoner.Agents.Agent
+  alias Summoner.Agents.LocalAgent
   alias Summoner.MediaProviders
   alias Summoner.Presets
   alias Summoner.Providers
@@ -24,15 +25,39 @@ defmodule SummonerWeb.AgentLive.Form do
 
             {%Agent{
                workspace_id: workspace.id,
-               step_timeout_s: settings.default_step_timeout_s,
-               total_timeout_s: settings.default_total_timeout_s
+               local_agent: %LocalAgent{
+                 step_timeout_s: settings.default_step_timeout_s,
+                 total_timeout_s: settings.default_total_timeout_s
+               }
              }, "New Summon"}
 
           id ->
             {Agents.get_agent!(scope, workspace.id, id), "Edit Summon"}
         end
 
-      changeset = Agent.changeset(agent, %{})
+      local = agent.local_agent || %LocalAgent{}
+
+      flat_data =
+        %{
+          name: agent.name,
+          callname: agent.callname,
+          role: agent.role,
+          model: local.model,
+          provider_id: local.provider_id,
+          media_provider_id: local.media_provider_id,
+          system_prompt: local.system_prompt,
+          personality: local.personality,
+          max_steps: local.max_steps,
+          max_concurrent_invocations: local.max_concurrent_invocations,
+          max_delegation_concurrency: local.max_delegation_concurrency,
+          max_tokens_per_invocation: local.max_tokens_per_invocation,
+          context_length: local.context_length,
+          step_timeout_s: local.step_timeout_s,
+          total_timeout_s: local.total_timeout_s,
+          stream_tokens_to_observability: local.stream_tokens_to_observability
+        }
+
+      changeset = flat_changeset(flat_data, %{})
 
       breadcrumbs =
         if agent.id do
@@ -61,7 +86,7 @@ defmodule SummonerWeb.AgentLive.Form do
         |> Enum.map(fn c -> {c.name, c.id} end)
 
       initial_provider_id =
-        if agent.id, do: to_string(agent.provider_id), else: nil
+        if agent.id, do: to_string(local.provider_id), else: nil
 
       cached_models =
         load_cached_models(providers, initial_provider_id)
@@ -71,7 +96,7 @@ defmodule SummonerWeb.AgentLive.Form do
         |> assign(page_title: "#{title} - #{workspace.name}")
         |> assign(
           agent: agent,
-          form: to_form(changeset),
+          form: to_form(changeset, as: "agent"),
           title: title,
           editing: agent.id != nil,
           providers: providers,
@@ -101,8 +126,7 @@ defmodule SummonerWeb.AgentLive.Form do
     selected = raw["template"] || socket.assigns.selected_template
 
     changeset =
-      socket.assigns.agent
-      |> Agent.changeset(params)
+      flat_changeset(flat_data_from_assigns(socket), params)
       |> Map.put(:action, :validate)
 
     # Reload models only if provider changed
@@ -123,7 +147,7 @@ defmodule SummonerWeb.AgentLive.Form do
 
     {:noreply,
      assign(socket,
-       form: to_form(changeset),
+       form: to_form(changeset, as: "agent"),
        selected_template: selected,
        last_provider_id: provider_id
      )}
@@ -171,7 +195,7 @@ defmodule SummonerWeb.AgentLive.Form do
          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, as: "agent"))}
     end
   end
 
@@ -192,7 +216,7 @@ defmodule SummonerWeb.AgentLive.Form do
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, as: "agent"))}
     end
   end
 
@@ -242,6 +266,59 @@ defmodule SummonerWeb.AgentLive.Form do
 
   defp filter_chat_models(models, kind) do
     Providers.filter_models_by_capability(models, kind, :chat)
+  end
+
+  # ---------------------------------------------------------------
+  # Flat (schemaless) changeset for combined agent + local_agent form
+  # ---------------------------------------------------------------
+
+  @flat_types %{
+    name: :string,
+    callname: :string,
+    role: :string,
+    model: :string,
+    provider_id: :string,
+    media_provider_id: :string,
+    system_prompt: :string,
+    personality: :string,
+    max_steps: :integer,
+    max_concurrent_invocations: :integer,
+    max_delegation_concurrency: :integer,
+    max_tokens_per_invocation: :integer,
+    context_length: :integer,
+    step_timeout_s: :integer,
+    total_timeout_s: :integer,
+    stream_tokens_to_observability: :boolean
+  }
+
+  defp flat_changeset(data, params) do
+    {data, @flat_types}
+    |> Ecto.Changeset.cast(params, Map.keys(@flat_types))
+    |> Ecto.Changeset.validate_required([:name, :role, :model, :provider_id])
+  end
+
+  defp flat_data_from_assigns(socket) do
+    agent = socket.assigns.agent
+    local = agent.local_agent || %LocalAgent{}
+
+    %{
+      name: agent.name,
+      callname: agent.callname,
+      role: agent.role,
+      model: local.model,
+      provider_id: local.provider_id,
+      media_provider_id: local.media_provider_id,
+      system_prompt: local.system_prompt,
+      personality: local.personality,
+      max_steps: local.max_steps,
+      max_concurrent_invocations: local.max_concurrent_invocations,
+      max_delegation_concurrency: local.max_delegation_concurrency,
+      max_tokens_per_invocation: local.max_tokens_per_invocation,
+      context_length: local.context_length,
+      step_timeout_s: local.step_timeout_s,
+      total_timeout_s: local.total_timeout_s,
+      stream_tokens_to_observability: local.stream_tokens_to_observability
+    }
   end
 
   @impl true

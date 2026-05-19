@@ -876,9 +876,13 @@ defmodule SummonerWeb.CoreComponents do
   attr :id, :string, required: true
 
   def model_switcher(assigns) do
-    models = cached_models(assigns.agent)
-    provider_name = provider_display_name(assigns.agent)
-    assigns = assign(assigns, models: models, provider_name: provider_name)
+    local = assigns.agent.local_agent
+    models = cached_models(local)
+    provider_name = provider_display_name(local)
+    current_model = local && local.model
+
+    assigns =
+      assign(assigns, models: models, provider_name: provider_name, current_model: current_model)
 
     ~H"""
     <div id={@id} class="dropdown">
@@ -892,11 +896,11 @@ defmodule SummonerWeb.CoreComponents do
           "hover:border-primary/40 hover:bg-primary/5",
           "active:scale-95 transition-all duration-150"
         ]}
-        title={"Current spirit: #{@agent.model}\nGateway: #{@provider_name}"}
+        title={"Current spirit: #{@current_model}\nGateway: #{@provider_name}"}
       >
         <span class="hero-cpu-chip size-3 text-base-content/40"></span>
         <span class="max-w-36 truncate font-medium text-base-content/70">
-          {short_model_name(@agent.model)}
+          {short_model_name(@current_model)}
         </span>
         <span class="hero-chevron-up-down size-3 text-base-content/30"></span>
       </div>
@@ -929,7 +933,7 @@ defmodule SummonerWeb.CoreComponents do
               phx-value-model={model}
               class={[
                 "flex items-center gap-2 rounded-lg text-xs",
-                if(model == @agent.model,
+                if(model == @current_model,
                   do: "bg-primary/10 text-primary font-medium",
                   else: "hover:bg-base-200"
                 )
@@ -937,11 +941,11 @@ defmodule SummonerWeb.CoreComponents do
             >
               <span class={[
                 "size-1.5 rounded-full flex-shrink-0",
-                if(model == @agent.model, do: "bg-primary", else: "bg-base-content/20")
+                if(model == @current_model, do: "bg-primary", else: "bg-base-content/20")
               ]} />
               <span class="truncate flex-1">{short_model_name(model)}</span>
               <span
-                :if={model == @agent.model}
+                :if={model == @current_model}
                 class="hero-check-circle-solid size-4 text-primary flex-shrink-0"
               />
             </button>

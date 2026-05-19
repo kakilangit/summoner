@@ -33,7 +33,7 @@ defmodule Summoner.Workers.SubtaskReaper do
   defp claimed_subtasks do
     Subtask
     |> where([s], s.status == :running)
-    |> preload(invocation: :agent)
+    |> preload(invocation: [agent: :local_agent])
     |> Repo.all()
   end
 
@@ -47,7 +47,9 @@ defmodule Summoner.Workers.SubtaskReaper do
 
   defp timed_out?(%Subtask{updated_at: updated_at, invocation: inv}) do
     timeout_s =
-      if inv.agent, do: inv.agent.total_timeout_s || @default_timeout_s, else: @default_timeout_s
+      if inv.agent && inv.agent.local_agent,
+        do: inv.agent.local_agent.total_timeout_s || @default_timeout_s,
+        else: @default_timeout_s
 
     deadline = DateTime.add(updated_at, timeout_s, :second)
     DateTime.compare(DateTime.utc_now(), deadline) == :gt

@@ -163,7 +163,7 @@ defmodule Summoner.Agents.Server do
     scope = Map.fetch!(params, :scope)
     react_opts = Map.get(params, :react_opts, %{})
 
-    if active_count(state) >= state.agent.max_concurrent_invocations do
+    if active_count(state) >= state.agent.local_agent.max_concurrent_invocations do
       # Queue the invocation in DB, defer reply until it completes
       case create_queued_invocation(scope, state, conversation_id, message) do
         {:ok, invocation} ->
@@ -193,7 +193,7 @@ defmodule Summoner.Agents.Server do
         {caller_pid, _},
         state
       ) do
-    if active_count(state) >= state.agent.max_concurrent_invocations do
+    if active_count(state) >= state.agent.local_agent.max_concurrent_invocations do
       {:reply, {:error, :at_capacity}, state}
     else
       workspace_id = state.agent.workspace_id
@@ -207,8 +207,8 @@ defmodule Summoner.Agents.Server do
           depth: 1,
           status: :queued,
           input: %{"subtask_id" => subtask_id, "description" => description},
-          provider_name: state.agent.provider.name,
-          model_name: state.agent.model
+          provider_name: state.agent.local_agent.provider.name,
+          model_name: state.agent.local_agent.model
         })
 
       # Start the worker's ReAct loop
@@ -223,7 +223,7 @@ defmodule Summoner.Agents.Server do
         Task.Supervisor.async_nolink(@task_supervisor, fn ->
           ReactLoop.run(
             state.agent,
-            state.agent.provider,
+            state.agent.local_agent.provider,
             invocation,
             context,
             [
@@ -248,7 +248,7 @@ defmodule Summoner.Agents.Server do
     scope = Map.fetch!(params, :scope)
     react_opts = Map.get(params, :react_opts, %{})
 
-    if active_count(state) >= state.agent.max_concurrent_invocations do
+    if active_count(state) >= state.agent.local_agent.max_concurrent_invocations do
       case create_queued_invocation(scope, state, conversation_id, message) do
         {:ok, _invocation} -> :ok
         {:error, reason} -> Logger.warning("Queued invocation failed: #{inspect(reason)}")
@@ -344,7 +344,7 @@ defmodule Summoner.Agents.Server do
     # Check workspace quota and budgets before creating invocation
     with :ok <- Ledger.check_workspace_quota(workspace_id),
          :ok <- Ledger.check_workspace_budget(workspace_id),
-         :ok <- Ledger.check_agent_budget(agent.id, agent.budget_usd) do
+         :ok <- Ledger.check_agent_budget(agent.id, agent.local_agent.budget_usd) do
       input =
         if message, do: %{"message" => message}, else: %{"continuation" => true}
 
@@ -355,8 +355,8 @@ defmodule Summoner.Agents.Server do
           conversation_id: conversation_id,
           status: :queued,
           input: input,
-          provider_name: state.agent.provider.name,
-          model_name: state.agent.model
+          provider_name: state.agent.local_agent.provider.name,
+          model_name: state.agent.local_agent.model
         })
 
       # Assemble context first (before writing user message, so history
@@ -381,7 +381,7 @@ defmodule Summoner.Agents.Server do
         Task.Supervisor.async_nolink(@task_supervisor, fn ->
           ReactLoop.run(
             state.agent,
-            state.agent.provider,
+            state.agent.local_agent.provider,
             invocation,
             context,
             [
@@ -426,13 +426,13 @@ defmodule Summoner.Agents.Server do
       conversation_id: conversation_id,
       status: :queued,
       input: %{"message" => message},
-      provider_name: state.agent.provider.name,
-      model_name: state.agent.model
+      provider_name: state.agent.local_agent.provider.name,
+      model_name: state.agent.local_agent.model
     })
   end
 
   defp maybe_dequeue(state) do
-    if active_count(state) >= state.agent.max_concurrent_invocations do
+    if active_count(state) >= state.agent.local_agent.max_concurrent_invocations do
       state
     else
       do_dequeue(state)
@@ -498,7 +498,7 @@ defmodule Summoner.Agents.Server do
       Task.Supervisor.async_nolink(@task_supervisor, fn ->
         ReactLoop.run(
           state.agent,
-          state.agent.provider,
+          state.agent.local_agent.provider,
           invocation,
           context,
           [

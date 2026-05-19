@@ -38,7 +38,7 @@ defmodule Summoner.Swarms do
     Swarm
     |> Workspaces.where_workspace(workspace_id)
     |> order_by([c], asc: c.name)
-    |> preload(members: [agent: :provider])
+    |> preload(members: [agent: [local_agent: :provider]])
     |> Repo.all()
   end
 
@@ -51,14 +51,14 @@ defmodule Summoner.Swarms do
       |> Workspaces.where_workspace(workspace_id)
       |> Pagination.paginate(opts)
 
-    %{page | entries: Repo.preload(page.entries, members: [agent: :provider])}
+    %{page | entries: Repo.preload(page.entries, members: [agent: [local_agent: :provider]])}
   end
 
   def get_swarm!(%{user: _user}, workspace_id, swarm_id) do
     Swarm
     |> Workspaces.where_workspace(workspace_id)
     |> Repo.get!(swarm_id)
-    |> Repo.preload([{:coordinator_agent, :provider}, members: member_query()])
+    |> Repo.preload([{:coordinator_agent, [local_agent: :provider]}, members: member_query()])
   end
 
   def delete_swarm(%{user: _user}, %Swarm{} = swarm) do
@@ -105,7 +105,7 @@ defmodule Summoner.Swarms do
     SwarmMember
     |> where([m], m.swarm_id == ^swarm_id)
     |> order_by([m], asc: m.position)
-    |> preload(agent: :provider)
+    |> preload(agent: [local_agent: :provider])
     |> Repo.all()
   end
 
@@ -172,7 +172,10 @@ defmodule Summoner.Swarms do
 
   @doc false
   def member_query do
-    from(m in SwarmMember, order_by: [asc: m.position], preload: [agent: :provider])
+    from(m in SwarmMember,
+      order_by: [asc: m.position],
+      preload: [agent: [local_agent: :provider]]
+    )
   end
 
   # -------------------------------------------------------------------

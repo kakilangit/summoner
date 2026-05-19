@@ -95,7 +95,7 @@ defmodule Summoner.Memory do
     harness = Keyword.get(opts, :harness) || Presets.default_harness()
 
     parts =
-      [harness, agent.personality, agent.system_prompt]
+      [harness, agent.local_agent.personality, agent.local_agent.system_prompt]
       |> Enum.reject(&(is_nil(&1) or &1 == ""))
 
     env_block = workspace_env_block(workspace_id)

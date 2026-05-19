@@ -103,7 +103,7 @@ defmodule Summoner.MediaProviders do
   Returns nil if no media provider is available.
   """
   def resolve_media_provider(agent, type \\ :image) do
-    case agent.media_provider_id do
+    case agent.local_agent.media_provider_id do
       nil ->
         get_default_media_provider(agent.workspace_id, type)
 

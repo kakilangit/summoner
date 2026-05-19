@@ -28,9 +28,9 @@ defmodule Summoner.AgentsTest do
       assert {:ok, %Agent{} = f} = Agents.create_agent(scope, attrs)
       assert f.name == "Agent Smith"
       assert f.role == :autonomous
-      assert f.max_concurrent_invocations == 1
-      assert f.max_steps == 10
-      assert f.max_tokens_per_invocation == 50_000
+      assert f.local_agent.max_concurrent_invocations == 1
+      assert f.local_agent.max_steps == 10
+      assert f.local_agent.max_tokens_per_invocation == 50_000
     end
 
     test "creates a worker agent", %{
@@ -41,7 +41,7 @@ defmodule Summoner.AgentsTest do
       attrs = valid_agent_attributes(w.id, p.id, %{role: :worker})
       assert {:ok, %Agent{} = f} = Agents.create_agent(scope, attrs)
       assert f.role == :worker
-      assert f.max_concurrent_invocations == 1
+      assert f.local_agent.max_concurrent_invocations == 1
     end
 
     test "allows explicit max_concurrent_invocations", %{
@@ -53,7 +53,7 @@ defmodule Summoner.AgentsTest do
         valid_agent_attributes(w.id, p.id, %{max_concurrent_invocations: 5})
 
       assert {:ok, %Agent{} = f} = Agents.create_agent(scope, attrs)
-      assert f.max_concurrent_invocations == 5
+      assert f.local_agent.max_concurrent_invocations == 5
     end
 
     test "keeps default max_concurrent_invocations=1 for workers", %{
@@ -63,16 +63,14 @@ defmodule Summoner.AgentsTest do
     } do
       attrs = valid_agent_attributes(w.id, p.id, %{role: :worker})
       assert {:ok, %Agent{} = f} = Agents.create_agent(scope, attrs)
-      assert f.max_concurrent_invocations == 1
+      assert f.local_agent.max_concurrent_invocations == 1
     end
 
     test "requires mandatory fields", %{scope: scope} do
       assert {:error, changeset} = Agents.create_agent(scope, %{})
       errors = errors_on(changeset)
       assert errors[:name]
-      assert errors[:model]
       assert errors[:workspace_id]
-      assert errors[:provider_id]
     end
 
     test "enforces unique name per workspace", %{scope: scope, workspace: w, provider: p} do

@@ -25,11 +25,11 @@ defmodule Summoner.Workers.CompactorJob do
     agent = Agents.get_agent_with_provider!(agent_id)
 
     provider = %{
-      kind: agent.provider.kind,
-      api_format: agent.provider.api_format,
-      base_url: agent.provider.base_url,
-      api_key: Provider.api_key(agent.provider),
-      model: agent.model
+      kind: agent.local_agent.provider.kind,
+      api_format: agent.local_agent.provider.api_format,
+      base_url: agent.local_agent.provider.base_url,
+      api_key: Provider.api_key(agent.local_agent.provider),
+      model: agent.local_agent.model
     }
 
     case Compactor.maybe_compact(conversation_id, provider) do

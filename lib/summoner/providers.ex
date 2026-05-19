@@ -77,7 +77,7 @@ defmodule Summoner.Providers do
     provider
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.foreign_key_constraint(:agents,
-      name: :agents_provider_id_fkey,
+      name: :local_agents_provider_id_fkey,
       message: "gateway is still used by one or more summons"
     )
     |> Repo.delete()

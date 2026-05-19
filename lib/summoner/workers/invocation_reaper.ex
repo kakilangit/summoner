@@ -29,7 +29,7 @@ defmodule Summoner.Workers.InvocationReaper do
   defp running_invocations do
     Invocation
     |> where([i], i.status == :running and is_nil(i.pipeline_id))
-    |> preload(:agent)
+    |> preload(agent: :local_agent)
     |> Repo.all()
   end
 
@@ -49,7 +49,9 @@ defmodule Summoner.Workers.InvocationReaper do
   defp timed_out?(%Invocation{started_at: nil}), do: false
 
   defp timed_out?(%Invocation{started_at: started_at, agent: agent}) do
-    timeout_s = if agent, do: agent.total_timeout_s || 300, else: 300
+    timeout_s =
+      if agent && agent.local_agent, do: agent.local_agent.total_timeout_s || 300, else: 300
+
     deadline = DateTime.add(started_at, timeout_s, :second)
     DateTime.compare(DateTime.utc_now(), deadline) == :gt
   end

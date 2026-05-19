@@ -70,7 +70,7 @@ defmodule Summoner.Pipelines do
     Pipeline
     |> Workspaces.where_workspace(workspace_id)
     |> Repo.get!(pipeline_id)
-    |> Repo.preload(stages: [agent: :provider])
+    |> Repo.preload(stages: [agent: [local_agent: :provider]])
   end
 
   @doc """

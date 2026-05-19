@@ -287,7 +287,7 @@ defmodule SummonerWeb.SwarmLive.Form do
                   </span>
                 </div>
                 <div class="text-sm text-base-content/60 truncate">
-                  {member.agent.model}
+                  {member.agent.local_agent && member.agent.local_agent.model}
                 </div>
               </div>
             </div>

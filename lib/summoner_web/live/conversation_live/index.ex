@@ -181,7 +181,7 @@ defmodule SummonerWeb.ConversationLive.Index do
                   {agent.name}
                 </div>
                 <div class="text-xs text-base-content/50 truncate">
-                  {agent.personality || role_label(agent.role)}
+                  {(agent.local_agent && agent.local_agent.personality) || role_label(agent.role)}
                 </div>
               </div>
               <span class="hero-chevron-right size-4 text-base-content/30 group-hover:text-primary transition-colors" />

@@ -421,7 +421,9 @@ defmodule SummonerWeb.PipelineLive.Form do
             <span class="badge badge-neutral badge-sm font-mono">#{idx + 1}</span>
             <div class="flex-1 min-w-0">
               <span class="font-medium text-sm">{stage.agent.name}</span>
-              <span class="text-xs text-base-content/50 ml-2">{stage.agent.model}</span>
+              <span class="text-xs text-base-content/50 ml-2">
+                {stage.agent.local_agent && stage.agent.local_agent.model}
+              </span>
               <p :if={stage.instruction != ""} class="text-xs text-base-content/60 mt-0.5 truncate">
                 {stage.instruction}
               </p>
@@ -490,7 +492,9 @@ defmodule SummonerWeb.PipelineLive.Form do
                 </span>
                 <div>
                   <span class="font-medium">{stage.agent.name}</span>
-                  <div class="text-sm text-base-content/60">{stage.agent.model}</div>
+                  <div class="text-sm text-base-content/60">
+                    {stage.agent.local_agent && stage.agent.local_agent.model}
+                  </div>
                 </div>
                 <span
                   :if={stage.depends_on_positions != [] && stage.depends_on_positions != nil}

@@ -276,7 +276,7 @@ defmodule Summoner.Swarms.SwarmRunner do
             conversation_id: state.conversation.id,
             role: :system,
             content:
-              "#{agent.name} timed out after #{agent.total_timeout_s}s. " <>
+              "#{agent.name} timed out after #{agent.local_agent.total_timeout_s}s. " <>
                 "Skipping to next member. You can adjust the timeout in the summon's settings.",
             visibility: :public
           })
@@ -380,7 +380,7 @@ defmodule Summoner.Swarms.SwarmRunner do
          members,
          swarm_mode
        ) do
-    timeout_s = agent.total_timeout_s
+    timeout_s = agent.local_agent.total_timeout_s
 
     task =
       Task.async(fn ->

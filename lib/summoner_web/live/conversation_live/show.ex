@@ -77,7 +77,7 @@ defmodule SummonerWeb.ConversationLive.Show do
     if agent && agent.id == agent_id do
       case Agents.update_agent(scope, agent, %{model: model}) do
         {:ok, updated_agent} ->
-          updated_agent = Summoner.Repo.preload(updated_agent, :provider)
+          updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
           conversation = %{socket.assigns.conversation | primary_agent: updated_agent}
 
           {:noreply,
@@ -322,11 +322,14 @@ defmodule SummonerWeb.ConversationLive.Show do
             {@conversation.primary_agent.name}
           </span>
           <span
-            :if={@conversation.primary_agent.personality}
+            :if={
+              @conversation.primary_agent.local_agent &&
+                @conversation.primary_agent.local_agent.personality
+            }
             class="text-xs text-base-content/40 truncate max-w-xs"
-            title={@conversation.primary_agent.personality}
+            title={@conversation.primary_agent.local_agent.personality}
           >
-            — {@conversation.primary_agent.personality}
+            — {@conversation.primary_agent.local_agent.personality}
           </span>
           <.model_switcher agent={@conversation.primary_agent} id="chat-model-switcher" />
         </div>

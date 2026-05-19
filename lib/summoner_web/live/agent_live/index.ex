@@ -6,10 +6,10 @@ defmodule SummonerWeb.AgentLive.Index do
   alias Summoner.Agents
   alias Summoner.Agents.Agent
 
-  @sort_options [{"Name", :name}, {"Role", :role}, {"Spirit", :model}, {"Created", :inserted_at}]
+  @sort_options [{"Name", :name}, {"Role", :role}, {"Created", :inserted_at}]
   @default_sort_by :name
   @default_sort_dir :asc
-  @filter_fields [:name, :model]
+  @filter_fields [:name]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -161,7 +161,7 @@ defmodule SummonerWeb.AgentLive.Index do
               </span>
             </div>
             <div class="text-sm text-base-content/60 truncate">
-              {agent.model}
+              {agent.local_agent && agent.local_agent.model}
             </div>
           </div>
           <div class="flex gap-2 flex-shrink-0">

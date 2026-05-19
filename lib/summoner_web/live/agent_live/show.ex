@@ -56,19 +56,29 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             {@agent.role}
           </span>
-          <span class="text-sm text-base-content/60">{@agent.model}</span>
+          <span class="text-sm text-base-content/60">{@agent.local_agent.model}</span>
         </div>
 
-        <div :if={@agent.system_prompt} class="collapse collapse-arrow bg-base-200">
+        <div
+          :if={@agent.local_agent && @agent.local_agent.system_prompt}
+          class="collapse collapse-arrow bg-base-200"
+        >
           <input type="checkbox" checked />
           <div class="collapse-title text-sm font-medium">Instructions</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">{@agent.system_prompt}</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.system_prompt}
+          </div>
         </div>
 
-        <div :if={@agent.personality} class="collapse collapse-arrow bg-base-200">
+        <div
+          :if={@agent.local_agent && @agent.local_agent.personality}
+          class="collapse collapse-arrow bg-base-200"
+        >
           <input type="checkbox" checked />
           <div class="collapse-title text-sm font-medium">Persona</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">{@agent.personality}</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.personality}
+          </div>
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -96,19 +106,19 @@ defmodule SummonerWeb.AgentLive.Show do
           <div class="collapse-content">
             <div class="grid grid-cols-2 gap-2 text-sm">
               <div class="text-base-content/60">Max Steps</div>
-              <div>{@agent.max_steps}</div>
+              <div>{@agent.local_agent.max_steps}</div>
               <div class="text-base-content/60">Max Concurrent</div>
-              <div>{@agent.max_concurrent_invocations}</div>
+              <div>{@agent.local_agent.max_concurrent_invocations}</div>
               <div class="text-base-content/60">Max Delegation</div>
-              <div>{@agent.max_delegation_concurrency}</div>
+              <div>{@agent.local_agent.max_delegation_concurrency}</div>
               <div class="text-base-content/60">Token Limit</div>
-              <div>{@agent.max_tokens_per_invocation}</div>
+              <div>{@agent.local_agent.max_tokens_per_invocation}</div>
               <div class="text-base-content/60">Context Length</div>
-              <div>{@agent.context_length || "Default (131072)"}</div>
+              <div>{@agent.local_agent.context_length || "Default (131072)"}</div>
               <div class="text-base-content/60">Step Timeout</div>
-              <div>{@agent.step_timeout_s}s</div>
+              <div>{@agent.local_agent.step_timeout_s}s</div>
               <div class="text-base-content/60">Total Timeout</div>
-              <div>{@agent.total_timeout_s}s</div>
+              <div>{@agent.local_agent.total_timeout_s}s</div>
             </div>
           </div>
         </div>

@@ -88,7 +88,7 @@ defmodule Summoner.Conversations do
     Conversation
     |> Workspaces.where_workspace(workspace_id)
     |> Repo.get!(conversation_id)
-    |> Repo.preload(primary_agent: :provider)
+    |> Repo.preload(primary_agent: [local_agent: :provider])
   end
 
   @doc """

@@ -3,12 +3,18 @@ defmodule Summoner.Agents do
   The Agents context.
 
   Manages AI agent configurations within workspaces,
-  including linking managers to workers.
+  including linking managers to workers. Agents come in two types:
+
+  - `:local` — backed by a provider/model, runs the ReAct loop.
+    Config stored in `local_agents` detail table.
+  - `:remote` — backed by an external A2A agent.
+    Config stored in `remote_agents` detail table.
   """
 
   import Ecto.Query, warn: false
 
-  alias Summoner.Agents.{Agent, AgentLink}
+  alias Ecto.Multi
+  alias Summoner.Agents.{Agent, AgentLink, LocalAgent}
   alias Summoner.Pagination
   alias Summoner.Repo
   alias Summoner.Workspaces
@@ -18,37 +24,38 @@ defmodule Summoner.Agents do
   # -------------------------------------------------------------------
 
   @doc """
-  Creates an agent within a workspace.
+  Creates a local agent within a workspace.
+
+  Atomically creates both the `agents` row and its `local_agents` detail row.
   """
   def create_agent(%{user: _user}, attrs) do
     attrs = maybe_generate_callname(attrs)
+    {agent_attrs, local_attrs} = split_attrs(attrs)
 
-    %Agent{}
-    |> Agent.changeset(attrs)
-    |> Repo.insert()
-  end
+    agent_attrs =
+      if Map.has_key?(agent_attrs, "type") or Map.has_key?(agent_attrs, :type) do
+        agent_attrs
+      else
+        type_key = if Enum.any?(Map.keys(agent_attrs), &is_binary/1), do: "type", else: :type
+        Map.put(agent_attrs, type_key, :local)
+      end
 
-  defp maybe_generate_callname(attrs) do
-    callname = attrs[:callname] || attrs["callname"]
-    name = attrs[:name] || attrs["name"]
+    Multi.new()
+    |> Multi.insert(:agent, Agent.changeset(%Agent{}, agent_attrs))
+    |> Multi.insert(:local_agent, fn %{agent: agent} ->
+      %LocalAgent{agent_id: agent.id}
+      |> LocalAgent.changeset(local_attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{agent: agent, local_agent: local_agent}} ->
+        {:ok, %{agent | local_agent: local_agent}}
 
-    if callname_blank?(callname) && is_binary(name) do
-      generated = Agent.to_callname(name)
-      put_attr(attrs, :callname, generated)
-    else
-      attrs
-    end
-  end
+      {:error, :agent, changeset, _changes} ->
+        {:error, changeset}
 
-  defp callname_blank?(nil), do: true
-  defp callname_blank?(s) when is_binary(s), do: String.trim(s) == ""
-  defp callname_blank?(_), do: false
-
-  defp put_attr(attrs, key, value) when is_map(attrs) do
-    if Map.has_key?(attrs, "callname") do
-      Map.put(attrs, "callname", value)
-    else
-      Map.put(attrs, key, value)
+      {:error, :local_agent, changeset, _changes} ->
+        {:error, changeset}
     end
   end
 
@@ -56,21 +63,26 @@ defmodule Summoner.Agents do
   Gets a single agent scoped to a workspace.
 
   Raises `Ecto.NoResultsError` if not found.
+  Preloads the type-specific detail (local_agent or remote_agent).
   """
   def get_agent!(%{user: _user}, workspace_id, agent_id) do
     Agent
     |> Workspaces.where_workspace(workspace_id)
+    |> where([a], is_nil(a.deleted_at))
     |> Repo.get!(agent_id)
+    |> preload_detail()
   end
 
   @doc """
-  Lists all agents for a workspace.
+  Lists all active agents for a workspace.
   """
   def list_agents(%{user: _user}, workspace_id) do
     Agent
     |> Workspaces.where_workspace(workspace_id)
+    |> where([a], is_nil(a.deleted_at))
     |> order_by([f], asc: f.name)
     |> Repo.all()
+    |> Enum.map(&preload_detail/1)
   end
 
   @doc """
@@ -79,24 +91,53 @@ defmodule Summoner.Agents do
   def list_agents_paginated(%{user: _user}, workspace_id, opts \\ []) do
     Agent
     |> Workspaces.where_workspace(workspace_id)
+    |> where([a], is_nil(a.deleted_at))
+    |> preload(local_agent: [:provider, :media_provider])
     |> Pagination.paginate(opts)
   end
 
   @doc """
   Updates an agent.
+
+  For local agents, also updates the local_agent detail record.
   """
   def update_agent(%{user: _user}, %Agent{} = agent, attrs) do
-    agent
-    |> Agent.changeset(attrs)
-    |> Repo.update()
+    {agent_attrs, local_attrs} = split_attrs(attrs)
+
+    case agent.type do
+      :local ->
+        local_agent = ensure_local_agent_loaded(agent)
+
+        Multi.new()
+        |> Multi.update(:agent, Agent.changeset(agent, agent_attrs))
+        |> Multi.update(:local_agent, LocalAgent.changeset(local_agent, local_attrs))
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{agent: agent, local_agent: local_agent}} ->
+            {:ok, %{agent | local_agent: local_agent}}
+
+          {:error, :agent, changeset, _changes} ->
+            {:error, changeset}
+
+          {:error, :local_agent, changeset, _changes} ->
+            {:error, changeset}
+        end
+
+      :remote ->
+        agent
+        |> Agent.changeset(agent_attrs)
+        |> Repo.update()
+    end
   end
 
   @doc """
-  Deletes an agent.
+  Soft-deletes an agent by setting `deleted_at`.
+
+  Preserves conversation history and audit trail.
   """
   def delete_agent(%{user: _user}, %Agent{} = agent) do
     agent
-    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now()})
     |> Ecto.Changeset.foreign_key_constraint(:conversations,
       name: :conversations_primary_agent_id_fkey,
       message: "summon is still used by channels"
@@ -117,7 +158,7 @@ defmodule Summoner.Agents do
       name: :agent_skills_agent_id_fkey,
       message: "summon still has skills equipped"
     )
-    |> Repo.delete()
+    |> Repo.update()
   end
 
   @doc """
@@ -127,19 +168,27 @@ defmodule Summoner.Agents do
     Agent.changeset(agent, attrs)
   end
 
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking local agent changes.
+  """
+  def change_local_agent(%LocalAgent{} = local_agent, attrs \\ %{}) do
+    LocalAgent.changeset(local_agent, attrs)
+  end
+
   # -------------------------------------------------------------------
   # Internal API (for infrastructure use)
   # -------------------------------------------------------------------
 
   @doc """
-  Gets an agent with its provider preloaded.
+  Gets an agent with its local_agent and provider preloaded.
 
   Intended for infrastructure use (e.g. Agent GenServer startup).
+  Raises `Ecto.NoResultsError` if not found.
   """
   def get_agent_with_provider!(agent_id) do
     Agent
     |> Repo.get!(agent_id)
-    |> Repo.preload(provider: :api_key_secret)
+    |> Repo.preload(local_agent: [provider: :api_key_secret])
   end
 
   # -------------------------------------------------------------------
@@ -176,5 +225,80 @@ defmodule Summoner.Agents do
     |> preload(:worker)
     |> Repo.all()
     |> Enum.map(& &1.worker)
+  end
+
+  # -------------------------------------------------------------------
+  # Private helpers
+  # -------------------------------------------------------------------
+
+  defp maybe_generate_callname(attrs) do
+    callname = attrs[:callname] || attrs["callname"]
+    name = attrs[:name] || attrs["name"]
+
+    if callname_blank?(callname) && is_binary(name) do
+      generated = Agent.to_callname(name)
+      put_attr(attrs, :callname, generated)
+    else
+      attrs
+    end
+  end
+
+  defp callname_blank?(nil), do: true
+  defp callname_blank?(s) when is_binary(s), do: String.trim(s) == ""
+  defp callname_blank?(_), do: false
+
+  defp put_attr(attrs, key, value) when is_map(attrs) do
+    if Map.has_key?(attrs, "callname") do
+      Map.put(attrs, "callname", value)
+    else
+      Map.put(attrs, key, value)
+    end
+  end
+
+  # Fields that belong to the agent base table
+  @agent_fields ~w(name callname type role workspace_id)a
+  @agent_string_fields ~w(name callname type role workspace_id)
+
+  defp split_attrs(attrs) when is_map(attrs) do
+    {agent, local} =
+      Enum.reduce(attrs, {%{}, %{}}, fn {key, value}, {agent_acc, local_acc} ->
+        atom_key = if is_binary(key), do: safe_to_atom(key), else: key
+
+        if atom_key in @agent_fields do
+          {Map.put(agent_acc, key, value), local_acc}
+        else
+          {agent_acc, Map.put(local_acc, key, value)}
+        end
+      end)
+
+    {agent, local}
+  end
+
+  defp safe_to_atom(key) when is_binary(key) do
+    if key in @agent_string_fields do
+      String.to_existing_atom(key)
+    else
+      nil
+    end
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp preload_detail(%Agent{type: :local} = agent) do
+    Repo.preload(agent, local_agent: [:provider, :media_provider])
+  end
+
+  defp preload_detail(%Agent{type: :remote} = agent) do
+    Repo.preload(agent, :remote_agent)
+  end
+
+  defp preload_detail(%Agent{} = agent), do: agent
+
+  defp ensure_local_agent_loaded(%Agent{local_agent: %LocalAgent{}} = agent) do
+    agent.local_agent
+  end
+
+  defp ensure_local_agent_loaded(%Agent{} = agent) do
+    Repo.preload(agent, :local_agent).local_agent
   end
 end

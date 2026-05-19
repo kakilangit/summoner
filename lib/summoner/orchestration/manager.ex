@@ -112,7 +112,7 @@ defmodule Summoner.Orchestration.Manager do
 
   defp dispatch_all(subtasks, manager_state) do
     invocation_id = List.first(subtasks).invocation_id
-    max_concurrency = manager_state.agent.max_delegation_concurrency
+    max_concurrency = manager_state.agent.local_agent.max_delegation_concurrency
 
     dispatch_loop(invocation_id, max_concurrency, manager_state, [])
   end

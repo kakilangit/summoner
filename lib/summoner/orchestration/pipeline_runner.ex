@@ -475,8 +475,8 @@ defmodule Summoner.Orchestration.PipelineRunner do
         status: :running,
         input: %{"message" => initial_input},
         started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
-        provider_name: orchestrator.provider.name,
-        model_name: orchestrator.model
+        provider_name: orchestrator.local_agent.provider.name,
+        model_name: orchestrator.local_agent.model
       })
 
     manager_state = %{
