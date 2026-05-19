@@ -363,8 +363,8 @@ defmodule Summoner.Agents do
   defp callname_blank?(_), do: false
 
   defp put_attr(attrs, key, value) when is_map(attrs) do
-    if Map.has_key?(attrs, "callname") do
-      Map.put(attrs, "callname", value)
+    if Enum.any?(Map.keys(attrs), &is_binary/1) do
+      Map.put(attrs, to_string(key), value)
     else
       Map.put(attrs, key, value)
     end
