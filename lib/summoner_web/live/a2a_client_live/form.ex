@@ -1,9 +1,9 @@
-defmodule SummonerWeb.A2AServerLive.Form do
+defmodule SummonerWeb.A2AClientLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.A2A, as: SummonerA2A
-  alias Summoner.A2A.A2AServer
   alias Summoner.Agents
+  alias Summoner.Agents.Agent
+  alias Summoner.Secrets
   alias Summoner.Workspaces.Policy
 
   @impl true
@@ -13,37 +13,33 @@ defmodule SummonerWeb.A2AServerLive.Form do
     if Policy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
 
-      {server, title} =
+      {agent, title} =
         case params["id"] do
           nil ->
-            {%A2AServer{workspace_id: workspace.id}, "New Herald"}
+            {%Agent{type: :remote, workspace_id: workspace.id}, "New Envoy"}
 
           id ->
-            {SummonerA2A.get_server!(scope, workspace.id, id), "Edit Herald"}
+            {Agents.get_agent!(scope, workspace.id, id), "Edit Envoy"}
         end
 
-      changeset = SummonerA2A.change_server(server)
-      agents = Agents.list_agents(scope, workspace.id)
-
-      # Filter to local agents only
-      local_agents = Enum.filter(agents, &(&1.type == :local))
+      changeset = Agents.change_agent(agent)
+      secrets = Secrets.list_secrets(scope, workspace.id, workspace.tenant_id)
 
       socket =
         socket
         |> assign(page_title: "#{title} - #{workspace.name}")
         |> assign(
-          server: server,
+          agent: agent,
           form: to_form(changeset),
           title: title,
-          editing: server.id != nil,
-          local_agents: local_agents,
-          endpoint_url: if(server.id, do: SummonerA2A.base_url(server), else: nil)
+          editing: agent.id != nil,
+          secrets: secrets
         )
         |> assign(
           breadcrumbs: [
             {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
             {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Heralds", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/heralds"},
+            {"Envoys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys"},
             {title, nil}
           ]
         )
@@ -58,43 +54,43 @@ defmodule SummonerWeb.A2AServerLive.Form do
   end
 
   @impl true
-  def handle_event("save", %{"a2a_server" => params}, socket) do
+  def handle_event("save", %{"agent" => params}, socket) do
     if socket.assigns.editing do
-      update_server(socket, params)
+      update_envoy(socket, params)
     else
-      create_server(socket, params)
+      create_envoy(socket, params)
     end
   end
 
-  defp create_server(socket, params) do
+  defp create_envoy(socket, params) do
     workspace = socket.assigns.workspace
     params = Map.put(params, "workspace_id", workspace.id)
 
-    case SummonerA2A.create_server(socket.assigns.current_scope, params) do
-      {:ok, _server} ->
+    case Agents.create_remote_agent(socket.assigns.current_scope, params) do
+      {:ok, _agent} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Herald created.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/heralds")}
+         |> put_flash(:info, "Envoy created.")
+         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
-  defp update_server(socket, params) do
+  defp update_envoy(socket, params) do
     workspace = socket.assigns.workspace
 
-    case SummonerA2A.update_server(
+    case Agents.update_remote_agent(
            socket.assigns.current_scope,
-           socket.assigns.server,
+           socket.assigns.agent,
            params
          ) do
-      {:ok, _server} ->
+      {:ok, _agent} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Herald updated.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/heralds")}
+         |> put_flash(:info, "Envoy updated.")
+         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -107,20 +103,19 @@ defmodule SummonerWeb.A2AServerLive.Form do
     <div class="max-w-lg mx-auto space-y-6">
       <h1 class="text-2xl font-bold">{@title}</h1>
 
-      <div :if={@endpoint_url} class="alert alert-info text-sm">
-        <span>Endpoint: <code class="font-mono">{@endpoint_url}</code></span>
-      </div>
+      <.form for={@form} id="envoy-form" phx-submit="save" class="space-y-4">
+        <.input field={@form[:name]} type="text" label="Name" placeholder="My Remote Agent" required />
 
-      <.form for={@form} id="herald-form" phx-submit="save" class="space-y-4">
         <.input
-          field={@form[:agent_id]}
-          type="select"
-          label="Summon"
-          options={Enum.map(@local_agents, &{&1.name, &1.id})}
-          prompt="Select a summon..."
+          field={@form[:agent_card_url]}
+          type="url"
+          label="Agent Card URL"
+          placeholder="https://agent.example.com"
           required
-          disabled={@editing}
         />
+        <p class="text-xs text-base-content/50 -mt-2">
+          Base URL of the remote A2A agent. The agent card will be fetched from <code>/.well-known/agent-card.json</code>.
+        </p>
 
         <.input
           field={@form[:auth_mode]}
@@ -134,29 +129,32 @@ defmodule SummonerWeb.A2AServerLive.Form do
         />
 
         <.input
-          field={@form[:api_key]}
-          type="password"
-          label="API Key / Token"
-          placeholder={if @editing, do: "Leave blank to keep current", else: ""}
+          field={@form[:api_key_secret_id]}
+          type="select"
+          label="Credential (Seal)"
+          options={Enum.map(@secrets, &{&1.name, &1.id})}
+          prompt="Select a seal..."
         />
+        <p class="text-xs text-base-content/50 -mt-2">
+          Secret containing the token or API key for authentication.
+        </p>
 
         <.input
-          field={@form[:rate_limit_rpm]}
+          field={@form[:timeout_s]}
           type="number"
-          label="Rate limit (requests/minute)"
+          label="Timeout (seconds)"
+          placeholder="300"
         />
-
-        <.input field={@form[:enabled]} type="checkbox" label="Enabled" />
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/heralds"}
+            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys"}
             class="btn btn-ghost btn-sm"
           >
             Cancel
           </.link>
           <.button phx-disable-with="Saving..." class="btn btn-primary btn-sm">
-            {if @editing, do: "Update Herald", else: "Create Herald"}
+            {if @editing, do: "Update Envoy", else: "Create Envoy"}
           </.button>
         </div>
       </.form>

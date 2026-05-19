@@ -2,13 +2,14 @@ defmodule Summoner.A2A do
   @moduledoc """
   Context for A2A protocol integration.
 
-  Manages Herald (A2A server) and A2A task CRUD operations.
+  Manages Herald (A2A server), A2A tokens, and A2A task CRUD operations.
   """
 
   import Ecto.Query, warn: false
 
   alias Summoner.A2A.A2AServer
   alias Summoner.A2A.A2ATask
+  alias Summoner.A2A.A2AToken
   alias Summoner.Repo
 
   # -------------------------------------------------------------------
@@ -77,9 +78,27 @@ defmodule Summoner.A2A do
   end
 
   @doc """
+  Creates an A2A server without scope (for internal use, e.g. toggle from agent page).
+  """
+  def create_server(attrs) do
+    %A2AServer{}
+    |> A2AServer.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Updates an A2A server (Herald).
   """
   def update_server(%{user: _user}, %A2AServer{} = server, attrs) do
+    server
+    |> A2AServer.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates an A2A server without scope.
+  """
+  def update_server(%A2AServer{} = server, attrs) do
     server
     |> A2AServer.changeset(attrs)
     |> Repo.update()
@@ -93,10 +112,86 @@ defmodule Summoner.A2A do
   end
 
   @doc """
+  Deletes an A2A server without scope.
+  """
+  def delete_server(%A2AServer{} = server) do
+    Repo.delete(server)
+  end
+
+  @doc """
   Returns a changeset for tracking A2A server changes.
   """
   def change_server(%A2AServer{} = server, attrs \\ %{}) do
     A2AServer.changeset(server, attrs)
+  end
+
+  # -------------------------------------------------------------------
+  # A2A Token CRUD (workspace-scoped)
+  # -------------------------------------------------------------------
+
+  @doc """
+  Lists all active tokens for a workspace.
+  """
+  def list_tokens(workspace_id) do
+    A2AToken
+    |> where(workspace_id: ^workspace_id)
+    |> where([t], is_nil(t.revoked_at))
+    |> order_by([t], desc: t.inserted_at)
+    |> Repo.all()
+  end
+
+  @doc """
+  Creates a new token for a workspace.
+
+  Returns `{:ok, token}` where `token.token` contains the plaintext
+  (shown once) or `{:error, changeset}`.
+  """
+  def create_token(attrs) do
+    %A2AToken{}
+    |> A2AToken.create_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Revokes a token by setting `revoked_at`.
+  """
+  def revoke_token(%A2AToken{} = token) do
+    token
+    |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now()})
+    |> Repo.update()
+  end
+
+  @doc """
+  Verifies a plaintext token against stored hashes for a workspace.
+
+  Returns `{:ok, %A2AToken{}}` if valid, `{:error, :invalid}` otherwise.
+  Also increments request_count and updates last_used_at.
+  """
+  def verify_token(workspace_id, plaintext) do
+    tokens =
+      A2AToken
+      |> where(workspace_id: ^workspace_id)
+      |> where([t], is_nil(t.revoked_at))
+      |> Repo.all()
+
+    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
+      nil ->
+        Bcrypt.no_user_verify()
+        {:error, :invalid}
+
+      %A2AToken{} = token ->
+        record_token_usage(token)
+        {:ok, token}
+    end
+  end
+
+  defp record_token_usage(%A2AToken{} = token) do
+    A2AToken
+    |> where(id: ^token.id)
+    |> Repo.update_all(
+      set: [last_used_at: DateTime.utc_now()],
+      inc: [request_count: 1]
+    )
   end
 
   # -------------------------------------------------------------------

@@ -14,7 +14,9 @@ defmodule Summoner.Agents do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
-  alias Summoner.Agents.{Agent, AgentLink, LocalAgent}
+  alias Summoner.A2A.ClientExecutor
+  alias Summoner.Agents.{Agent, AgentLink, LocalAgent, RemoteAgent}
+  alias Summoner.Agents.Server, as: AgentServer
   alias Summoner.Pagination
   alias Summoner.Repo
   alias Summoner.Workspaces
@@ -60,6 +62,63 @@ defmodule Summoner.Agents do
   end
 
   @doc """
+  Creates a remote agent (Envoy) within a workspace.
+
+  Atomically creates both the `agents` row (type: :remote) and its
+  `remote_agents` detail row with A2A client configuration.
+  """
+  def create_remote_agent(%{user: _user}, attrs) do
+    attrs = maybe_generate_callname(attrs)
+    {agent_attrs, remote_attrs} = split_remote_attrs(attrs)
+
+    agent_attrs =
+      agent_attrs
+      |> put_string_or_atom(:type, :remote)
+      |> put_string_or_atom(:role, :worker)
+
+    Multi.new()
+    |> Multi.insert(:agent, Agent.changeset(%Agent{}, agent_attrs))
+    |> Multi.insert(:remote_agent, fn %{agent: agent} ->
+      %RemoteAgent{agent_id: agent.id}
+      |> RemoteAgent.changeset(remote_attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{agent: agent, remote_agent: remote_agent}} ->
+        {:ok, %{agent | remote_agent: remote_agent}}
+
+      {:error, :agent, changeset, _changes} ->
+        {:error, changeset}
+
+      {:error, :remote_agent, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Updates a remote agent's configuration.
+  """
+  def update_remote_agent(%{user: _user}, %Agent{type: :remote} = agent, attrs) do
+    {agent_attrs, remote_attrs} = split_remote_attrs(attrs)
+    remote_agent = ensure_remote_agent_loaded(agent)
+
+    Multi.new()
+    |> Multi.update(:agent, Agent.changeset(agent, agent_attrs))
+    |> Multi.update(:remote_agent, RemoteAgent.changeset(remote_agent, remote_attrs))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{agent: agent, remote_agent: remote_agent}} ->
+        {:ok, %{agent | remote_agent: remote_agent}}
+
+      {:error, :agent, changeset, _changes} ->
+        {:error, changeset}
+
+      {:error, :remote_agent, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
   Gets a single agent scoped to a workspace.
 
   Raises `Ecto.NoResultsError` if not found.
@@ -83,6 +142,18 @@ defmodule Summoner.Agents do
     |> order_by([f], asc: f.name)
     |> Repo.all()
     |> Enum.map(&preload_detail/1)
+  end
+
+  @doc """
+  Lists all active remote agents for a workspace.
+  """
+  def list_remote_agents(%{user: _user}, workspace_id) do
+    Agent
+    |> Workspaces.where_workspace(workspace_id)
+    |> where([a], a.type == :remote and is_nil(a.deleted_at))
+    |> order_by([a], asc: a.name)
+    |> preload(:remote_agent)
+    |> Repo.all()
   end
 
   @doc """
@@ -124,9 +195,23 @@ defmodule Summoner.Agents do
         end
 
       :remote ->
-        agent
-        |> Agent.changeset(agent_attrs)
-        |> Repo.update()
+        {agent_attrs, remote_attrs} = split_remote_attrs(attrs)
+        remote_agent = ensure_remote_agent_loaded(agent)
+
+        Multi.new()
+        |> Multi.update(:agent, Agent.changeset(agent, agent_attrs))
+        |> Multi.update(:remote_agent, RemoteAgent.changeset(remote_agent, remote_attrs))
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{agent: agent, remote_agent: remote_agent}} ->
+            {:ok, %{agent | remote_agent: remote_agent}}
+
+          {:error, :agent, changeset, _changes} ->
+            {:error, changeset}
+
+          {:error, :remote_agent, changeset, _changes} ->
+            {:error, changeset}
+        end
     end
   end
 
@@ -189,6 +274,36 @@ defmodule Summoner.Agents do
     Agent
     |> Repo.get!(agent_id)
     |> Repo.preload(local_agent: [provider: :api_key_secret])
+  end
+
+  # -------------------------------------------------------------------
+  # Execution dispatch
+  # -------------------------------------------------------------------
+
+  @doc """
+  Executes a message against an agent, dispatching by type.
+
+  - `:local` — delegates to `Agents.Server.invoke/3` (ReAct loop)
+  - `:remote` — delegates to `A2A.ClientExecutor.send_message/3`
+
+  Returns `{:ok, result}` or `{:error, reason}`.
+  """
+  def execute(%Agent{type: :local} = agent, message, opts) do
+    workspace_id = agent.workspace_id
+    conversation_id = Keyword.get(opts, :conversation_id)
+
+    params = %{
+      conversation_id: conversation_id,
+      message: message,
+      scope: Keyword.get(opts, :scope, %{user: nil})
+    }
+
+    AgentServer.invoke(workspace_id, agent.id, params)
+  end
+
+  def execute(%Agent{type: :remote} = agent, message, opts) do
+    remote = ensure_remote_agent_loaded(agent)
+    ClientExecutor.send_message(agent, remote, message, opts)
   end
 
   # -------------------------------------------------------------------
@@ -300,5 +415,45 @@ defmodule Summoner.Agents do
 
   defp ensure_local_agent_loaded(%Agent{} = agent) do
     Repo.preload(agent, :local_agent).local_agent
+  end
+
+  defp ensure_remote_agent_loaded(%Agent{remote_agent: %RemoteAgent{}} = agent) do
+    agent.remote_agent
+  end
+
+  defp ensure_remote_agent_loaded(%Agent{} = agent) do
+    Repo.preload(agent, :remote_agent).remote_agent
+  end
+
+  # Fields that belong to the remote_agents detail table
+  @remote_agent_string_fields ~w(agent_card_url cached_agent_card auth_mode card_refreshed_at status timeout_s api_key_secret_id)
+
+  defp split_remote_attrs(attrs) when is_map(attrs) do
+    Enum.reduce(attrs, {%{}, %{}}, fn {key, value}, {agent_acc, remote_acc} ->
+      atom_key = if is_binary(key), do: safe_to_atom_remote(key), else: key
+
+      if atom_key in @agent_fields do
+        {Map.put(agent_acc, key, value), remote_acc}
+      else
+        {agent_acc, Map.put(remote_acc, key, value)}
+      end
+    end)
+  end
+
+  defp safe_to_atom_remote(key) when is_binary(key) do
+    combined = @agent_string_fields ++ @remote_agent_string_fields
+
+    if key in combined do
+      String.to_existing_atom(key)
+    else
+      nil
+    end
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp put_string_or_atom(attrs, key, value) do
+    type_key = if Enum.any?(Map.keys(attrs), &is_binary/1), do: to_string(key), else: key
+    Map.put_new(attrs, type_key, value)
   end
 end

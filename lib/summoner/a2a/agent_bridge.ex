@@ -24,6 +24,8 @@ defmodule Summoner.A2A.AgentBridge do
   alias Summoner.Agents.Server, as: AgentServer
   alias Summoner.Conversations
   alias Summoner.Conversations.Content
+  alias Summoner.MCP
+  alias Summoner.Skills
 
   alias A2A.Agent.Runtime, as: AgentRuntime
   alias A2A.Agent.State, as: AgentState
@@ -315,15 +317,6 @@ defmodule Summoner.A2A.AgentBridge do
   end
 
   defp build_agent_card(a2a_server, agent) do
-    skills =
-      if a2a_server && a2a_server.allowed_skills != [] do
-        Enum.map(a2a_server.allowed_skills, fn name ->
-          %{id: name, name: name, description: "", tags: []}
-        end)
-      else
-        []
-      end
-
     name = if agent, do: agent.callname, else: "unknown"
 
     description =
@@ -334,15 +327,64 @@ defmodule Summoner.A2A.AgentBridge do
         ""
       end
 
+    skills = build_skills(agent)
+
+    capabilities = %{
+      streaming: true,
+      state_transition_history: true
+    }
+
+    security_schemes =
+      if a2a_server && a2a_server.access_mode == :protected do
+        %{"bearer" => %A2A.SecurityScheme.HTTPAuth{scheme: "bearer"}}
+      else
+        %{}
+      end
+
     %{
       name: name,
       description: description || "",
       version: "0.1.0",
       skills: skills,
       opts: [
-        capabilities: %{streaming: true, state_transition_history: true}
+        capabilities: capabilities,
+        security_schemes: security_schemes
       ]
     }
+  end
+
+  defp build_skills(nil), do: []
+
+  defp build_skills(agent) do
+    knowledge_skills = build_knowledge_skills(agent.id)
+    tool_skills = build_tool_skills(agent.id)
+    knowledge_skills ++ tool_skills
+  end
+
+  defp build_knowledge_skills(agent_id) do
+    agent_id
+    |> Skills.list_equipped_skills_internal()
+    |> Enum.map(fn skill ->
+      %{
+        id: "knowledge:#{skill.id}",
+        name: skill.name,
+        description: truncate_description(skill.content),
+        tags: ["knowledge"]
+      }
+    end)
+  end
+
+  defp build_tool_skills(agent_id) do
+    agent_id
+    |> MCP.list_equipped_servers()
+    |> Enum.map(fn server ->
+      %{
+        id: "tool:#{server.id}",
+        name: server.name,
+        description: "MCP tool server: #{server.name}",
+        tags: ["tool", to_string(server.transport)]
+      }
+    end)
   end
 
   defp truncate_description(nil), do: ""

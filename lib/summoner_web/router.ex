@@ -140,9 +140,10 @@ defmodule SummonerWeb.Router do
       live "/realms/:workspace_id/gallery", GalleryLive.Index, :index
       live "/realms/:workspace_id/scrolls", FileBrowserLive.Index, :index
       live "/realms/:workspace_id/scrolls/*path", FileBrowserLive.Index, :show
-      live "/realms/:workspace_id/heralds", A2AServerLive.Index, :index
-      live "/realms/:workspace_id/heralds/new", A2AServerLive.Form, :new
-      live "/realms/:workspace_id/heralds/:id/edit", A2AServerLive.Form, :edit
+      live "/realms/:workspace_id/envoys", A2AClientLive.Index, :index
+      live "/realms/:workspace_id/envoys/new", A2AClientLive.Form, :new
+      live "/realms/:workspace_id/envoys/:id/edit", A2AClientLive.Form, :edit
+      live "/realms/:workspace_id/wards", WardLive.Index, :index
     end
   end
 

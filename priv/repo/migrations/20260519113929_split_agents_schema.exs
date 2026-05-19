@@ -1,13 +1,10 @@
 defmodule Summoner.Repo.Migrations.SplitAgentsSchema do
   @moduledoc """
-  Nuclear migration: split the monolithic `agents` table into three tables.
+  Split the monolithic `agents` table into three tables and add parallel fields.
 
   - `agents` — thin universal identity (name, callname, type, role)
-  - `local_agents` — inference/ReAct config (provider, model, timeouts, etc.)
+  - `local_agents` — inference/ReAct config (provider, model, timeouts, concurrency)
   - `remote_agents` — A2A client config (URL, card, auth, status)
-
-  All orchestration FKs (`swarm_members.agent_id`, `pipeline_stages.agent_id`, etc.)
-  remain unchanged — they still reference `agents.id`.
   """
 
   use Ecto.Migration
@@ -42,6 +39,7 @@ defmodule Summoner.Repo.Migrations.SplitAgentsSchema do
       add :total_timeout_s, :integer, null: false, default: 300
       add :stream_tokens_to_observability, :boolean, null: false, default: false
       add :budget_usd, :decimal, precision: 10, scale: 2
+      add :max_tool_concurrency, :integer
 
       add :provider_id, references(:providers, type: :binary_id, on_delete: :restrict),
         null: false
@@ -130,5 +128,10 @@ defmodule Summoner.Repo.Migrations.SplitAgentsSchema do
              where: "deleted_at IS NULL",
              name: :agents_workspace_id_callname_active_index
            )
+
+    # 8. Add parallel execution default to workspace settings
+    alter table(:workspace_settings) do
+      add :default_max_tool_concurrency, :integer, default: 5, null: false
+    end
   end
 end

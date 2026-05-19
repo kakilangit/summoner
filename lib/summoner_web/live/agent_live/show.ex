@@ -1,6 +1,7 @@
 defmodule SummonerWeb.AgentLive.Show do
   use SummonerWeb, :live_view
 
+  alias Summoner.A2A, as: SummonerA2A
   alias Summoner.Agents
   alias Summoner.Agents.Agent
   alias Summoner.Ledger
@@ -24,8 +25,50 @@ defmodule SummonerWeb.AgentLive.Show do
           {agent.name, nil}
         ]
       )
+      |> load_herald()
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_event("toggle_herald", _params, socket) do
+    agent = socket.assigns.agent
+    workspace = socket.assigns.workspace
+
+    case socket.assigns.herald do
+      nil ->
+        {:ok, server} =
+          SummonerA2A.create_server(%{
+            agent_id: agent.id,
+            workspace_id: workspace.id,
+            access_mode: :public
+          })
+
+        {:noreply,
+         socket
+         |> assign(herald: server)
+         |> put_flash(:info, "Herald enabled.")}
+
+      server ->
+        {:ok, _} = SummonerA2A.delete_server(server)
+
+        {:noreply,
+         socket
+         |> assign(herald: nil)
+         |> put_flash(:info, "Herald disabled.")}
+    end
+  end
+
+  def handle_event("toggle_access_mode", _params, socket) do
+    herald = socket.assigns.herald
+    new_mode = if herald.access_mode == :public, do: :protected, else: :public
+    {:ok, updated} = SummonerA2A.update_server(herald, %{access_mode: new_mode})
+    {:noreply, assign(socket, herald: updated)}
+  end
+
+  defp load_herald(socket) do
+    herald = SummonerA2A.get_server_by_agent_id(socket.assigns.agent.id)
+    assign(socket, herald: herald)
   end
 
   @impl true
@@ -35,6 +78,7 @@ defmodule SummonerWeb.AgentLive.Show do
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">{@agent.name}</h1>
         <.link
+          :if={@can?.(:operate)}
           navigate={
             ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/edit"
           }
@@ -100,6 +144,8 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
         </div>
 
+        <.herald_section herald={@herald} agent={@agent} can?={@can?} />
+
         <div class="collapse collapse-arrow bg-base-200">
           <input type="checkbox" />
           <div class="collapse-title font-medium text-sm">Advanced Settings</div>
@@ -128,6 +174,73 @@ defmodule SummonerWeb.AgentLive.Show do
     </div>
     """
   end
+
+  # -------------------------------------------------------------------
+  # Herald — toggle + access mode only
+  # -------------------------------------------------------------------
+
+  attr :herald, :any, required: true
+  attr :agent, :any, required: true
+  attr :can?, :any, required: true
+
+  defp herald_section(assigns) do
+    ~H"""
+    <div class="collapse collapse-arrow bg-base-200">
+      <input type="checkbox" checked={@herald != nil} />
+      <div class="collapse-title font-medium text-sm">
+        Herald (A2A) <span :if={@herald} class="badge badge-xs badge-success ml-2">Active</span>
+      </div>
+      <div class="collapse-content space-y-3">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-base-content/60">
+            Expose this summon as a remote A2A agent.
+          </p>
+          <button
+            :if={@can?.(:operate)}
+            phx-click="toggle_herald"
+            class={["btn btn-xs", (@herald && "btn-error") || "btn-primary"]}
+          >
+            {if @herald, do: "Disable", else: "Enable"}
+          </button>
+        </div>
+
+        <div :if={@herald} class="space-y-2">
+          <div class="text-xs font-mono bg-base-300 p-2 rounded select-all overflow-x-auto">
+            {herald_url(@agent)}
+          </div>
+
+          <div :if={@can?.(:operate)} class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <button phx-click="toggle_access_mode" class="btn btn-xs btn-ghost">
+              <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+                {@herald.access_mode}
+              </span>
+            </button>
+          </div>
+
+          <div :if={!@can?.(:operate)} class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+              {@herald.access_mode}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp herald_url(agent) do
+    endpoint = SummonerWeb.Endpoint
+    host = endpoint.host()
+    port = endpoint.config(:http)[:port] || 4000
+    scheme = if endpoint.config(:https), do: "https", else: "http"
+    "#{scheme}://#{host}:#{port}/summons/#{agent.id}"
+  end
+
+  # -------------------------------------------------------------------
+  # Usage stats
+  # -------------------------------------------------------------------
 
   attr :usage, :map, required: true
 
