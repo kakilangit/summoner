@@ -140,6 +140,9 @@ defmodule SummonerWeb.Router do
       live "/realms/:workspace_id/gallery", GalleryLive.Index, :index
       live "/realms/:workspace_id/scrolls", FileBrowserLive.Index, :index
       live "/realms/:workspace_id/scrolls/*path", FileBrowserLive.Index, :show
+      live "/realms/:workspace_id/heralds", A2AServerLive.Index, :index
+      live "/realms/:workspace_id/heralds/new", A2AServerLive.Form, :new
+      live "/realms/:workspace_id/heralds/:id/edit", A2AServerLive.Form, :edit
     end
   end
 
@@ -147,6 +150,13 @@ defmodule SummonerWeb.Router do
   # scope "/api", SummonerWeb do
   #   pipe_through :api
   # end
+
+  # A2A protocol endpoints — per-agent, no browser auth
+  scope "/summons" do
+    pipe_through :api
+
+    forward "/", SummonerWeb.A2AEndpoint
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:summoner, :dev_routes) do

@@ -19,6 +19,8 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
+        {Registry, keys: :unique, name: Summoner.A2ARegistry},
+        {DynamicSupervisor, name: Summoner.A2ASupervisor, strategy: :one_for_one},
         {Task.Supervisor, name: Summoner.TaskSupervisor},
         Summoner.EventLog,
         Summoner.Agents.ProcessMonitor,
