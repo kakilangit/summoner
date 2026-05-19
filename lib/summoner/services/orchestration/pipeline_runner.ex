@@ -28,6 +28,7 @@ defmodule Summoner.Services.Orchestration.PipelineRunner do
   alias Summoner.Domain.Events.{PipelineRunStatus, PipelineStageInvocation, PipelineStageStatus}
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Events
+  alias Summoner.Services.A2A.SkillResolver
   alias Summoner.Services.Agents.Server
   alias Summoner.Services.Orchestration.Manager
 
@@ -215,17 +216,28 @@ defmodule Summoner.Services.Orchestration.PipelineRunner do
     # Subscribe to agent topic to receive completion broadcasts
     Events.subscribe({:agent, workspace_id, agent.id})
 
-    with :ok <- Server.ensure_started(workspace_id, agent.id) do
-      # Fire async — pass conversation_id for persistent context
-      Server.invoke_async(workspace_id, agent.id, %{
-        conversation_id: conversation_id,
-        message: message,
-        scope: %{user: nil},
-        react_opts: %{pipeline_stage: true}
-      })
+    case agent.type do
+      :local ->
+        with :ok <- Server.ensure_started(workspace_id, agent.id) do
+          Server.invoke_async(workspace_id, agent.id, %{
+            conversation_id: conversation_id,
+            message: message,
+            scope: %{user: nil},
+            react_opts: %{pipeline_stage: true}
+          })
 
-      # Wait for the agent to finish and extract output
-      await_agent_completion(workspace_id, agent.id, run, stage.position)
+          await_agent_completion(workspace_id, agent.id, run, stage.position)
+        end
+
+      :remote ->
+        Agents.execute_async(agent, workspace_id, %{
+          conversation_id: conversation_id,
+          message: message,
+          scope: %{user: nil},
+          skill: SkillResolver.for_skill(stage.skill)
+        })
+
+        await_agent_completion(workspace_id, agent.id, run, stage.position)
     end
   end
 

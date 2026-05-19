@@ -19,6 +19,7 @@ defmodule Summoner.Domain.Schemas.PipelineStage do
     field :position, :integer
     field :instruction, :string
     field :depends_on_positions, {:array, :integer}, default: []
+    field :skill, :string
 
     belongs_to :pipeline, Pipeline
     belongs_to :agent, Agent
@@ -27,7 +28,7 @@ defmodule Summoner.Domain.Schemas.PipelineStage do
   end
 
   @required_fields ~w(position pipeline_id agent_id)a
-  @optional_fields ~w(instruction depends_on_positions)a
+  @optional_fields ~w(instruction depends_on_positions skill)a
 
   def changeset(stage, attrs) do
     stage

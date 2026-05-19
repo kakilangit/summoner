@@ -23,6 +23,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   alias Summoner.Ports.Events
   alias Summoner.Repo
   alias Summoner.Services.A2A.ClientExecutor
+  alias Summoner.Services.A2A.SkillResolver
   alias Summoner.Services.Agents.Server, as: AgentServer
 
   # -------------------------------------------------------------------
@@ -313,6 +314,23 @@ defmodule Summoner.Adapters.Persistence.Agents do
   @task_supervisor Summoner.TaskSupervisor
 
   @doc """
+  Synchronously executes a message against an agent, dispatching by type.
+  Used by swarms which need the result before proceeding.
+
+  For local agents, delegates to `AgentServer.invoke/3`.
+  For remote agents, runs the A2A lifecycle synchronously.
+
+  Returns `{:ok, result}` or `{:error, reason}`.
+  """
+  def execute_sync(%Agent{type: :local} = agent, workspace_id, params) do
+    AgentServer.invoke(workspace_id, agent.id, params)
+  end
+
+  def execute_sync(%Agent{type: :remote} = agent, workspace_id, params) do
+    run_remote_invocation(agent, workspace_id, params)
+  end
+
+  @doc """
   Asynchronously executes a message against an agent, dispatching by type.
 
   For conversations: creates an invocation, sends the message, writes the
@@ -338,6 +356,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
     conversation_id = Map.fetch!(params, :conversation_id)
     message = Map.fetch!(params, :message)
     scope = Map.fetch!(params, :scope)
+    explicit_skill = Map.get(params, :skill)
 
     {:ok, invocation} =
       Orchestration.create_invocation(scope, %{
@@ -356,7 +375,12 @@ defmodule Summoner.Adapters.Persistence.Agents do
 
     remote = ensure_remote_agent_loaded(agent)
 
-    case ClientExecutor.send_message(agent, remote, message, conversation_id: conversation_id) do
+    skill = explicit_skill || SkillResolver.resolve(remote.cached_agent_card, message)
+
+    case ClientExecutor.send_message(agent, remote, message,
+           conversation_id: conversation_id,
+           skill: skill
+         ) do
       {:ok, %{content: content}} ->
         Conversations.add_message(%{
           conversation_id: conversation_id,

@@ -21,6 +21,9 @@ Summoner uses fantasy-themed naming throughout the interface. Here is the mappin
 | **Spellbook** | Skill | Instructional content equipped to agents, searchable via vector embeddings |
 | **Scroll** | File Browser | Workspace file manager |
 | **Archon** | Admin Panel | System administration for users, tenants, and quotas |
+| **Herald** | A2A Server | Inbound Agent-to-Agent protocol endpoint exposing local agents to external clients |
+| **Envoy** | A2A Client / Remote Agent | Outbound connection to an external agent via A2A protocol |
+| **Ward** | A2A Token | Authentication token for Herald access |
 
 ## Architecture
 
@@ -72,3 +75,15 @@ Multi-agent collaboration with three modes:
 - **Circle** (Round Robin): Agents take turns in order, cycling until max turns
 - **Chain** (Relay): Agents hand off to the next via structured routing (`__relay__` tool)
 - **Command** (Directed): A coordinator agent decides who speaks next via JSON routing decisions
+
+### Agent-to-Agent Protocol (A2A)
+
+Summoner supports the [A2A protocol](https://github.com/google/A2A) for inter-agent communication across services.
+
+**Herald (A2A Server):** Exposes local agents to external clients via a workspace-scoped JSON-RPC endpoint. Each Herald is configured with access mode (public or token-gated) and issues Wards (authentication tokens) for clients.
+
+**Envoy (Remote Agent):** Connects to external A2A agents. Remote agents are registered with an agent card URL for discovery. Summoner caches the agent card (including skills) and refreshes it automatically.
+
+**Skill-aware invocation:** Remote agents that advertise skills on their agent card can be invoked with explicit skill targeting (in pipelines via `pipeline_stages.skill`) or inferred skill matching (in conversations and swarms via keyword matching against skill names, descriptions, and tags).
+
+**Remote agents in workflows:** Remote agents participate in pipelines and swarms alongside local agents. The pipeline runner and swarm runner dispatch by agent type, using A2A for remote agents and the local AgentServer for local agents.

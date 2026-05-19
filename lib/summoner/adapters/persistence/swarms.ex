@@ -174,7 +174,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   def member_query do
     from(m in SwarmMember,
       order_by: [asc: m.position],
-      preload: [agent: [local_agent: :provider]]
+      preload: [agent: [local_agent: :provider, remote_agent: []]]
     )
   end
 

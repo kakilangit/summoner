@@ -22,6 +22,7 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
   require Logger
 
+  alias Summoner.Adapters.Persistence.Agents
   alias Summoner.Adapters.Persistence.Conversations
   alias Summoner.Adapters.Persistence.Orchestration
   alias Summoner.Adapters.Persistence.Swarms
@@ -244,8 +245,8 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
       agent_id: agent.id
     })
 
-    # Ensure agent server is started and invoke synchronously
-    AgentServer.ensure_started(state.workspace_id, agent.id)
+    # Ensure agent server is started for local agents
+    if agent.type == :local, do: AgentServer.ensure_started(state.workspace_id, agent.id)
 
     # The message is either the user's original message (first turn),
     # a directive from the coordinator, or nil for relay handoffs.
@@ -280,7 +281,7 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
             conversation_id: state.conversation.id,
             role: :system,
             content:
-              "#{agent.name} timed out after #{agent.local_agent.total_timeout_s}s. " <>
+              "#{agent.name} timed out after #{agent_timeout_s(agent)}s. " <>
                 "Skipping to next member. You can adjust the timeout in the summon's settings.",
             visibility: :public
           })
@@ -386,20 +387,34 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
          members,
          swarm_mode
        ) do
-    timeout_s = agent.local_agent.total_timeout_s
+    timeout_s =
+      case agent.type do
+        :local -> agent.local_agent.total_timeout_s
+        :remote -> agent.remote_agent.timeout_s
+      end
 
     task =
       Task.async(fn ->
-        AgentServer.invoke(workspace_id, agent.id, %{
-          conversation_id: conversation_id,
-          message: message,
-          scope: scope,
-          react_opts: %{
-            swarm: true,
-            swarm_members: members,
-            swarm_mode: swarm_mode
-          }
-        })
+        case agent.type do
+          :local ->
+            AgentServer.invoke(workspace_id, agent.id, %{
+              conversation_id: conversation_id,
+              message: message,
+              scope: scope,
+              react_opts: %{
+                swarm: true,
+                swarm_members: members,
+                swarm_mode: swarm_mode
+              }
+            })
+
+          :remote ->
+            Agents.execute_sync(agent, workspace_id, %{
+              conversation_id: conversation_id,
+              message: message,
+              scope: scope
+            })
+        end
       end)
 
     case Task.yield(task, timeout_s * 1_000) || Task.shutdown(task, :brutal_kill) do
@@ -417,6 +432,9 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
     Enum.map(swarm.members, & &1.agent)
   end
+
+  defp agent_timeout_s(%{type: :local} = agent), do: agent.local_agent.total_timeout_s
+  defp agent_timeout_s(%{type: :remote} = agent), do: agent.remote_agent.timeout_s
 
   defp cancel_agent_invocations(workspace_id, agent_id, conversation_id) do
     # Find running invocations for this agent+conversation and cancel them

@@ -71,7 +71,7 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
     Pipeline
     |> Workspaces.where_workspace(workspace_id)
     |> Repo.get!(pipeline_id)
-    |> Repo.preload(stages: [agent: [local_agent: :provider]])
+    |> Repo.preload(stages: [agent: [local_agent: :provider, remote_agent: []]])
   end
 
   @doc """
