@@ -114,6 +114,23 @@ defmodule Summoner.Agents.Agent do
   defp blank?(_), do: false
 
   @doc """
+  Returns a short human-readable description of the agent.
+
+  For local agents this is the personality. For remote agents it is the
+  description from the cached A2A agent card. Returns `nil` when neither
+  is available.
+  """
+  def description(%__MODULE__{local_agent: %LocalAgent{personality: p}})
+      when is_binary(p) and p != "", do: p
+
+  def description(%__MODULE__{
+        remote_agent: %RemoteAgent{cached_agent_card: %{"description" => d}}
+      })
+      when is_binary(d) and d != "", do: d
+
+  def description(%__MODULE__{}), do: nil
+
+  @doc """
   Extracts an inference snapshot map from a local agent with its provider preloaded.
 
   Returns `%{provider_name: ..., model_name: ...}` for embedding in

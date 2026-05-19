@@ -158,7 +158,7 @@ defmodule Summoner.MCP do
   Toggles the enabled state of an equipped MCP server.
   When toggled ON, starts the MCP client connection.
   When toggled OFF, stops the MCP client connection.
-  Broadcasts `:refresh_tools` so the agent server reloads.
+  Publishes `AgentConfigChanged` so the agent server reloads.
   """
   def toggle_server(%{user: _user}, workspace_id, agent_id, mcp_server_id) do
     AgentMcpServer
@@ -329,11 +329,11 @@ defmodule Summoner.MCP do
   @doc """
   Notifies the agent server that its tool configuration has changed.
 
-  Broadcasts `:refresh_tools` to the agent's config topic so the
-  agent server reloads tool definitions from running MCP clients.
+  Publishes `AgentConfigChanged` so the agent server reloads
+  tool definitions from running MCP clients.
   """
   def notify_tools_changed(agent_id) do
-    Summoner.Broadcasts.broadcast("agent_config:#{agent_id}", :refresh_tools)
+    Summoner.Events.publish(%Summoner.Events.AgentConfigChanged{agent_id: agent_id})
   end
 
   # -------------------------------------------------------------------

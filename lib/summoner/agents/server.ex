@@ -20,7 +20,6 @@ defmodule Summoner.Agents.Server do
 
   alias Summoner.Agents
   alias Summoner.Agents.ProcessMonitor
-  alias Summoner.Broadcasts
   alias Summoner.Ledger
   alias Summoner.MCP
   alias Summoner.Memory
@@ -150,7 +149,7 @@ defmodule Summoner.Agents.Server do
     }
 
     # Subscribe to agent config changes for tool refresh
-    Broadcasts.subscribe("agent_config:#{agent.id}")
+    Summoner.Events.subscribe({:agent_config, agent.id})
     ProcessMonitor.monitor(agent.workspace_id, agent.id, self())
     Logger.info("Agent server started: #{agent.name} (#{agent.id})")
     {:ok, state}
@@ -320,7 +319,7 @@ defmodule Summoner.Agents.Server do
   end
 
   @impl true
-  def handle_info(:refresh_tools, state) do
+  def handle_info(%Summoner.Events.AgentConfigChanged{}, state) do
     {tool_executor, intent_tools} = load_tools(nil, state.agent.workspace_id, state.agent.id)
     Logger.info("Agent #{state.agent.name}: tools refreshed")
     {:noreply, %{state | tool_executor: tool_executor, intent_tools: intent_tools}}

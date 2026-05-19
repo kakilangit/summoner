@@ -7,7 +7,8 @@ defmodule Summoner.Orchestration do
 
   import Ecto.Query, warn: false
 
-  alias Summoner.Broadcasts
+  alias Summoner.Events
+  alias Summoner.Events.{InvocationCompleted, InvocationFailed, InvocationStarted}
   alias Summoner.Orchestration.{Invocation, InvocationEvent, InvocationStep, Subtask}
   alias Summoner.Repo
   alias Summoner.Workspaces
@@ -83,12 +84,7 @@ defmodule Summoner.Orchestration do
            invocation
            |> Invocation.status_changeset(attrs)
            |> Repo.update() do
-      Broadcasts.broadcast_invocation_status(
-        updated.workspace_id,
-        updated.id,
-        status
-      )
-
+      publish_invocation_event(updated, status, attrs)
       {:ok, updated}
     end
   end
@@ -107,6 +103,31 @@ defmodule Summoner.Orchestration do
     |> Repo.update_all(set: [status: status, end_reason: end_reason, completed_at: completed_at])
   end
 
+  defp publish_invocation_event(invocation, status, attrs) do
+    base = %{
+      workspace_id: invocation.workspace_id,
+      agent_id: invocation.agent_id,
+      invocation_id: invocation.id
+    }
+
+    event =
+      case status do
+        :running ->
+          struct!(InvocationStarted, base)
+
+        :completed ->
+          struct!(InvocationCompleted, Map.put(base, :output, Map.get(attrs, :output)))
+
+        status when status in [:failed, :cancelled] ->
+          struct!(InvocationFailed, Map.put(base, :output, Map.get(attrs, :output)))
+
+        _other ->
+          nil
+      end
+
+    if event, do: Events.publish(event)
+  end
+
   # -------------------------------------------------------------------
   # Steps
   # -------------------------------------------------------------------
@@ -115,18 +136,9 @@ defmodule Summoner.Orchestration do
   Adds a step to an invocation.
   """
   def add_step(attrs) do
-    workspace_id = Map.get(attrs, :workspace_id) || Map.get(attrs, "workspace_id")
-
-    with {:ok, step} <-
-           %InvocationStep{}
-           |> InvocationStep.changeset(attrs)
-           |> Repo.insert() do
-      if workspace_id do
-        Broadcasts.broadcast_invocation_step(workspace_id, step.invocation_id, step)
-      end
-
-      {:ok, step}
-    end
+    %InvocationStep{}
+    |> InvocationStep.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
@@ -154,7 +166,12 @@ defmodule Summoner.Orchestration do
            |> InvocationEvent.changeset(attrs)
            |> Repo.insert() do
       if workspace_id do
-        Broadcasts.broadcast_invocation_event(workspace_id, event.invocation_id, event)
+        Events.publish(%Events.InvocationEvent{
+          workspace_id: workspace_id,
+          agent_id: event.agent_id,
+          invocation_id: event.invocation_id,
+          event: event
+        })
       end
 
       {:ok, event}

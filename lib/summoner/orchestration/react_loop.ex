@@ -23,8 +23,10 @@ defmodule Summoner.Orchestration.ReactLoop do
 
   alias Arcanum.{Intent, ModelProfile, Response}
   alias Arcanum.Response.Normalizer
-  alias Summoner.Broadcasts
+  alias Summoner.Agents.Agent
   alias Summoner.Conversations
+  alias Summoner.Events
+  alias Summoner.Events.ContentToken
   alias Summoner.Harness
   alias Summoner.Inference
   alias Summoner.Ledger
@@ -130,10 +132,6 @@ defmodule Summoner.Orchestration.ReactLoop do
         started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
       })
 
-    # Broadcast :running to agent topic so ConversationLive can track the invocation_id
-    agent_topic = Broadcasts.agent_topic(invocation.workspace_id, state.agent.id)
-    Broadcasts.broadcast(agent_topic, {:invocation_status, invocation.id, :running})
-
     state = %{state | invocation: invocation}
     loop(state)
   end
@@ -232,12 +230,12 @@ defmodule Summoner.Orchestration.ReactLoop do
         broadcast_token = Response.text(delta) || delta.thinking
 
         if broadcast_token && broadcast_token != "" do
-          Broadcasts.broadcast_content_token(
-            workspace_id,
-            agent_id,
-            invocation_id,
-            broadcast_token
-          )
+          Events.publish(%ContentToken{
+            workspace_id: workspace_id,
+            agent_id: agent_id,
+            invocation_id: invocation_id,
+            token: broadcast_token
+          })
         end
 
         merge_delta(acc, delta)
@@ -1261,8 +1259,12 @@ defmodule Summoner.Orchestration.ReactLoop do
   end
 
   defp format_member_line(agent) do
-    personality = agent.local_agent && agent.local_agent.personality
-    desc = if personality && personality != "", do: " — #{personality}", else: ""
+    desc =
+      case Agent.description(agent) do
+        nil -> ""
+        d -> " — #{d}"
+      end
+
     "  - @#{agent.callname}#{desc}"
   end
 
@@ -1455,17 +1457,6 @@ defmodule Summoner.Orchestration.ReactLoop do
       steps: state.step_number,
       tokens: state.token_count
     })
-
-    # Broadcast status to subscribers (ConversationLive.Show listens for these)
-    topic = Broadcasts.agent_topic(invocation.workspace_id, state.agent.id)
-
-    broadcast_payload =
-      case event_type do
-        :failed -> {:invocation_status, invocation.id, :failed, output}
-        _ -> {:invocation_status, invocation.id, event_type}
-      end
-
-    Broadcasts.broadcast(topic, broadcast_payload)
 
     # Record token usage for analytics
     record_token_usage(state, invocation)

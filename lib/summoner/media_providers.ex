@@ -100,9 +100,13 @@ defmodule Summoner.MediaProviders do
 
   @doc """
   Resolves the media provider for an agent. Falls back to workspace default.
-  Returns nil if no media provider is available.
+  Returns nil if no media provider is available or the agent has no local config.
   """
-  def resolve_media_provider(agent, type \\ :image) do
+  def resolve_media_provider(agent, type \\ :image)
+
+  def resolve_media_provider(%{local_agent: nil}, _type), do: nil
+
+  def resolve_media_provider(agent, type) do
     case agent.local_agent.media_provider_id do
       nil ->
         get_default_media_provider(agent.workspace_id, type)

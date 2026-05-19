@@ -15,7 +15,8 @@ defmodule Summoner.Orchestration.FailurePolicy do
   require Logger
 
   alias Summoner.Audit
-  alias Summoner.Broadcasts
+  alias Summoner.Events
+  alias Summoner.Events.Escalation
   alias Summoner.Orchestration
   alias Summoner.Orchestration.Subtask
 
@@ -90,11 +91,11 @@ defmodule Summoner.Orchestration.FailurePolicy do
     })
 
     # Broadcast escalation
-    Broadcasts.broadcast_escalation(
-      invocation.workspace_id,
-      invocation.id,
-      "Subtask failed: #{subtask.description}"
-    )
+    Events.publish(%Escalation{
+      workspace_id: invocation.workspace_id,
+      invocation_id: invocation.id,
+      reason: "Subtask failed: #{subtask.description}"
+    })
 
     {:ok, :escalated}
   end

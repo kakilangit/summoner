@@ -23,8 +23,9 @@ defmodule Summoner.Swarms.SwarmRunner do
   require Logger
 
   alias Summoner.Agents.Server, as: AgentServer
-  alias Summoner.Broadcasts
   alias Summoner.Conversations
+  alias Summoner.Events
+  alias Summoner.Events.{SwarmDone, SwarmTimeout, SwarmTurn}
   alias Summoner.Orchestration
   alias Summoner.Swarms.{SwarmCoordinator, TurnRouter}
 
@@ -233,12 +234,12 @@ defmodule Summoner.Swarms.SwarmRunner do
 
   defp execute_turn(state, agent, directive \\ nil) do
     # Broadcast which agent is responding
-    topic = Broadcasts.swarm_topic(state.workspace_id, state.swarm.id)
-
-    Broadcasts.broadcast(
-      topic,
-      {:swarm_turn, state.conversation.id, agent.id}
-    )
+    Events.publish(%SwarmTurn{
+      workspace_id: state.workspace_id,
+      swarm_id: state.swarm.id,
+      conversation_id: state.conversation.id,
+      agent_id: agent.id
+    })
 
     # Ensure agent server is started and invoke synchronously
     AgentServer.ensure_started(state.workspace_id, agent.id)
@@ -281,10 +282,12 @@ defmodule Summoner.Swarms.SwarmRunner do
             visibility: :public
           })
 
-        Broadcasts.broadcast(
-          topic,
-          {:swarm_timeout, state.conversation.id, agent.id}
-        )
+        Events.publish(%SwarmTimeout{
+          workspace_id: state.workspace_id,
+          swarm_id: state.swarm.id,
+          conversation_id: state.conversation.id,
+          agent_id: agent.id
+        })
 
         # Skip this agent, continue with next turn
         state = %{
@@ -426,7 +429,11 @@ defmodule Summoner.Swarms.SwarmRunner do
     # to prevent stale invocations from running after the swarm is done
     Orchestration.cancel_queued_invocations_for_conversation(conversation_id)
 
-    topic = Broadcasts.swarm_topic(workspace_id, swarm_id)
-    Broadcasts.broadcast(topic, {:swarm_done, conversation_id, summary})
+    Events.publish(%SwarmDone{
+      workspace_id: workspace_id,
+      swarm_id: swarm_id,
+      conversation_id: conversation_id,
+      summary: summary
+    })
   end
 end

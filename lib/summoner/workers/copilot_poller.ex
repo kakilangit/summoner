@@ -4,8 +4,8 @@ defmodule Summoner.Workers.CopilotPoller do
   the user initiates a device code flow.
 
   On success, creates (or updates) a Seal with the OAuth token and
-  links it to the provider via `api_key_secret_id`. Broadcasts the
-  result to the provider topic so the LiveView can react.
+  links it to the provider via `api_key_secret_id`. Publishes
+  `CopilotConnected` or `CopilotConnectionFailed` so the LiveView can react.
 
   ## Args
 
@@ -26,7 +26,8 @@ defmodule Summoner.Workers.CopilotPoller do
     max_attempts: 1
 
   alias Arcanum.Auth.Copilot, as: CopilotAuth
-  alias Summoner.Broadcasts
+  alias Summoner.Events
+  alias Summoner.Events.{CopilotConnected, CopilotConnectionFailed}
   alias Summoner.Providers
   alias Summoner.Providers.Provider
   alias Summoner.Repo
@@ -166,10 +167,18 @@ defmodule Summoner.Workers.CopilotPoller do
   # PubSub
   # -------------------------------------------------------------------
 
-  defp broadcast_result(workspace_id, provider_id, result) do
-    Broadcasts.broadcast(
-      Broadcasts.provider_topic(workspace_id, provider_id),
-      {:copilot_connect, result}
-    )
+  defp broadcast_result(workspace_id, provider_id, :ok) do
+    Events.publish(%CopilotConnected{
+      workspace_id: workspace_id,
+      provider_id: provider_id
+    })
+  end
+
+  defp broadcast_result(workspace_id, provider_id, {:error, reason}) do
+    Events.publish(%CopilotConnectionFailed{
+      workspace_id: workspace_id,
+      provider_id: provider_id,
+      reason: reason
+    })
   end
 end

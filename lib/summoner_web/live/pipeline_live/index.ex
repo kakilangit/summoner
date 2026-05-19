@@ -3,7 +3,6 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Broadcasts
   alias Summoner.Pipelines
   alias Summoner.Workers.PipelineRunnerJob
 
@@ -41,7 +40,7 @@ defmodule SummonerWeb.PipelineLive.Index do
 
     if connected?(socket) do
       Enum.each(socket.assigns.page.entries, fn p ->
-        Broadcasts.subscribe(Broadcasts.pipeline_topic(workspace.id, p.id))
+        Summoner.Events.subscribe({:pipeline, workspace.id, p.id})
       end)
     end
 
@@ -128,13 +127,13 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   # PubSub — refresh latest runs on status changes
   @impl true
-  def handle_info({:pipeline_run_status, _run_id, _status}, socket) do
+  def handle_info(%Summoner.Events.PipelineRunStatus{}, socket) do
     latest_runs = load_latest_runs(socket.assigns.page.entries)
     {:noreply, assign(socket, latest_runs: latest_runs)}
   end
 
   @impl true
-  def handle_info({:pipeline_run_stage_status, _run_id, _position, _status}, socket) do
+  def handle_info(%Summoner.Events.PipelineStageStatus{}, socket) do
     latest_runs = load_latest_runs(socket.assigns.page.entries)
     {:noreply, assign(socket, latest_runs: latest_runs)}
   end

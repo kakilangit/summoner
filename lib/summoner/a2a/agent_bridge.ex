@@ -21,6 +21,7 @@ defmodule Summoner.A2A.AgentBridge do
   alias Summoner.A2A, as: SummonerA2A
   alias Summoner.A2A.ContentAdapter
   alias Summoner.A2A.TaskStore, as: SummonerTaskStore
+  alias Summoner.Agents.Agent
   alias Summoner.Agents.Server, as: AgentServer
   alias Summoner.Conversations
   alias Summoner.Conversations.Content
@@ -320,9 +321,8 @@ defmodule Summoner.A2A.AgentBridge do
     name = if agent, do: agent.callname, else: "unknown"
 
     description =
-      if agent && agent.local_agent do
-        agent.local_agent.personality ||
-          truncate_description(agent.local_agent.system_prompt)
+      if agent do
+        Agent.description(agent) || truncate_description(system_prompt(agent)) || ""
       else
         ""
       end
@@ -395,6 +395,9 @@ defmodule Summoner.A2A.AgentBridge do
     |> List.first()
     |> String.slice(0, 500)
   end
+
+  defp system_prompt(%{local_agent: %{system_prompt: prompt}}), do: prompt
+  defp system_prompt(_), do: nil
 
   defp maybe_wrap_stream(%{metadata: %{stream: enum}} = task, {_pid, _ref}) do
     wrapped = AgentRuntime.wrap_stream(enum, self(), task.id)

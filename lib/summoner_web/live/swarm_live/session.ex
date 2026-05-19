@@ -3,9 +3,9 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Broadcasts
   alias Summoner.Conversations
   alias Summoner.Conversations.Content
+  alias Summoner.Events
   alias Summoner.Orchestration
   alias Summoner.Swarms
   alias Summoner.Swarms.SwarmRunner
@@ -25,8 +25,8 @@ defmodule SummonerWeb.SwarmLive.Session do
     messages = Conversations.list_messages(conversation.id, visibility: :public)
 
     if connected?(socket) do
-      Broadcasts.subscribe(Broadcasts.swarm_topic(workspace.id, swarm.id))
-      Broadcasts.subscribe(Broadcasts.escalations_topic(workspace.id))
+      Events.subscribe({:swarm, workspace.id, swarm.id})
+      Events.subscribe({:escalations, workspace.id})
     end
 
     agent_colors = build_agent_colors(swarm.members)
@@ -223,7 +223,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info({:swarm_turn, conversation_id, agent_id}, socket) do
+  def handle_info(%Events.SwarmTurn{conversation_id: conversation_id, agent_id: agent_id}, socket) do
     if conversation_id == socket.assigns.conversation.id do
       agent_name = agent_name_for(socket.assigns.swarm, agent_id)
 
@@ -240,7 +240,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info({:swarm_done, conversation_id, _summary}, socket) do
+  def handle_info(%Events.SwarmDone{conversation_id: conversation_id}, socket) do
     if conversation_id == socket.assigns.conversation.id do
       messages =
         Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
@@ -264,7 +264,10 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info({:swarm_timeout, conversation_id, agent_id}, socket) do
+  def handle_info(
+        %Events.SwarmTimeout{conversation_id: conversation_id, agent_id: agent_id},
+        socket
+      ) do
     if conversation_id == socket.assigns.conversation.id do
       agent_name = agent_name_for(socket.assigns.swarm, agent_id)
       Logger.warning("Agent #{agent_name} timed out in swarm session")
@@ -283,15 +286,15 @@ defmodule SummonerWeb.SwarmLive.Session do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info({:content_token, _, _} = msg, socket),
-    do: SH.handle_content_token(msg, socket)
+  def handle_info(%Events.ContentToken{} = event, socket),
+    do: SH.handle_content_token(event, socket)
 
   @impl true
-  def handle_info({:invocation_status, _, :running} = msg, socket),
-    do: SH.handle_invocation_running(msg, socket)
+  def handle_info(%Events.InvocationStarted{} = event, socket),
+    do: SH.handle_invocation_running(event, socket)
 
   @impl true
-  def handle_info({:invocation_status, _, :completed}, socket) do
+  def handle_info(%Events.InvocationCompleted{}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -299,7 +302,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info({:invocation_status, _, :failed, output}, socket) do
+  def handle_info(%Events.InvocationFailed{output: output}, socket) do
     {:noreply, result_socket} = SH.handle_invocation_failed(socket, output)
 
     {:noreply,
@@ -310,23 +313,12 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info({:invocation_status, _, :failed}, socket) do
-    {:noreply, result_socket} = SH.handle_invocation_failed(socket, nil)
-
-    {:noreply,
-     assign(result_socket,
-       current_agent_id: nil,
-       current_agent_name: nil
-     )}
-  end
+  def handle_info(%Events.InvocationEvent{} = event, socket),
+    do: SH.handle_invocation_event(event, socket)
 
   @impl true
-  def handle_info({:invocation_event, _} = msg, socket),
-    do: SH.handle_invocation_event(msg, socket)
-
-  @impl true
-  def handle_info({:escalation, _, _} = msg, socket),
-    do: SH.handle_escalation(msg, socket)
+  def handle_info(%Events.Escalation{} = event, socket),
+    do: SH.handle_escalation(event, socket)
 
   @impl true
   def handle_info(_msg, socket), do: {:noreply, socket}
@@ -510,15 +502,13 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   defp subscribe_to_members(workspace_id, swarm) do
     for member <- swarm.members do
-      topic = Broadcasts.agent_topic(workspace_id, member.agent_id)
-      Broadcasts.subscribe(topic)
+      Events.subscribe({:agent, workspace_id, member.agent_id})
     end
   end
 
   defp unsubscribe_from_members(workspace_id, swarm) do
     for member <- swarm.members do
-      topic = Broadcasts.agent_topic(workspace_id, member.agent_id)
-      Broadcasts.unsubscribe(topic)
+      Events.unsubscribe({:agent, workspace_id, member.agent_id})
     end
   end
 

@@ -4,7 +4,6 @@ defmodule SummonerWeb.PipelineLive.Show do
   import SummonerWeb.AuthorizeHelper
 
   alias Summoner.Agents
-  alias Summoner.Broadcasts
   alias Summoner.Pipelines
   alias Summoner.Workers.PipelineRunnerJob
 
@@ -16,7 +15,7 @@ defmodule SummonerWeb.PipelineLive.Show do
     runs_page = Pipelines.list_runs_paginated(pipeline.id)
 
     if connected?(socket) do
-      Broadcasts.subscribe(Broadcasts.pipeline_topic(workspace.id, pipeline.id))
+      Summoner.Events.subscribe({:pipeline, workspace.id, pipeline.id})
     end
 
     socket =
@@ -105,7 +104,7 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   # PubSub handlers — refresh runs on any status change
   @impl true
-  def handle_info({:pipeline_run_status, _run_id, _status}, socket) do
+  def handle_info(%Summoner.Events.PipelineRunStatus{}, socket) do
     pipeline_id = socket.assigns.pipeline.id
 
     runs_page =
@@ -120,7 +119,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   end
 
   @impl true
-  def handle_info({:pipeline_run_stage_status, _run_id, _position, _status}, socket) do
+  def handle_info(%Summoner.Events.PipelineStageStatus{}, socket) do
     runs_page =
       Pipelines.list_runs_paginated(socket.assigns.pipeline.id,
         page: socket.assigns.runs_page.page

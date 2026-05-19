@@ -14,8 +14,9 @@ defmodule Summoner.Workers.MediaGeneration do
     priority: 2
 
   alias Arcanum.{Intent, Response}
-  alias Summoner.Broadcasts
   alias Summoner.Conversations
+  alias Summoner.Events
+  alias Summoner.Events.{MediaGenerationCompleted, MediaGenerationFailed, MediaGenerationStarted}
   alias Summoner.Inference.Gateway
   alias Summoner.Media
   alias Summoner.MediaProviders
@@ -130,31 +131,31 @@ defmodule Summoner.Workers.MediaGeneration do
   defp format_error(reason), do: inspect(reason)
 
   defp broadcast_started(attachment) do
-    Broadcasts.broadcast(
-      media_generation_topic(attachment),
-      {:media_generation_started, attachment.conversation_id,
-       %{attachment_id: attachment.id, type: attachment.type, prompt: attachment.prompt}}
-    )
+    Events.publish(%MediaGenerationStarted{
+      workspace_id: attachment.workspace_id,
+      conversation_id: attachment.conversation_id,
+      attachment_id: attachment.id,
+      type: attachment.type,
+      prompt: attachment.prompt
+    })
   end
 
   defp broadcast_complete(attachment) do
-    Broadcasts.broadcast(
-      media_generation_topic(attachment),
-      {:media_generation_complete, attachment.conversation_id,
-       %{attachment_id: attachment.id, url: Media.media_url(attachment)}}
-    )
+    Events.publish(%MediaGenerationCompleted{
+      workspace_id: attachment.workspace_id,
+      conversation_id: attachment.conversation_id,
+      attachment_id: attachment.id,
+      url: Media.media_url(attachment)
+    })
   end
 
   defp broadcast_failed(attachment, reason) do
-    Broadcasts.broadcast(
-      media_generation_topic(attachment),
-      {:media_generation_failed, attachment.conversation_id,
-       %{attachment_id: attachment.id, error: reason}}
-    )
-  end
-
-  defp media_generation_topic(attachment) do
-    Broadcasts.conversation_topic(attachment.workspace_id, attachment.conversation_id)
+    Events.publish(%MediaGenerationFailed{
+      workspace_id: attachment.workspace_id,
+      conversation_id: attachment.conversation_id,
+      attachment_id: attachment.id,
+      error: reason
+    })
   end
 
   defp append_media_block(message_id, attachment_id, type) do

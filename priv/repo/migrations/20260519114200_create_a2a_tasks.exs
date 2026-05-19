@@ -12,7 +12,7 @@ defmodule Summoner.Repo.Migrations.CreateA2aTasks do
       add :remote_client_info, :map
       add :a2a_server_id, references(:a2a_servers, type: :binary_id)
       add :agent_id, references(:agents, type: :binary_id)
-      add :conversation_id, references(:conversations, type: :binary_id)
+      add :conversation_id, references(:conversations, type: :binary_id, on_delete: :delete_all)
 
       timestamps(type: :utc_datetime_usec)
     end

@@ -1,7 +1,6 @@
 defmodule SummonerWeb.ProviderLive.Show do
   use SummonerWeb, :live_view
 
-  alias Summoner.Broadcasts
   alias Summoner.Ledger
   alias Summoner.Providers
 
@@ -14,7 +13,7 @@ defmodule SummonerWeb.ProviderLive.Show do
     model_usage = Ledger.usage_by_model_for_provider(provider.id)
 
     if connected?(socket) do
-      Broadcasts.subscribe(Broadcasts.provider_topic(workspace.id, provider.id))
+      Summoner.Events.subscribe({:provider, workspace.id, provider.id})
     end
 
     socket =
@@ -51,7 +50,7 @@ defmodule SummonerWeb.ProviderLive.Show do
   end
 
   @impl true
-  def handle_info({:copilot_connect, :ok}, socket) do
+  def handle_info(%Summoner.Events.CopilotConnected{}, socket) do
     # Reload provider to pick up the new Seal link
     scope = socket.assigns.current_scope
     workspace = socket.assigns.workspace
@@ -71,7 +70,7 @@ defmodule SummonerWeb.ProviderLive.Show do
   end
 
   @impl true
-  def handle_info({:copilot_connect, {:error, reason}}, socket) do
+  def handle_info(%Summoner.Events.CopilotConnectionFailed{reason: reason}, socket) do
     message =
       case reason do
         :expired -> "Device code expired. Please try again."

@@ -11,6 +11,7 @@ defmodule Summoner.A2A.ClientExecutor do
 
   alias Summoner.A2A, as: SummonerA2A
   alias Summoner.A2A.ContentAdapter
+  alias Summoner.A2A.Discovery
   alias Summoner.Agents.RemoteAgent
   alias Summoner.Repo
 
@@ -24,37 +25,46 @@ defmodule Summoner.A2A.ClientExecutor do
   content blocks) and `:task` (the A2A task), or `{:error, reason}`.
   """
   def send_message(agent, %RemoteAgent{} = remote, message, opts \\ []) do
-    headers = build_auth_headers(remote)
-    timeout = remote.timeout_s * 1_000
+    with {:ok, service_url} <- resolve_service_url(remote) do
+      headers = build_auth_headers(remote)
+      timeout = remote.timeout_s * 1_000
 
-    client =
-      A2A.Client.new(remote.agent_card_url,
-        headers: headers,
-        connect_options: [timeout: timeout]
-      )
-
-    a2a_message = build_message(message)
-    send_opts = Keyword.take(opts, [:task_id, :context_id, :metadata])
-
-    with {:ok, task} <- create_outbound_task(agent, opts),
-         {:ok, a2a_task} <- A2A.Client.send_message(client, a2a_message, send_opts) do
-      update_outbound_task(task, a2a_task)
-      content = extract_content(a2a_task)
-
-      {:ok,
-       %{
-         content: content,
-         task: a2a_task,
-         output: %{"content" => content, "response" => content_to_text(content)}
-       }}
-    else
-      {:error, reason} ->
-        Logger.warning(
-          "A2A outbound request to #{remote.agent_card_url} failed: #{inspect(reason)}"
+      client =
+        A2A.Client.new(service_url,
+          headers: headers,
+          connect_options: [timeout: timeout]
         )
 
-        {:error, reason}
+      a2a_message = build_message(message)
+      send_opts = Keyword.take(opts, [:task_id, :context_id, :metadata])
+
+      with {:ok, task} <- create_outbound_task(agent, opts),
+           {:ok, a2a_task} <- A2A.Client.send_message(client, a2a_message, send_opts) do
+        update_outbound_task(task, a2a_task)
+        interpret_a2a_result(a2a_task)
+      else
+        {:error, reason} ->
+          Logger.warning("A2A outbound request to #{service_url} failed: #{inspect(reason)}")
+          {:error, reason}
+      end
     end
+  end
+
+  defp interpret_a2a_result(%A2A.Task{status: %{state: state}} = a2a_task)
+       when state in [:failed, :rejected, :canceled] do
+    error_content = extract_status_message(a2a_task) || inspect(state)
+    {:error, error_content}
+  end
+
+  defp interpret_a2a_result(%A2A.Task{} = a2a_task) do
+    content = extract_content(a2a_task)
+
+    {:ok,
+     %{
+       content: content,
+       task: a2a_task,
+       output: %{"content" => content, "response" => content_to_text(content)}
+     }}
   end
 
   defp build_message(message) when is_binary(message) do
@@ -120,9 +130,26 @@ defmodule Summoner.A2A.ClientExecutor do
 
   defp extract_content(_), do: [%{"type" => "text", "text" => ""}]
 
+  defp extract_status_message(%A2A.Task{status: %{message: %Message{} = msg}}) do
+    Message.text(msg)
+  end
+
+  defp extract_status_message(_), do: nil
+
   defp content_to_text(content) when is_list(content) do
     content
     |> Enum.filter(&(&1["type"] == "text"))
     |> Enum.map_join("\n", & &1["text"])
+  end
+
+  # Resolves the JSON-RPC service URL by fetching/caching the agent card.
+  # The card's `url` field is the actual A2A endpoint, distinct from the
+  # discovery URL (agent_card_url).
+  defp resolve_service_url(%RemoteAgent{} = remote) do
+    case Discovery.get_or_refresh(remote) do
+      {:ok, %{url: url}} when is_binary(url) and url != "" -> {:ok, url}
+      {:ok, _} -> {:error, :no_service_url_in_card}
+      {:error, reason} -> {:error, {:discovery_failed, reason}}
+    end
   end
 end

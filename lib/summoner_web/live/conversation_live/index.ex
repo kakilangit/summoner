@@ -2,6 +2,7 @@ defmodule SummonerWeb.ConversationLive.Index do
   use SummonerWeb, :live_view
 
   alias Summoner.Agents
+  alias Summoner.Agents.Agent
   alias Summoner.Conversations
 
   @sort_options [{"Title", :title}, {"Created", :inserted_at}]
@@ -181,7 +182,7 @@ defmodule SummonerWeb.ConversationLive.Index do
                   {agent.name}
                 </div>
                 <div class="text-xs text-base-content/50 truncate">
-                  {(agent.local_agent && agent.local_agent.personality) || role_label(agent.role)}
+                  {Agent.description(agent) || role_label(agent.role)}
                 </div>
               </div>
               <span class="hero-chevron-right size-4 text-base-content/30 group-hover:text-primary transition-colors" />

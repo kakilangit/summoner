@@ -17,6 +17,10 @@ defmodule Summoner.Agents do
   alias Summoner.A2A.ClientExecutor
   alias Summoner.Agents.{Agent, AgentLink, LocalAgent, RemoteAgent}
   alias Summoner.Agents.Server, as: AgentServer
+  alias Summoner.Conversations
+  alias Summoner.Events
+  alias Summoner.Events.InvocationStarted
+  alias Summoner.Orchestration
   alias Summoner.Pagination
   alias Summoner.Repo
   alias Summoner.Workspaces
@@ -305,6 +309,97 @@ defmodule Summoner.Agents do
     remote = ensure_remote_agent_loaded(agent)
     ClientExecutor.send_message(agent, remote, message, opts)
   end
+
+  @task_supervisor Summoner.TaskSupervisor
+
+  @doc """
+  Asynchronously executes a message against an agent, dispatching by type.
+
+  For conversations: creates an invocation, sends the message, writes the
+  response as an assistant message, and broadcasts status changes so LiveViews
+  update automatically.
+
+  - `:local` — delegates to `Agents.Server.invoke_async/3`
+  - `:remote` — spawns a supervised task that runs the full A2A lifecycle
+
+  Params must include `:conversation_id`, `:message`, and `:scope`.
+  """
+  def execute_async(%Agent{type: :local} = agent, workspace_id, params) do
+    AgentServer.invoke_async(workspace_id, agent.id, params)
+  end
+
+  def execute_async(%Agent{type: :remote} = agent, workspace_id, params) do
+    Task.Supervisor.start_child(@task_supervisor, fn ->
+      run_remote_invocation(agent, workspace_id, params)
+    end)
+  end
+
+  defp run_remote_invocation(agent, workspace_id, params) do
+    conversation_id = Map.fetch!(params, :conversation_id)
+    message = Map.fetch!(params, :message)
+    scope = Map.fetch!(params, :scope)
+
+    {:ok, invocation} =
+      Orchestration.create_invocation(scope, %{
+        workspace_id: workspace_id,
+        agent_id: agent.id,
+        conversation_id: conversation_id,
+        status: :running,
+        input: %{"message" => message}
+      })
+
+    Events.publish(%InvocationStarted{
+      workspace_id: workspace_id,
+      agent_id: agent.id,
+      invocation_id: invocation.id
+    })
+
+    remote = ensure_remote_agent_loaded(agent)
+
+    case ClientExecutor.send_message(agent, remote, message, conversation_id: conversation_id) do
+      {:ok, %{content: content}} ->
+        Conversations.add_message(%{
+          conversation_id: conversation_id,
+          agent_id: agent.id,
+          role: :assistant,
+          visibility: :public,
+          kind: :chat,
+          content: content,
+          invocation_id: invocation.id
+        })
+
+        Orchestration.update_invocation_status(invocation, :completed, %{
+          end_reason: :completed,
+          output: %{"response" => content_to_text(content)}
+        })
+
+      {:error, reason} ->
+        error_text = if is_binary(reason), do: reason, else: inspect(reason)
+
+        Conversations.add_message(%{
+          conversation_id: conversation_id,
+          agent_id: agent.id,
+          role: :assistant,
+          visibility: :public,
+          kind: :chat,
+          content: [%{"type" => "text", "text" => "**Error:** #{error_text}"}],
+          invocation_id: invocation.id
+        })
+
+        Orchestration.update_invocation_status(invocation, :failed, %{
+          end_reason: :failed,
+          output: %{"error" => error_text}
+        })
+    end
+  end
+
+  defp content_to_text(content) when is_list(content) do
+    content
+    |> Enum.filter(&(&1["type"] == "text"))
+    |> Enum.map_join("\n", & &1["text"])
+  end
+
+  defp content_to_text(_), do: ""
 
   # -------------------------------------------------------------------
   # Linking

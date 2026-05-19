@@ -22,8 +22,10 @@ defmodule Summoner.Orchestration.PipelineRunner do
 
   alias Summoner.Agents
   alias Summoner.Agents.{Agent, Server}
-  alias Summoner.Broadcasts
   alias Summoner.Conversations
+  alias Summoner.Events
+  alias Summoner.Events.{InvocationCompleted, InvocationFailed, InvocationStarted}
+  alias Summoner.Events.{PipelineRunStatus, PipelineStageInvocation, PipelineStageStatus}
   alias Summoner.Orchestration
   alias Summoner.Orchestration.Manager
   alias Summoner.Pipelines
@@ -210,8 +212,7 @@ defmodule Summoner.Orchestration.PipelineRunner do
     message = build_stage_message(stage, input, results_by_position)
 
     # Subscribe to agent topic to receive completion broadcasts
-    agent_topic = Broadcasts.agent_topic(workspace_id, agent.id)
-    Broadcasts.subscribe(agent_topic)
+    Events.subscribe({:agent, workspace_id, agent.id})
 
     with :ok <- Server.ensure_started(workspace_id, agent.id) do
       # Fire async — pass conversation_id for persistent context
@@ -223,15 +224,14 @@ defmodule Summoner.Orchestration.PipelineRunner do
       })
 
       # Wait for the agent to finish and extract output
-      await_agent_completion(agent_topic, workspace_id, agent.id, run, stage.position)
+      await_agent_completion(workspace_id, agent.id, run, stage.position)
     end
   end
 
-  defp await_agent_completion(agent_topic, workspace_id, agent_id, run, position) do
+  defp await_agent_completion(workspace_id, agent_id, run, position) do
     receive do
-      {:invocation_status, invocation_id, :completed} ->
+      %InvocationCompleted{invocation_id: invocation_id} ->
         handle_stage_completion(
-          agent_topic,
           workspace_id,
           agent_id,
           invocation_id,
@@ -239,9 +239,8 @@ defmodule Summoner.Orchestration.PipelineRunner do
           position
         )
 
-      {:invocation_status, invocation_id, :failed, output} ->
+      %InvocationFailed{invocation_id: invocation_id, output: output} ->
         handle_stage_failure(
-          agent_topic,
           workspace_id,
           agent_id,
           invocation_id,
@@ -250,50 +249,39 @@ defmodule Summoner.Orchestration.PipelineRunner do
           position
         )
 
-      {:invocation_status, invocation_id, :failed} ->
-        handle_stage_failure(
-          agent_topic,
-          workspace_id,
-          agent_id,
-          invocation_id,
-          nil,
-          run,
-          position
-        )
-
-      {:invocation_status, invocation_id, :running} ->
+      %InvocationStarted{invocation_id: invocation_id} ->
         broadcast_stage_invocation(workspace_id, run.pipeline_id, run.id, position, invocation_id)
-        await_agent_completion(agent_topic, workspace_id, agent_id, run, position)
+        await_agent_completion(workspace_id, agent_id, run, position)
 
-      {:invocation_status, _invocation_id, _other} ->
-        await_agent_completion(agent_topic, workspace_id, agent_id, run, position)
+      %struct{} when struct in [InvocationCompleted, InvocationFailed, InvocationStarted] ->
+        await_agent_completion(workspace_id, agent_id, run, position)
     after
       @stage_timeout ->
-        Phoenix.PubSub.unsubscribe(Summoner.PubSub, agent_topic)
+        Events.unsubscribe({:agent, workspace_id, agent_id})
         {:error, :stage_timeout}
     end
   end
 
-  defp handle_stage_completion(agent_topic, workspace_id, agent_id, invocation_id, run, position) do
+  defp handle_stage_completion(workspace_id, agent_id, invocation_id, run, position) do
     invocation = Orchestration.get_invocation_by_id(invocation_id)
 
     if matches_stage_agent?(invocation, workspace_id, agent_id) do
-      Phoenix.PubSub.unsubscribe(Summoner.PubSub, agent_topic)
+      Events.unsubscribe({:agent, workspace_id, agent_id})
       {:ok, extract_invocation_output(invocation)}
     else
-      await_agent_completion(agent_topic, workspace_id, agent_id, run, position)
+      await_agent_completion(workspace_id, agent_id, run, position)
     end
   end
 
-  defp handle_stage_failure(agent_topic, workspace_id, agent_id, invocation_id, output, run, pos) do
+  defp handle_stage_failure(workspace_id, agent_id, invocation_id, output, run, pos) do
     invocation = Orchestration.get_invocation_by_id(invocation_id)
 
     if matches_stage_agent?(invocation, workspace_id, agent_id) do
-      Phoenix.PubSub.unsubscribe(Summoner.PubSub, agent_topic)
+      Events.unsubscribe({:agent, workspace_id, agent_id})
       error = extract_failure_reason(invocation, output)
       {:error, error}
     else
-      await_agent_completion(agent_topic, workspace_id, agent_id, run, pos)
+      await_agent_completion(workspace_id, agent_id, run, pos)
     end
   end
 
@@ -746,17 +734,31 @@ defmodule Summoner.Orchestration.PipelineRunner do
   # -------------------------------------------------------------------
 
   defp broadcast_run_status(workspace_id, pipeline_id, run_id, status) do
-    topic = Broadcasts.pipeline_topic(workspace_id, pipeline_id)
-    Broadcasts.broadcast(topic, {:pipeline_run_status, run_id, status})
+    Events.publish(%PipelineRunStatus{
+      workspace_id: workspace_id,
+      pipeline_id: pipeline_id,
+      run_id: run_id,
+      status: status
+    })
   end
 
   defp broadcast_stage_status(workspace_id, pipeline_id, run_id, position, status) do
-    topic = Broadcasts.pipeline_topic(workspace_id, pipeline_id)
-    Broadcasts.broadcast(topic, {:pipeline_run_stage_status, run_id, position, status})
+    Events.publish(%PipelineStageStatus{
+      workspace_id: workspace_id,
+      pipeline_id: pipeline_id,
+      run_id: run_id,
+      position: position,
+      status: status
+    })
   end
 
   defp broadcast_stage_invocation(workspace_id, pipeline_id, run_id, position, invocation_id) do
-    topic = Broadcasts.pipeline_topic(workspace_id, pipeline_id)
-    Broadcasts.broadcast(topic, {:pipeline_stage_invocation, run_id, position, invocation_id})
+    Events.publish(%PipelineStageInvocation{
+      workspace_id: workspace_id,
+      pipeline_id: pipeline_id,
+      run_id: run_id,
+      position: position,
+      invocation_id: invocation_id
+    })
   end
 end

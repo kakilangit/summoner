@@ -20,8 +20,8 @@ defmodule SummonerWeb.ConversationHelpers do
       end
   """
 
-  alias Summoner.Broadcasts
   alias Summoner.Conversations
+  alias Summoner.Events
   alias Summoner.Media
   alias Summoner.Orchestration
   alias Summoner.Orchestration.Cancellation
@@ -229,7 +229,10 @@ defmodule SummonerWeb.ConversationHelpers do
   # PubSub: Invocation lifecycle
   # -------------------------------------------------------------------
 
-  def handle_content_token({:content_token, invocation_id, token}, socket) do
+  def handle_content_token(
+        %Events.ContentToken{invocation_id: invocation_id, token: token},
+        socket
+      ) do
     if invocation_id == socket.assigns[:current_invocation_id] do
       {:noreply, assign(socket, streaming_content: socket.assigns.streaming_content <> token)}
     else
@@ -237,9 +240,9 @@ defmodule SummonerWeb.ConversationHelpers do
     end
   end
 
-  def handle_invocation_running({:invocation_status, invocation_id, :running}, socket) do
+  def handle_invocation_running(%Events.InvocationStarted{invocation_id: invocation_id}, socket) do
     workspace = socket.assigns.workspace
-    Broadcasts.subscribe(Broadcasts.invocation_events_topic(workspace.id, invocation_id))
+    Events.subscribe({:invocation_events, workspace.id, invocation_id})
     {:noreply, assign(socket, current_invocation_id: invocation_id)}
   end
 
@@ -276,13 +279,13 @@ defmodule SummonerWeb.ConversationHelpers do
      )}
   end
 
-  def handle_invocation_event({:invocation_event, event}, socket) do
+  def handle_invocation_event(%Events.InvocationEvent{event: event}, socket) do
     events = socket.assigns.invocation_events ++ [event]
     subtasks = refresh_subtasks(socket.assigns.current_invocation_id)
     {:noreply, assign(socket, invocation_events: events, subtasks: subtasks)}
   end
 
-  def handle_escalation({:escalation, invocation_id, reason}, socket) do
+  def handle_escalation(%Events.Escalation{invocation_id: invocation_id, reason: reason}, socket) do
     subtasks = refresh_subtasks(invocation_id)
 
     {:noreply,
