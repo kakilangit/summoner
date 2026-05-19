@@ -1,20 +1,20 @@
-defmodule Summoner.Orchestration.ReactLoopTest do
+defmodule Summoner.Services.Orchestration.ReactLoopTest do
   use Summoner.DataCase
 
   import Mox
 
   alias Arcanum.{Intent, Response}
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
-  alias Summoner.Orchestration
-  alias Summoner.Orchestration.ReactLoop
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Services.Orchestration.ReactLoop
 
-  import Summoner.AccountsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup :verify_on_exit!
 
@@ -70,7 +70,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       invocation: inv,
       context: ctx
     } do
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: Intent.text("Hello! How can I help?"),
@@ -81,7 +81,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       end)
 
       {:ok, completed} =
-        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.InferenceAdapterMock)
+        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.Services.InferenceAdapterMock)
 
       assert completed.status == :completed
       assert completed.end_reason == :completed
@@ -121,7 +121,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       context: ctx
     } do
       # First call returns a tool call
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -150,7 +150,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock
         )
 
@@ -181,7 +181,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       invocation: inv,
       context: ctx
     } do
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -212,7 +212,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock
         )
 
@@ -249,7 +249,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       inv = invocation_fixture(scope, ws.id, agent.id, conversation_id: conv.id)
 
       # Both calls return tool calls, so we'll hit max_steps
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, 2, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -271,7 +271,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(agent, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock
         )
 
@@ -293,13 +293,13 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       invocation: inv,
       context: ctx
     } do
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         {:error, {:http, 500, "Internal Server Error"}}
       end)
 
       {:error, :failed, failed} =
-        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.InferenceAdapterMock)
+        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.Services.InferenceAdapterMock)
 
       assert failed.status == :failed
       assert failed.end_reason == :failed
@@ -329,7 +329,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       inv = invocation_fixture(scope, ws.id, worker.id, conversation_id: conv.id, depth: 1)
 
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: Intent.text("worker output"),
@@ -339,7 +339,8 @@ defmodule Summoner.Orchestration.ReactLoopTest do
         })
       end)
 
-      {:ok, _} = ReactLoop.run(worker, prov, inv, ctx, adapter: Summoner.InferenceAdapterMock)
+      {:ok, _} =
+        ReactLoop.run(worker, prov, inv, ctx, adapter: Summoner.Services.InferenceAdapterMock)
 
       messages = Conversations.list_messages(conv.id, visibility: :internal)
       assert length(messages) == 1
@@ -360,7 +361,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       invocation: inv,
       context: ctx
     } do
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: Intent.text(String.duplicate("a", 100)),
@@ -371,7 +372,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       end)
 
       {:ok, completed} =
-        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.InferenceAdapterMock)
+        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.Services.InferenceAdapterMock)
 
       assert completed.status == :completed
 
@@ -398,7 +399,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       large_output = String.duplicate("x", 500)
 
       # First call returns a tool call
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -435,7 +436,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock,
           max_tool_output_chars: 100
         )
@@ -451,7 +452,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
     } do
       small_output = "short result"
 
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -482,7 +483,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock,
           max_tool_output_chars: 100
         )
@@ -529,7 +530,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
         %{role: :user, content: "second question"}
       ]
 
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, intent, _profile ->
         # The old big messages should have been evicted
         # System + last user msg should remain
@@ -551,7 +552,9 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       end)
 
       {:ok, completed} =
-        ReactLoop.run(agent, provider, inv, context, adapter: Summoner.InferenceAdapterMock)
+        ReactLoop.run(agent, provider, inv, context,
+          adapter: Summoner.Services.InferenceAdapterMock
+        )
 
       assert completed.status == :completed
     end
@@ -564,7 +567,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
     } do
       # Default provider has nil context_length → 131K budget
       # Small context should not trigger eviction
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, intent, _profile ->
         # All messages should be preserved
         assert length(intent.messages) == length(ctx)
@@ -578,7 +581,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       end)
 
       {:ok, completed} =
-        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.InferenceAdapterMock)
+        ReactLoop.run(fam, prov, inv, ctx, adapter: Summoner.Services.InferenceAdapterMock)
 
       assert completed.status == :completed
     end
@@ -615,7 +618,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       ]
 
       # First call: LLM returns bash with empty args (missing required "command")
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -645,7 +648,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tools: tools
         )
 
@@ -690,7 +693,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
       ]
 
       # LLM returns two tool calls: one valid, one missing required param
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         stream_response(%Response{
           content: nil,
@@ -723,7 +726,7 @@ defmodule Summoner.Orchestration.ReactLoopTest do
 
       {:ok, completed} =
         ReactLoop.run(fam, prov, inv, ctx,
-          adapter: Summoner.InferenceAdapterMock,
+          adapter: Summoner.Services.InferenceAdapterMock,
           tool_executor: Summoner.ToolExecutorMock,
           tools: tools
         )

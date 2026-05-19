@@ -1,16 +1,16 @@
 defmodule SummonerWeb.McpServerLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.MCP
-  alias Summoner.MCP.McpServer
-  alias Summoner.Presets
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.McpServer
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
 
       {server, title} =

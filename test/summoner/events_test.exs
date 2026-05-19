@@ -1,7 +1,8 @@
-defmodule Summoner.EventsTest do
+defmodule Summoner.Ports.EventsTest do
   use Summoner.DataCase
 
-  alias Summoner.Events
+  alias Summoner.Domain.Events
+  alias Summoner.Ports.Events, as: EventsPort
 
   # -------------------------------------------------------------------
   # Subscribe + Publish round-trip
@@ -15,8 +16,8 @@ defmodule Summoner.EventsTest do
         invocation_id: "inv1"
       }
 
-      :ok = Events.subscribe({:invocation, "ws1", "inv1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:invocation, "ws1", "inv1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.InvocationStarted{invocation_id: "inv1"}
     end
@@ -28,8 +29,8 @@ defmodule Summoner.EventsTest do
         invocation_id: "inv1"
       }
 
-      :ok = Events.subscribe({:invocation, "ws1", "inv1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:invocation, "ws1", "inv1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.InvocationCompleted{invocation_id: "inv1"}
     end
@@ -41,8 +42,8 @@ defmodule Summoner.EventsTest do
         invocation_id: "inv1"
       }
 
-      :ok = Events.subscribe({:invocation, "ws1", "inv1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:invocation, "ws1", "inv1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.InvocationFailed{invocation_id: "inv1"}
     end
@@ -55,8 +56,8 @@ defmodule Summoner.EventsTest do
         token: "Hello"
       }
 
-      :ok = Events.subscribe({:agent, "ws1", "ag1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:agent, "ws1", "ag1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.ContentToken{token: "Hello"}
     end
@@ -68,8 +69,8 @@ defmodule Summoner.EventsTest do
         reason: "need human review"
       }
 
-      :ok = Events.subscribe({:escalations, "ws1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:escalations, "ws1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.Escalation{reason: "need human review"}
     end
@@ -84,14 +85,14 @@ defmodule Summoner.EventsTest do
         event: inner
       }
 
-      :ok = Events.subscribe({:invocation_events, "ws1", "inv1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:invocation_events, "ws1", "inv1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.InvocationEvent{event: ^inner}
     end
 
     test "unsubscribed process does not receive messages" do
-      :ok = Events.subscribe({:invocation, "ws1", "other"})
+      :ok = EventsPort.subscribe({:invocation, "ws1", "other"})
 
       event = %Events.InvocationStarted{
         workspace_id: "ws1",
@@ -99,7 +100,7 @@ defmodule Summoner.EventsTest do
         invocation_id: "inv1"
       }
 
-      :ok = Events.publish(event)
+      :ok = EventsPort.publish(event)
 
       refute_receive %Events.InvocationStarted{}, 50
     end
@@ -111,8 +112,8 @@ defmodule Summoner.EventsTest do
         invocation_id: "inv1"
       }
 
-      :ok = Events.subscribe({:agent, "ws1", "ag1"})
-      :ok = Events.publish(event)
+      :ok = EventsPort.subscribe({:agent, "ws1", "ag1"})
+      :ok = EventsPort.publish(event)
 
       assert_receive %Events.InvocationStarted{invocation_id: "inv1"}
     end
@@ -123,13 +124,13 @@ defmodule Summoner.EventsTest do
   # -------------------------------------------------------------------
 
   describe "orchestration integration" do
-    import Summoner.AccountsFixtures
-    import Summoner.WorkspacesFixtures
-    import Summoner.ProvidersFixtures
-    import Summoner.AgentsFixtures
-    import Summoner.ConversationsFixtures
+    import Summoner.Adapters.Persistence.AccountsFixtures
+    import Summoner.Adapters.Persistence.WorkspacesFixtures
+    import Summoner.Adapters.Persistence.ProvidersFixtures
+    import Summoner.Adapters.Persistence.AgentsFixtures
+    import Summoner.Adapters.Persistence.ConversationsFixtures
 
-    alias Summoner.Orchestration
+    alias Summoner.Adapters.Persistence.Orchestration
 
     setup do
       scope = user_scope_fixture()
@@ -159,7 +160,7 @@ defmodule Summoner.EventsTest do
       workspace: ws,
       invocation: inv
     } do
-      :ok = Events.subscribe({:invocation, ws.id, inv.id})
+      :ok = EventsPort.subscribe({:invocation, ws.id, inv.id})
 
       {:ok, _} = Orchestration.update_invocation_status(inv, :running)
 
@@ -171,7 +172,7 @@ defmodule Summoner.EventsTest do
       invocation: inv,
       workspace: ws
     } do
-      :ok = Events.subscribe({:invocation, ws.id, inv.id})
+      :ok = EventsPort.subscribe({:invocation, ws.id, inv.id})
 
       {:ok, step} =
         Orchestration.add_step(%{
@@ -191,7 +192,7 @@ defmodule Summoner.EventsTest do
       agent: agent,
       invocation: inv
     } do
-      :ok = Events.subscribe({:invocation_events, ws.id, inv.id})
+      :ok = EventsPort.subscribe({:invocation_events, ws.id, inv.id})
 
       {:ok, event} =
         Orchestration.add_event(%{
@@ -209,7 +210,7 @@ defmodule Summoner.EventsTest do
       workspace: ws,
       invocation: inv
     } do
-      :ok = Events.subscribe({:invocation, ws.id, inv.id})
+      :ok = EventsPort.subscribe({:invocation, ws.id, inv.id})
 
       {:ok, _step} =
         Orchestration.add_step(%{

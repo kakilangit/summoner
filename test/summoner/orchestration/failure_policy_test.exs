@@ -1,14 +1,14 @@
-defmodule Summoner.Orchestration.FailurePolicyTest do
+defmodule Summoner.Domain.Policies.FailurePolicyTest do
   use Summoner.DataCase
 
-  alias Summoner.Orchestration
-  alias Summoner.Orchestration.FailurePolicy
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Domain.Policies.FailurePolicy
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()

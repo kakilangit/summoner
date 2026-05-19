@@ -36,9 +36,9 @@ defmodule SummonerWeb.ConnCase do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 
-  alias Summoner.Accounts
-  alias Summoner.Accounts.Scope
-  alias Summoner.AccountsFixtures
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Adapters.Persistence.AccountsFixtures
+  alias Summoner.Domain.Schemas.Scope
 
   @doc """
   Setup helper that registers and logs in users.

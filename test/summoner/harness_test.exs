@@ -1,7 +1,7 @@
-defmodule Summoner.HarnessTest do
+defmodule Summoner.Ports.HarnessTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.Harness
+  alias Summoner.Ports.Harness
 
   # -------------------------------------------------------------------
   # run/2

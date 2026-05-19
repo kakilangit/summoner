@@ -1,9 +1,9 @@
-defmodule Summoner.ProvidersFixtures do
+defmodule Summoner.Adapters.Persistence.ProvidersFixtures do
   @moduledoc """
   Test helpers for creating provider entities.
   """
 
-  alias Summoner.Providers
+  alias Summoner.Adapters.Persistence.Providers
 
   def unique_provider_name, do: "provider-#{System.unique_integer([:positive])}"
 

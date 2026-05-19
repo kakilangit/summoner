@@ -1,11 +1,11 @@
 defmodule SummonerWeb.UserAuthTest do
   use SummonerWeb.ConnCase, async: true
 
-  alias Summoner.Accounts
-  alias Summoner.Accounts.Scope
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Domain.Schemas.Scope
   alias SummonerWeb.UserAuth
 
-  import Summoner.AccountsFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
 
   @remember_me_cookie "_summoner_web_user_remember_me"
   @remember_me_cookie_max_age 60 * 60 * 24 * 14

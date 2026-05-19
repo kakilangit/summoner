@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantSkillLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Presets
-  alias Summoner.Skills
-  alias Summoner.Skills.Skill
+  alias Summoner.Adapters.Persistence.Skills
+  alias Summoner.Domain.Schemas.Skill
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do

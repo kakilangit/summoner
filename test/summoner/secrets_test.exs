@@ -1,10 +1,10 @@
-defmodule Summoner.SecretsTest do
+defmodule Summoner.Adapters.Persistence.SecretsTest do
   use Summoner.DataCase
 
-  alias Summoner.Secrets
+  alias Summoner.Adapters.Persistence.Secrets
 
-  import Summoner.AccountsFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()

@@ -1,7 +1,9 @@
 defmodule SummonerWeb.PipelineLive.RunShow do
   use SummonerWeb, :live_view
 
-  alias Summoner.Pipelines
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Ports.Events
+  alias Summoner.Services.TimeZone
 
   @refresh_debounce_ms 500
 
@@ -13,7 +15,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
     run = Pipelines.get_run!(run_id)
 
     if connected?(socket) do
-      Summoner.Events.subscribe({:pipeline, workspace.id, pipeline.id})
+      Events.subscribe({:pipeline, workspace.id, pipeline.id})
     end
 
     socket =
@@ -54,7 +56,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
   # Stage invocation link — subscribe to invocation events for live feed
   @impl true
   def handle_info(
-        %Summoner.Events.PipelineStageInvocation{
+        %Summoner.Domain.Events.PipelineStageInvocation{
           run_id: run_id,
           position: position,
           invocation_id: invocation_id
@@ -70,7 +72,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
 
   # Invocation event — append to the stage's event feed
   @impl true
-  def handle_info(%Summoner.Events.InvocationEvent{event: event}, socket) do
+  def handle_info(%Summoner.Domain.Events.InvocationEvent{event: event}, socket) do
     position = Map.get(socket.assigns, :invocation_positions, %{})[event.invocation_id]
 
     if position do
@@ -84,7 +86,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
 
   # PubSub — debounce rapid status updates into a single refresh
   @impl true
-  def handle_info(%Summoner.Events.PipelineRunStatus{run_id: run_id}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineRunStatus{run_id: run_id}, socket) do
     if run_id == socket.assigns.run.id do
       {:noreply, schedule_refresh(socket)}
     else
@@ -93,7 +95,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
   end
 
   @impl true
-  def handle_info(%Summoner.Events.PipelineStageStatus{run_id: run_id}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineStageStatus{run_id: run_id}, socket) do
     if run_id == socket.assigns.run.id do
       {:noreply, schedule_refresh(socket)}
     else
@@ -124,7 +126,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
       socket
     else
       workspace_id = socket.assigns.workspace.id
-      Summoner.Events.subscribe({:invocation_events, workspace_id, invocation_id})
+      Events.subscribe({:invocation_events, workspace_id, invocation_id})
 
       positions = Map.get(socket.assigns, :invocation_positions, %{})
 
@@ -331,7 +333,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
   defp event_icon_class(_), do: "text-base-content/40"
 
   defp format_datetime(nil), do: "-"
-  defp format_datetime(dt), do: Summoner.TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
+  defp format_datetime(dt), do: TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
 
   defp format_duration(nil, _), do: "-"
   defp format_duration(_, nil), do: "-"

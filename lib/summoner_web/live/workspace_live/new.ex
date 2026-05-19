@@ -1,7 +1,8 @@
 defmodule SummonerWeb.WorkspaceLive.New do
   use SummonerWeb, :live_view
 
-  alias Summoner.Workspaces.Workspace
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Schemas.Workspace
 
   @impl true
   def mount(_params, _session, socket) do
@@ -25,7 +26,7 @@ defmodule SummonerWeb.WorkspaceLive.New do
   def handle_event("save", %{"workspace" => params}, socket) do
     tenant = socket.assigns.tenant
 
-    case Summoner.Workspaces.create_workspace(socket.assigns.current_scope, tenant.id, params) do
+    case Workspaces.create_workspace(socket.assigns.current_scope, tenant.id, params) do
       {:ok, workspace} ->
         socket =
           socket

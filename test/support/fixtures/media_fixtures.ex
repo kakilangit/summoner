@@ -1,9 +1,9 @@
-defmodule Summoner.MediaFixtures do
+defmodule Summoner.Adapters.Persistence.MediaFixtures do
   @moduledoc """
   Test helpers for creating media-related entities.
   """
 
-  alias Summoner.Media
+  alias Summoner.Adapters.Persistence.Media
 
   def valid_media_attachment_attributes(workspace_id, conversation_id, attrs \\ %{}) do
     Enum.into(attrs, %{

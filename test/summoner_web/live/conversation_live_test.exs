@@ -3,14 +3,14 @@ defmodule SummonerWeb.ConversationLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Summoner.Agents
-  alias Summoner.Conversations
-  alias Summoner.Providers
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
 
   setup :register_and_log_in_user
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup %{scope: scope} do
     tenant = tenant_fixture(scope)

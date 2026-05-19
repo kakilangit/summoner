@@ -1,9 +1,9 @@
-defmodule Summoner.SkillsFixtures do
+defmodule Summoner.Adapters.Persistence.SkillsFixtures do
   @moduledoc """
   Test helpers for creating skill-related entities.
   """
 
-  alias Summoner.Skills
+  alias Summoner.Adapters.Persistence.Skills
 
   def unique_skill_name, do: "skill-#{System.unique_integer([:positive])}"
 

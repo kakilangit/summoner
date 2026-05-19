@@ -1,8 +1,9 @@
 defmodule SummonerWeb.FileBrowserLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Features
-  alias Summoner.FileSystem
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Types.Features
+  alias Summoner.Services.FileSystem
 
   @max_upload_size 50 * 1_024 * 1_024
 
@@ -242,7 +243,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
   def handle_event("open_workspace", _params, socket) do
     workspace = socket.assigns.workspace
 
-    case Summoner.Workspaces.open_workspace_dir(workspace.id) do
+    case Workspaces.open_workspace_dir(workspace.id) do
       :ok -> {:noreply, socket}
       {:error, msg} -> {:noreply, put_flash(socket, :error, msg)}
     end
@@ -273,7 +274,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
   end
 
   defp resolve_upload_dest(workspace_id, current_path) do
-    root = Summoner.Workspaces.workspace_dir(workspace_id)
+    root = Workspaces.workspace_dir(workspace_id)
     Path.join(root, current_path)
   end
 

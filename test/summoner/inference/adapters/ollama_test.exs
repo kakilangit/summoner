@@ -5,7 +5,7 @@ defmodule Summoner.Inference.Adapters.OllamaTest do
 
   alias Arcanum.Adapters.Ollama
   alias Arcanum.{Intent, ModelProfile, Response}
-  alias Summoner.HTTPClientMock
+  alias Summoner.Ports.HTTPClientMock
 
   setup :verify_on_exit!
 

@@ -1,15 +1,18 @@
 defmodule SummonerWeb.UserRegistrationControllerTest do
   use SummonerWeb.ConnCase, async: true
 
-  import Summoner.AccountsFixtures
-  import Summoner.TenantsFixtures
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Adapters.Persistence.Tenants
+
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   defp create_open_tenant(_context) do
     scope = user_scope_fixture()
     tenant = tenant_fixture(scope)
 
-    Summoner.Tenants.update_settings(tenant, %{registration_mode: :open})
-    tenant = Summoner.Tenants.get_tenant!(tenant.id)
+    Tenants.update_settings(tenant, %{registration_mode: :open})
+    tenant = Tenants.get_tenant!(tenant.id)
     %{tenant: tenant}
   end
 
@@ -57,9 +60,9 @@ defmodule SummonerWeb.UserRegistrationControllerTest do
                ~r/An email was sent to .*, please access it to confirm your account/
 
       # Verify tenant membership was created
-      user = Summoner.Accounts.get_user_by_email(email)
+      user = Accounts.get_user_by_email(email)
       assert user
-      membership = Summoner.Tenants.get_membership(tenant.id, user.id)
+      membership = Tenants.get_membership(tenant.id, user.id)
       assert membership
       assert membership.role == :member
     end

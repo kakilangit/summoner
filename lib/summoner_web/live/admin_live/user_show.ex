@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.UserShow do
   use SummonerWeb, :live_view
 
-  alias Summoner.Admin
+  alias Summoner.Adapters.Persistence.Admin
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -140,14 +140,14 @@ defmodule SummonerWeb.AdminLive.UserShow do
               <span class="text-base-content/60">Confirmed</span>
               <div class="mt-1">
                 {if @user.confirmed_at,
-                  do: Summoner.TimeZone.format(@user.confirmed_at),
+                  do: Summoner.Services.TimeZone.format(@user.confirmed_at),
                   else: "—"}
               </div>
             </div>
             <div>
               <span class="text-base-content/60">Registered</span>
               <div class="mt-1">
-                {Summoner.TimeZone.format(@user.inserted_at)}
+                {Summoner.Services.TimeZone.format(@user.inserted_at)}
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@ defmodule SummonerWeb.AdminLive.UserShow do
                   <span class="badge badge-sm badge-ghost">{membership.role}</span>
                 </td>
                 <td class="text-xs text-base-content/60">
-                  {Summoner.TimeZone.format(membership.inserted_at,
+                  {Summoner.Services.TimeZone.format(membership.inserted_at,
                     format: "%Y-%m-%d",
                     show_zone: false
                   )}

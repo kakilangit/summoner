@@ -1,7 +1,7 @@
-defmodule Summoner.Pipelines.CronBuilderTest do
+defmodule Summoner.Domain.Types.CronBuilderTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.Pipelines.CronBuilder
+  alias Summoner.Domain.Types.CronBuilder
 
   describe "presets/0" do
     test "returns a non-empty list of presets" do

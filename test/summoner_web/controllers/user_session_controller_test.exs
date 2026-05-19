@@ -1,8 +1,8 @@
 defmodule SummonerWeb.UserSessionControllerTest do
   use SummonerWeb.ConnCase, async: true
 
-  import Summoner.AccountsFixtures
-  alias Summoner.Accounts
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  alias Summoner.Adapters.Persistence.Accounts
 
   setup do
     %{unconfirmed_user: unconfirmed_user_fixture(), user: user_fixture()}
@@ -144,7 +144,9 @@ defmodule SummonerWeb.UserSessionControllerTest do
         })
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-      assert Summoner.Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "login"
+
+      assert Summoner.Repo.get_by!(Summoner.Domain.Schemas.UserToken, user_id: user.id).context ==
+               "login"
     end
 
     test "logs the user in", %{conn: conn, user: user} do

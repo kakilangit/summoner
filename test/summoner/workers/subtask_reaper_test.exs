@@ -1,13 +1,15 @@
-defmodule Summoner.Workers.SubtaskReaperTest do
+defmodule Summoner.Adapters.Workers.SubtaskReaperTest do
   use Summoner.DataCase, async: true
 
-  alias Summoner.Workers.SubtaskReaper
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Workers.SubtaskReaper
+  alias Summoner.Repo
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()
@@ -28,14 +30,14 @@ defmodule Summoner.Workers.SubtaskReaperTest do
 
     # Claim the subtask
     worker_inv = invocation_fixture(scope, ws.id, agent.id)
-    {:ok, claimed} = Summoner.Orchestration.claim_subtask(subtask.id, agent.id, worker_inv.id)
+    {:ok, claimed} = Orchestration.claim_subtask(subtask.id, agent.id, worker_inv.id)
 
     assert claimed.status == :running
 
     # No live GenServer for this agent — reaper should requeue
     assert :ok = SubtaskReaper.perform(%Oban.Job{})
 
-    reloaded = Summoner.Orchestration.get_subtask(subtask.id)
+    reloaded = Orchestration.get_subtask(subtask.id)
     assert reloaded.status == :pending
     assert reloaded.retry_count == 1
   end
@@ -45,16 +47,16 @@ defmodule Summoner.Workers.SubtaskReaperTest do
     subtask = subtask_fixture(inv)
 
     worker_inv = invocation_fixture(scope, ws.id, agent.id)
-    {:ok, claimed} = Summoner.Orchestration.claim_subtask(subtask.id, agent.id, worker_inv.id)
+    {:ok, claimed} = Orchestration.claim_subtask(subtask.id, agent.id, worker_inv.id)
 
     # Set retry_count to max (1)
     claimed
     |> Ecto.Changeset.change(%{retry_count: 1})
-    |> Summoner.Repo.update!()
+    |> Repo.update!()
 
     assert :ok = SubtaskReaper.perform(%Oban.Job{})
 
-    reloaded = Summoner.Orchestration.get_subtask(subtask.id)
+    reloaded = Orchestration.get_subtask(subtask.id)
     assert reloaded.status == :failed
   end
 
@@ -65,7 +67,7 @@ defmodule Summoner.Workers.SubtaskReaperTest do
     assert :ok = SubtaskReaper.perform(%Oban.Job{})
 
     # Should still be pending
-    [reloaded] = Summoner.Orchestration.list_subtasks(inv.id)
+    [reloaded] = Orchestration.list_subtasks(inv.id)
     assert reloaded.status == :pending
   end
 end

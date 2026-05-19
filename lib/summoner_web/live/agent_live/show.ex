@@ -1,10 +1,10 @@
 defmodule SummonerWeb.AgentLive.Show do
   use SummonerWeb, :live_view
 
-  alias Summoner.A2A, as: SummonerA2A
-  alias Summoner.Agents
-  alias Summoner.Agents.Agent
-  alias Summoner.Ledger
+  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Ledger
+  alias Summoner.Domain.Schemas.Agent
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -100,7 +100,9 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             {@agent.role}
           </span>
-          <span class="text-sm text-base-content/60">{@agent.local_agent.model}</span>
+          <span :if={@agent.local_agent} class="text-sm text-base-content/60">
+            {@agent.local_agent.model}
+          </span>
         </div>
 
         <div
@@ -146,7 +148,7 @@ defmodule SummonerWeb.AgentLive.Show do
 
         <.herald_section herald={@herald} agent={@agent} can?={@can?} />
 
-        <div class="collapse collapse-arrow bg-base-200">
+        <div :if={@agent.local_agent} class="collapse collapse-arrow bg-base-200">
           <input type="checkbox" />
           <div class="collapse-title font-medium text-sm">Advanced Settings</div>
           <div class="collapse-content">

@@ -1,11 +1,12 @@
 defmodule SummonerWeb.UserRegistrationController do
   use SummonerWeb, :controller
 
-  alias Summoner.Accounts
-  alias Summoner.Accounts.User
-  alias Summoner.Admin
-  alias Summoner.Invitations
-  alias Summoner.Tenants
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Adapters.Persistence.Invitations
+  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Domain.Schemas.Invitation
+  alias Summoner.Domain.Schemas.User
 
   def new(conn, params) do
     with {:ok, tenant} <- fetch_tenant(params),
@@ -79,7 +80,7 @@ defmodule SummonerWeb.UserRegistrationController do
         render_invitation_error(conn, user_params, tenant, "Invalid invitation code.")
 
       invitation ->
-        if Invitations.Invitation.available?(invitation) and invitation.tenant_id == tenant.id do
+        if Invitation.available?(invitation) and invitation.tenant_id == tenant.id do
           do_create_with_invitation(conn, user_params, tenant, invitation)
         else
           render_invitation_error(

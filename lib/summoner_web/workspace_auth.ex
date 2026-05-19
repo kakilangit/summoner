@@ -11,9 +11,9 @@ defmodule SummonerWeb.WorkspaceAuth do
   import Phoenix.Component
   use SummonerWeb, :verified_routes
 
-  alias Summoner.Features
-  alias Summoner.Workspaces
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Types.Features
 
   def on_mount(:ensure_workspace_member, params, _session, socket) do
     workspace_id = params["workspace_id"]
@@ -28,7 +28,7 @@ defmodule SummonerWeb.WorkspaceAuth do
         # Verify workspace belongs to the current tenant if tenant is assigned
         if tenant = socket.assigns[:tenant] do
           if workspace.tenant_id != tenant.id do
-            raise Ecto.NoResultsError, queryable: Summoner.Workspaces.Workspace
+            raise Ecto.NoResultsError, queryable: Summoner.Domain.Schemas.Workspace
           end
         end
 
@@ -36,7 +36,7 @@ defmodule SummonerWeb.WorkspaceAuth do
           socket
           |> assign(:workspace, workspace)
           |> assign(:membership, membership)
-          |> assign(:can?, &Policy.can?(membership, &1))
+          |> assign(:can?, &WorkspacePolicy.can?(membership, &1))
           |> assign(:local_mode, Features.local_mode?())
 
         {:cont, socket}

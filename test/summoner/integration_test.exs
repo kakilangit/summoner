@@ -6,24 +6,24 @@ defmodule Summoner.IntegrationTest do
 
   import Mox
 
-  alias Summoner.Accounts
-  alias Summoner.AccountsFixtures
-  alias Summoner.Agents
-  alias Summoner.Audit
-  alias Summoner.Conversations
-  alias Summoner.Ledger
-  alias Summoner.Orchestration
-  alias Summoner.Providers
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.AccountsFixtures
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Audit
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Ledger
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Schemas.Scope
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup :set_mox_global
   setup :verify_on_exit!
 
   setup do
     user = AccountsFixtures.user_fixture()
-    scope = Accounts.Scope.for_user(user)
+    scope = Scope.for_user(user)
     %{user: user, scope: scope}
   end
 

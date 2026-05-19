@@ -4,7 +4,7 @@ defmodule SummonerWeb.GalleryLive.Index do
   import SummonerWeb.AuthorizeHelper
 
   alias Phoenix.LiveView.JS
-  alias Summoner.Media
+  alias Summoner.Adapters.Persistence.Media
 
   @max_gallery_items 100
 

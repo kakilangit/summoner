@@ -1,6 +1,6 @@
-defmodule Summoner.HTTPClientStub do
+defmodule Summoner.Ports.HTTPClientStub do
   @moduledoc false
-  @behaviour Summoner.HTTPClient
+  @behaviour Summoner.Ports.HTTPClient
 
   @impl true
   def get(_url, _opts), do: {:error, :not_implemented}

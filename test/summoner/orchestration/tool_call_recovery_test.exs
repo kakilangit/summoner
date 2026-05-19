@@ -1,8 +1,8 @@
-defmodule Summoner.Orchestration.ToolCallRecoveryTest do
+defmodule Summoner.Services.Orchestration.ToolCallRecoveryTest do
   use ExUnit.Case, async: true
 
   alias Arcanum.Response
-  alias Summoner.Orchestration.ToolCallRecovery
+  alias Summoner.Services.Orchestration.ToolCallRecovery
 
   describe "recover/1" do
     test "passes through response with nil tool_calls" do

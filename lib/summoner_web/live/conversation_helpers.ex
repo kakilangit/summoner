@@ -15,16 +15,18 @@ defmodule SummonerWeb.ConversationHelpers do
       end
 
       # In handle_info:
-      def handle_info({:content_token, _, _} = msg, socket) do
+      def handle_info(%Events.ContentToken{} = msg, socket) do
         ConversationHelpers.handle_content_token(msg, socket)
       end
   """
 
-  alias Summoner.Conversations
-  alias Summoner.Events
-  alias Summoner.Media
-  alias Summoner.Orchestration
-  alias Summoner.Orchestration.Cancellation
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Media
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Domain.Events.{ContentToken, Escalation, InvocationEvent, InvocationStarted}
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Events
+  alias Summoner.Services.Orchestration.Cancellation
 
   import Phoenix.Component, only: [assign: 2]
 
@@ -176,7 +178,7 @@ defmodule SummonerWeb.ConversationHelpers do
     {:noreply,
      assign(socket,
        editing_message_id: id,
-       editing_message_content: Conversations.Content.text_only(message.content)
+       editing_message_content: Content.text_only(message.content)
      )}
   end
 
@@ -230,7 +232,7 @@ defmodule SummonerWeb.ConversationHelpers do
   # -------------------------------------------------------------------
 
   def handle_content_token(
-        %Events.ContentToken{invocation_id: invocation_id, token: token},
+        %ContentToken{invocation_id: invocation_id, token: token},
         socket
       ) do
     if invocation_id == socket.assigns[:current_invocation_id] do
@@ -240,7 +242,7 @@ defmodule SummonerWeb.ConversationHelpers do
     end
   end
 
-  def handle_invocation_running(%Events.InvocationStarted{invocation_id: invocation_id}, socket) do
+  def handle_invocation_running(%InvocationStarted{invocation_id: invocation_id}, socket) do
     workspace = socket.assigns.workspace
     Events.subscribe({:invocation_events, workspace.id, invocation_id})
     {:noreply, assign(socket, current_invocation_id: invocation_id)}
@@ -279,13 +281,13 @@ defmodule SummonerWeb.ConversationHelpers do
      )}
   end
 
-  def handle_invocation_event(%Events.InvocationEvent{event: event}, socket) do
+  def handle_invocation_event(%InvocationEvent{event: event}, socket) do
     events = socket.assigns.invocation_events ++ [event]
     subtasks = refresh_subtasks(socket.assigns.current_invocation_id)
     {:noreply, assign(socket, invocation_events: events, subtasks: subtasks)}
   end
 
-  def handle_escalation(%Events.Escalation{invocation_id: invocation_id, reason: reason}, socket) do
+  def handle_escalation(%Escalation{invocation_id: invocation_id, reason: reason}, socket) do
     subtasks = refresh_subtasks(invocation_id)
 
     {:noreply,

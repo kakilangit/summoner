@@ -1,9 +1,9 @@
-defmodule Summoner.ConversationsFixtures do
+defmodule Summoner.Adapters.Persistence.ConversationsFixtures do
   @moduledoc """
   Test helpers for creating conversation-related entities.
   """
 
-  alias Summoner.Conversations
+  alias Summoner.Adapters.Persistence.Conversations
 
   def valid_conversation_attributes(workspace_id, agent_id, attrs \\ %{}) do
     Enum.into(attrs, %{

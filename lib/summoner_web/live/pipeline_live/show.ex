@@ -3,9 +3,11 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Agents
-  alias Summoner.Pipelines
-  alias Summoner.Workers.PipelineRunnerJob
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Adapters.Workers.PipelineRunnerJob
+  alias Summoner.Ports.Events
+  alias Summoner.Services.TimeZone
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -15,7 +17,7 @@ defmodule SummonerWeb.PipelineLive.Show do
     runs_page = Pipelines.list_runs_paginated(pipeline.id)
 
     if connected?(socket) do
-      Summoner.Events.subscribe({:pipeline, workspace.id, pipeline.id})
+      Events.subscribe({:pipeline, workspace.id, pipeline.id})
     end
 
     socket =
@@ -104,7 +106,7 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   # PubSub handlers — refresh runs on any status change
   @impl true
-  def handle_info(%Summoner.Events.PipelineRunStatus{}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineRunStatus{}, socket) do
     pipeline_id = socket.assigns.pipeline.id
 
     runs_page =
@@ -119,7 +121,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   end
 
   @impl true
-  def handle_info(%Summoner.Events.PipelineStageStatus{}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineStageStatus{}, socket) do
     runs_page =
       Pipelines.list_runs_paginated(socket.assigns.pipeline.id,
         page: socket.assigns.runs_page.page
@@ -207,7 +209,7 @@ defmodule SummonerWeb.PipelineLive.Show do
               {@pipeline.trigger_type}
             </span>
             <span :if={@pipeline.cron_expression} class="text-sm text-base-content/60">
-              {Summoner.Pipelines.CronBuilder.to_human(@pipeline.cron_expression)}
+              {Summoner.Domain.Types.CronBuilder.to_human(@pipeline.cron_expression)}
             </span>
           </div>
         </div>
@@ -367,7 +369,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   defp format_datetime(nil), do: "-"
 
   defp format_datetime(dt) do
-    Summoner.TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
+    TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
   end
 
   defp format_duration(_, nil), do: "-"

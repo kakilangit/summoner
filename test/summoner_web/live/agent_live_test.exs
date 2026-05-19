@@ -4,18 +4,18 @@ defmodule SummonerWeb.AgentLiveTest do
   import Mox
   import Phoenix.LiveViewTest
 
-  alias Summoner.Agents
-  alias Summoner.Providers
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
 
   setup :register_and_log_in_user
   setup :verify_on_exit!
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup %{scope: scope} do
     # Stub model listing for all tests — mount loads models on edit
-    stub(Summoner.HTTPClientMock, :get, fn _url, _opts ->
+    stub(Summoner.Ports.HTTPClientMock, :get, fn _url, _opts ->
       {:ok, %{status: 200, body: %{"data" => [%{"id" => "llama3"}]}}}
     end)
 

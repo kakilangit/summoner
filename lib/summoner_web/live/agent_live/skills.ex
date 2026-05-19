@@ -1,8 +1,8 @@
 defmodule SummonerWeb.AgentLive.Skills do
   use SummonerWeb, :live_view
 
-  alias Summoner.Agents
-  alias Summoner.Skills
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Skills
 
   @impl true
   def mount(%{"id" => agent_id}, _session, socket) do

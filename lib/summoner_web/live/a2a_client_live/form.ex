@@ -1,16 +1,16 @@
 defmodule SummonerWeb.A2AClientLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Agents
-  alias Summoner.Agents.Agent
-  alias Summoner.Secrets
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Agent
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
 
       {agent, title} =

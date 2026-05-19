@@ -1,16 +1,16 @@
 defmodule SummonerWeb.SwarmLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Agents
-  alias Summoner.Swarms
-  alias Summoner.Swarms.Swarm
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Swarm
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
       agents = Agents.list_agents(scope, workspace.id)
 

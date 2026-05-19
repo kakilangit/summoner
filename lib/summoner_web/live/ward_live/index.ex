@@ -3,7 +3,7 @@ defmodule SummonerWeb.WardLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.A2A, as: SummonerA2A
+  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
 
   @impl true
   def mount(_params, _session, socket) do

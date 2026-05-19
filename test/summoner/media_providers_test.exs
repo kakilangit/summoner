@@ -1,17 +1,17 @@
-defmodule Summoner.MediaProvidersTest do
+defmodule Summoner.Adapters.Persistence.MediaProvidersTest do
   use Summoner.DataCase
 
-  alias Summoner.MediaProviders
+  alias Summoner.Adapters.Persistence.MediaProviders
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.MediaProvidersFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.MediaProvidersFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     user = user_fixture()
-    scope = %Summoner.Accounts.Scope{user: user}
+    scope = %Summoner.Domain.Schemas.Scope{user: user}
     workspace = workspace_fixture(scope)
     provider = provider_fixture(scope, workspace.id)
     agent = agent_fixture(scope, workspace.id, provider.id)

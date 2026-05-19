@@ -3,15 +3,29 @@ defmodule SummonerWeb.ConversationLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Agents
-  alias Summoner.Agents.Agent
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
-  alias Summoner.Events
-  alias Summoner.Media
-  alias Summoner.MediaProviders
-  alias Summoner.Orchestration
-  alias Summoner.Workers.MediaGeneration
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Media
+  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Adapters.Workers.MediaGeneration
+
+  alias Summoner.Domain.Events.{
+    ContentToken,
+    Escalation,
+    InvocationCompleted,
+    InvocationEvent,
+    InvocationFailed,
+    InvocationStarted,
+    MediaGenerationCompleted,
+    MediaGenerationFailed,
+    MediaGenerationStarted
+  }
+
+  alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Events
 
   alias SummonerWeb.ConversationComponents, as: SC
   alias SummonerWeb.ConversationHelpers, as: SH
@@ -184,7 +198,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   def handle_event("open_workspace", _params, socket) do
     workspace = socket.assigns.workspace
 
-    case Summoner.Workspaces.open_workspace_dir(workspace.id) do
+    case Workspaces.open_workspace_dir(workspace.id) do
       :ok ->
         {:noreply, socket}
 
@@ -206,31 +220,31 @@ defmodule SummonerWeb.ConversationLive.Show do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info(%Events.ContentToken{} = event, socket),
+  def handle_info(%ContentToken{} = event, socket),
     do: SH.handle_content_token(event, socket)
 
   @impl true
-  def handle_info(%Events.InvocationStarted{} = event, socket),
+  def handle_info(%InvocationStarted{} = event, socket),
     do: SH.handle_invocation_running(event, socket)
 
   @impl true
-  def handle_info(%Events.InvocationCompleted{}, socket),
+  def handle_info(%InvocationCompleted{}, socket),
     do: SH.handle_invocation_completed(socket)
 
   @impl true
-  def handle_info(%Events.InvocationFailed{output: output}, socket),
+  def handle_info(%InvocationFailed{output: output}, socket),
     do: SH.handle_invocation_failed(socket, output)
 
   @impl true
-  def handle_info(%Events.InvocationEvent{} = event, socket),
+  def handle_info(%InvocationEvent{} = event, socket),
     do: SH.handle_invocation_event(event, socket)
 
   @impl true
-  def handle_info(%Events.Escalation{} = event, socket),
+  def handle_info(%Escalation{} = event, socket),
     do: SH.handle_escalation(event, socket)
 
   @impl true
-  def handle_info(%Events.MediaGenerationCompleted{attachment_id: id}, socket) do
+  def handle_info(%MediaGenerationCompleted{attachment_id: id}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -242,7 +256,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   end
 
   @impl true
-  def handle_info(%Events.MediaGenerationFailed{attachment_id: id}, socket) do
+  def handle_info(%MediaGenerationFailed{attachment_id: id}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -254,7 +268,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   end
 
   @impl true
-  def handle_info(%Events.MediaGenerationStarted{}, socket) do
+  def handle_info(%MediaGenerationStarted{}, socket) do
     {:noreply, socket}
   end
 
@@ -480,7 +494,7 @@ defmodule SummonerWeb.ConversationLive.Show do
       )
 
     if user_msg && conversation.primary_agent do
-      text = Conversations.Content.text_only(user_msg.content)
+      text = Content.text_only(user_msg.content)
 
       Agents.execute_async(conversation.primary_agent, workspace.id, %{
         conversation_id: conversation.id,

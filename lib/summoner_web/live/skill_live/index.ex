@@ -3,7 +3,7 @@ defmodule SummonerWeb.SkillLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Skills
+  alias Summoner.Adapters.Persistence.Skills
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

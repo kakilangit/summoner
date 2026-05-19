@@ -798,14 +798,14 @@ defmodule SummonerWeb.CoreComponents do
   @doc """
   Renders pagination controls.
 
-  Expects a `%Summoner.Pagination{}` struct. Emits a `"paginate"`
+  Expects a `%Summoner.Adapters.Persistence.Pagination{}` struct. Emits a `"paginate"`
   event with `%{"page" => page_number}` when a page button is clicked.
 
   ## Examples
 
       <.pagination page={@page} />
   """
-  attr :page, :any, required: true, doc: "a %Summoner.Pagination{} struct"
+  attr :page, :any, required: true, doc: "a %Summoner.Adapters.Persistence.Pagination{} struct"
   attr :event, :string, default: "paginate", doc: "the event name to emit"
 
   def pagination(assigns) do

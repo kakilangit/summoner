@@ -1,13 +1,14 @@
-defmodule Summoner.AgentsTest do
+defmodule Summoner.Adapters.Persistence.AgentsTest do
   use Summoner.DataCase
 
-  alias Summoner.Agents
-  alias Summoner.Agents.{Agent, AgentLink}
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Schemas.AgentLink
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

@@ -1,12 +1,12 @@
-defmodule Summoner.AuditTest do
+defmodule Summoner.Adapters.Persistence.AuditTest do
   use Summoner.DataCase
 
-  alias Summoner.Audit
+  alias Summoner.Adapters.Persistence.Audit
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

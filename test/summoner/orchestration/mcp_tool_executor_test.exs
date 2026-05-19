@@ -1,7 +1,7 @@
-defmodule Summoner.Orchestration.McpToolExecutorTest do
+defmodule Summoner.Services.Orchestration.McpToolExecutorTest do
   use Summoner.DataCase
 
-  alias Summoner.Orchestration.McpToolExecutor
+  alias Summoner.Services.Orchestration.McpToolExecutor
 
   describe "namespace_tool/2" do
     test "creates namespaced tool name" do

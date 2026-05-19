@@ -1,20 +1,20 @@
 defmodule SummonerWeb.AgentLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Agents
-  alias Summoner.Agents.Agent
-  alias Summoner.Agents.LocalAgent
-  alias Summoner.MediaProviders
-  alias Summoner.Presets
-  alias Summoner.Providers
-  alias Summoner.Workspaces
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Schemas.LocalAgent
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
       providers = Providers.list_providers(scope, workspace.id, workspace.tenant_id)
 

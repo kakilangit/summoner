@@ -1,9 +1,9 @@
-defmodule Summoner.MediaProvidersFixtures do
+defmodule Summoner.Adapters.Persistence.MediaProvidersFixtures do
   @moduledoc """
   Test helpers for creating media provider (Forge) entities.
   """
 
-  alias Summoner.MediaProviders
+  alias Summoner.Adapters.Persistence.MediaProviders
 
   def valid_media_provider_attributes(workspace_id, attrs \\ %{}) do
     Enum.into(attrs, %{

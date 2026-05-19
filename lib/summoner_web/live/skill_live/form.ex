@@ -1,16 +1,16 @@
 defmodule SummonerWeb.SkillLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Presets
-  alias Summoner.Skills
-  alias Summoner.Skills.Skill
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Skills
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Skill
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
 
       {skill, title} =

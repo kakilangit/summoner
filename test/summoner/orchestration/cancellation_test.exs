@@ -1,14 +1,14 @@
-defmodule Summoner.Orchestration.CancellationTest do
+defmodule Summoner.Services.Orchestration.CancellationTest do
   use Summoner.DataCase
 
-  alias Summoner.Orchestration
-  alias Summoner.Orchestration.Cancellation
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Services.Orchestration.Cancellation
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()

@@ -1,19 +1,19 @@
-defmodule Summoner.Workers.InvocationReaperTest do
+defmodule Summoner.Adapters.Workers.InvocationReaperTest do
   use Summoner.DataCase, async: true
 
-  alias Summoner.Accounts
-  alias Summoner.AccountsFixtures
-  alias Summoner.Agents
-  alias Summoner.Orchestration
-  alias Summoner.Providers
-  alias Summoner.Workers.InvocationReaper
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.AccountsFixtures
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Adapters.Workers.InvocationReaper
+  alias Summoner.Domain.Schemas.Scope
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup do
     user = AccountsFixtures.user_fixture()
-    scope = Accounts.Scope.for_user(user)
+    scope = Scope.for_user(user)
     tenant = tenant_fixture(scope)
     {:ok, workspace} = Workspaces.create_workspace(scope, tenant.id, %{name: "Test WS"})
 

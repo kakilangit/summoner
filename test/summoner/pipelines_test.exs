@@ -1,12 +1,12 @@
-defmodule Summoner.PipelinesTest do
+defmodule Summoner.Adapters.Persistence.PipelinesTest do
   use Summoner.DataCase
 
-  alias Summoner.Pipelines
+  alias Summoner.Adapters.Persistence.Pipelines
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()

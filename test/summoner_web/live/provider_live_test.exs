@@ -3,12 +3,12 @@ defmodule SummonerWeb.ProviderLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Summoner.Providers
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Workspaces
 
   setup :register_and_log_in_user
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup %{scope: scope} do
     tenant = tenant_fixture(scope)

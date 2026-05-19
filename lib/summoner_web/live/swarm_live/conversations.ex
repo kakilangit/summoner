@@ -3,8 +3,8 @@ defmodule SummonerWeb.SwarmLive.Conversations do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Conversations
-  alias Summoner.Swarms
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Swarms
 
   @sort_options [{"Title", :title}, {"Created", :inserted_at}]
   @default_sort_by :inserted_at
@@ -180,7 +180,9 @@ defmodule SummonerWeb.SwarmLive.Conversations do
                 {conversation.title || "Untitled"}
               </div>
               <div class="text-xs text-base-content/50 mt-0.5">
-                {Summoner.TimeZone.format(conversation.inserted_at, format: "%b %d, %Y at %H:%M")}
+                {Summoner.Services.TimeZone.format(conversation.inserted_at,
+                  format: "%b %d, %Y at %H:%M"
+                )}
               </div>
             </div>
           </.link>

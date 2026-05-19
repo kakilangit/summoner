@@ -3,12 +3,26 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
-  alias Summoner.Events
-  alias Summoner.Orchestration
-  alias Summoner.Swarms
-  alias Summoner.Swarms.SwarmRunner
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Adapters.Persistence.Workspaces
+
+  alias Summoner.Domain.Events.{
+    ContentToken,
+    Escalation,
+    InvocationCompleted,
+    InvocationEvent,
+    InvocationFailed,
+    InvocationStarted,
+    SwarmDone,
+    SwarmTimeout,
+    SwarmTurn
+  }
+
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Events
+  alias Summoner.Services.Swarms.SwarmRunner
 
   alias SummonerWeb.ConversationComponents, as: SC
   alias SummonerWeb.ConversationHelpers, as: SH
@@ -201,7 +215,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   def handle_event("open_workspace", _params, socket) do
     workspace = socket.assigns.workspace
 
-    case Summoner.Workspaces.open_workspace_dir(workspace.id) do
+    case Workspaces.open_workspace_dir(workspace.id) do
       :ok ->
         {:noreply, socket}
 
@@ -223,7 +237,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info(%Events.SwarmTurn{conversation_id: conversation_id, agent_id: agent_id}, socket) do
+  def handle_info(%SwarmTurn{conversation_id: conversation_id, agent_id: agent_id}, socket) do
     if conversation_id == socket.assigns.conversation.id do
       agent_name = agent_name_for(socket.assigns.swarm, agent_id)
 
@@ -240,7 +254,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info(%Events.SwarmDone{conversation_id: conversation_id}, socket) do
+  def handle_info(%SwarmDone{conversation_id: conversation_id}, socket) do
     if conversation_id == socket.assigns.conversation.id do
       messages =
         Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
@@ -265,7 +279,7 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   @impl true
   def handle_info(
-        %Events.SwarmTimeout{conversation_id: conversation_id, agent_id: agent_id},
+        %SwarmTimeout{conversation_id: conversation_id, agent_id: agent_id},
         socket
       ) do
     if conversation_id == socket.assigns.conversation.id do
@@ -286,15 +300,15 @@ defmodule SummonerWeb.SwarmLive.Session do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info(%Events.ContentToken{} = event, socket),
+  def handle_info(%ContentToken{} = event, socket),
     do: SH.handle_content_token(event, socket)
 
   @impl true
-  def handle_info(%Events.InvocationStarted{} = event, socket),
+  def handle_info(%InvocationStarted{} = event, socket),
     do: SH.handle_invocation_running(event, socket)
 
   @impl true
-  def handle_info(%Events.InvocationCompleted{}, socket) do
+  def handle_info(%InvocationCompleted{}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -302,7 +316,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info(%Events.InvocationFailed{output: output}, socket) do
+  def handle_info(%InvocationFailed{output: output}, socket) do
     {:noreply, result_socket} = SH.handle_invocation_failed(socket, output)
 
     {:noreply,
@@ -313,11 +327,11 @@ defmodule SummonerWeb.SwarmLive.Session do
   end
 
   @impl true
-  def handle_info(%Events.InvocationEvent{} = event, socket),
+  def handle_info(%InvocationEvent{} = event, socket),
     do: SH.handle_invocation_event(event, socket)
 
   @impl true
-  def handle_info(%Events.Escalation{} = event, socket),
+  def handle_info(%Escalation{} = event, socket),
     do: SH.handle_escalation(event, socket)
 
   @impl true

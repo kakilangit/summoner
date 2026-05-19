@@ -1,8 +1,8 @@
 defmodule SummonerWeb.UserSettingsControllerTest do
   use SummonerWeb.ConnCase, async: true
 
-  alias Summoner.Accounts
-  import Summoner.AccountsFixtures
+  alias Summoner.Adapters.Persistence.Accounts
+  import Summoner.Adapters.Persistence.AccountsFixtures
 
   setup :register_and_log_in_user
 

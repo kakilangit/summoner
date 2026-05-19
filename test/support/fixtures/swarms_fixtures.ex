@@ -1,9 +1,9 @@
-defmodule Summoner.SwarmsFixtures do
+defmodule Summoner.Adapters.Persistence.SwarmsFixtures do
   @moduledoc """
   Test helpers for creating swarm-related entities.
   """
 
-  alias Summoner.Swarms
+  alias Summoner.Adapters.Persistence.Swarms
 
   def unique_swarm_name, do: "swarm-#{System.unique_integer([:positive])}"
 

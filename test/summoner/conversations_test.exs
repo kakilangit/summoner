@@ -1,14 +1,14 @@
-defmodule Summoner.ConversationsTest do
+defmodule Summoner.Adapters.Persistence.ConversationsTest do
   use Summoner.DataCase
 
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Domain.Types.Content
 
-  import Summoner.AccountsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

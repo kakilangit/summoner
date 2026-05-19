@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Accounts.Scope
-  alias Summoner.Admin
-  alias Summoner.Tenants
+  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Domain.Schemas.Scope
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name
@@ -190,7 +190,7 @@ defmodule SummonerWeb.TenantLive.Index do
                 <span :if={tenant.disabled_at} class="badge badge-error badge-sm">Disabled</span>
               </td>
               <td class="text-xs text-base-content/60">
-                {Summoner.TimeZone.format(tenant.inserted_at,
+                {Summoner.Services.TimeZone.format(tenant.inserted_at,
                   format: "%Y-%m-%d",
                   show_zone: false
                 )}

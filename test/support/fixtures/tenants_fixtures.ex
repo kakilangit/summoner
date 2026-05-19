@@ -1,9 +1,9 @@
-defmodule Summoner.TenantsFixtures do
+defmodule Summoner.Adapters.Persistence.TenantsFixtures do
   @moduledoc """
   Test helpers for creating tenant-related entities.
   """
 
-  alias Summoner.Tenants
+  alias Summoner.Adapters.Persistence.Tenants
 
   def unique_tenant_name, do: "tenant-#{System.unique_integer([:positive])}"
 
