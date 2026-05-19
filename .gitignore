@@ -49,3 +49,6 @@ priv/static/uploads/
 # AI
 #
 AGENTS.md
+
+# Generated docs
+docs/_site/

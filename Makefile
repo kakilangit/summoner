@@ -1,4 +1,4 @@
-.PHONY: setup server iex fmt lint test ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build hooks
+.PHONY: setup server iex fmt lint test ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build hooks docs
 
 ## Git Hooks
 
@@ -107,3 +107,8 @@ build.seed:
 	docker build -f docker/seed/Dockerfile --cache-from $(SEED_IMAGE):$(DOCKER_TAG) -t $(SEED_IMAGE):$(DOCKER_TAG) .
 
 build: build.builder build.base build.app build.seed
+
+## Documentation
+
+docs:
+	mix run --no-start docs/generate.exs

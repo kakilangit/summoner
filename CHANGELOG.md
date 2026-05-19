@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-05-19
+
+### Added
+
+- Standalone markdown documentation (`docs/`) with HTML generation via `make docs`
+- SearXNG service in bundled Docker Compose for out-of-the-box web search
+
+### Changed
+
+- Documentation moved from in-app LiveView (`/dev/docs`) to standalone markdown files readable on GitHub
+- SearXNG MCP preset default URL changed to `http://searxng:8080` (Docker bundled address)
+- Removed Dev Docs nav link from application layout
+
 ## [0.1.2] - 2026-05-18
 
 ### Added
@@ -53,6 +66,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.3]: https://github.com/kakilangit/summoner/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kakilangit/summoner/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kakilangit/summoner/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kakilangit/summoner/releases/tag/v0.1.0

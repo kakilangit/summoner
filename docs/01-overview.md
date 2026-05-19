@@ -1,0 +1,74 @@
+# Overview
+
+Summoner is a local-first, multi-user, multi-workspace AI agent platform built with Elixir, Phoenix LiveView, and PostgreSQL.
+
+## Core Concepts
+
+Summoner uses fantasy-themed naming throughout the interface. Here is the mapping to standard terminology:
+
+| Term | Meaning | Description |
+|------|---------|-------------|
+| **Guild** | Tenant / Organization | Top-level container for users, workspaces, and shared resources |
+| **Realm** | Workspace | Isolated environment within a guild for agents, conversations, and workflows |
+| **Seal** | Secret | Encrypted credential (API key, token) referenced by `$NAME` in configurations |
+| **Gateway** | AI Provider | LLM provider connection (OpenAI, Anthropic, Ollama, etc.) |
+| **Summon** | Agent | AI agent with a system prompt, personality, model, and tool access |
+| **Channel** | Conversation | Chat session between a user and one or more agents |
+| **Quest** | Pipeline | Sequential or orchestrated multi-agent workflow |
+| **Party** | Swarm | Multi-agent collaboration (round-robin, relay, or directed) |
+| **Rune** | MCP Server | Model Context Protocol server providing tools to agents |
+| **Forge** | Media Provider | Image/video generation provider |
+| **Spellbook** | Skill | Instructional content equipped to agents, searchable via vector embeddings |
+| **Scroll** | File Browser | Workspace file manager |
+| **Archon** | Admin Panel | System administration for users, tenants, and quotas |
+
+## Architecture
+
+- **Stack**: Elixir 1.19 / OTP 28 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oban
+- **Primary keys**: NULIDs (Crockford Base32), stored as `binary_id` (UUID) in PostgreSQL
+- **Encryption**: AES-256-GCM via Cloak for secrets at rest
+- **Multitenancy**: Two-level hierarchy -- Guilds (tenants) contain Realms (workspaces)
+- **Scoping**: Resources are either guild-scoped (shared across all realms) or realm-scoped (local to one workspace). Realm-local resources override guild-shared ones of the same name.
+
+## Supported Providers
+
+| Provider | API Format | Type |
+|----------|-----------|------|
+| Ollama | Custom | Local |
+| OpenAI | OpenAI | Cloud |
+| Anthropic | Anthropic | Cloud |
+| DeepSeek | OpenAI | Cloud |
+| xAI | OpenAI | Cloud |
+| OpenRouter | OpenAI | Cloud |
+| GitHub Copilot | OpenAI | Cloud |
+| Z.AI | OpenAI | Cloud |
+| Custom | OpenAI | Local |
+
+## Agent Orchestration
+
+Agents use a **ReAct loop** (Reason + Act) for multi-step task execution:
+
+1. Agent receives a prompt
+2. Agent reasons about the next action
+3. Agent calls tools (MCP servers, built-in tools, delegation)
+4. Agent observes the result
+5. Repeat until task completion or step limit
+
+Agents can be **autonomous** (independent, can delegate to workers) or **workers** (receive delegated tasks, work in isolation).
+
+## Multi-Agent Workflows
+
+### Quests (Pipelines)
+
+Sequential or orchestrated multi-agent workflows:
+
+- **Simple mode**: Stages execute in order, each agent receiving the previous stage's output
+- **Orchestrated mode**: A manager agent coordinates stage execution dynamically
+
+### Parties (Swarms)
+
+Multi-agent collaboration with three modes:
+
+- **Circle** (Round Robin): Agents take turns in order, cycling until max turns
+- **Chain** (Relay): Agents hand off to the next via structured routing (`__relay__` tool)
+- **Command** (Directed): A coordinator agent decides who speaks next via JSON routing decisions

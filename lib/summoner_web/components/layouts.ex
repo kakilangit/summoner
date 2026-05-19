@@ -5,10 +5,6 @@ defmodule SummonerWeb.Layouts do
   """
   use SummonerWeb, :html
 
-  @dev_routes Application.compile_env(:summoner, :dev_routes, false)
-
-  def dev_routes?, do: @dev_routes
-
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
