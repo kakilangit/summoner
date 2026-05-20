@@ -74,7 +74,11 @@ defmodule Summoner.Adapters.Persistence.AgentsTest do
       assert errors[:workspace_id]
     end
 
-    test "auto-generates unique callname when name conflicts", %{scope: scope, workspace: w, provider: p} do
+    test "auto-generates unique callname when name conflicts", %{
+      scope: scope,
+      workspace: w,
+      provider: p
+    } do
       first = agent_fixture(scope, w.id, p.id, %{name: "dupe"})
       assert first.callname == "dupe"
 
