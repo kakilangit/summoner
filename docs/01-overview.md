@@ -33,6 +33,32 @@ Summoner uses fantasy-themed naming throughout the interface. Here is the mappin
 - **Multitenancy**: Two-level hierarchy -- Guilds (tenants) contain Realms (workspaces)
 - **Scoping**: Resources are either guild-scoped (shared across all realms) or realm-scoped (local to one workspace). Realm-local resources override guild-shared ones of the same name.
 
+### Hexagonal Layers
+
+Summoner follows a four-layer hexagonal (ports and adapters) architecture:
+
+```
+Application (LiveViews, Controllers)
+  |  calls services, subscribes to domain events
+Domain (schemas, events, policies, types)
+  -- pure data, no side effects
+Ports (behaviours)
+  -- contracts for side effects
+Services (orchestration, inference, swarms)
+  |  uses ports for side effects
+Adapters (persistence, pubsub, workers, mailer, crypto)
+     implements ports
+```
+
+| Layer | Namespace | Contents |
+|-------|-----------|----------|
+| Domain | `Summoner.Domain.*` | Ecto schemas, domain event structs, authorization policies, value types |
+| Ports | `Summoner.Ports.*` | Behaviour definitions (`Events`, `Workers`, `Persistence.*`) with compile-time adapter injection |
+| Adapters | `Summoner.Adapters.*` | Repo-backed persistence, PubSub, Oban workers, Cloak crypto, Swoosh mailer |
+| Services | `Summoner.Services.*` | Orchestration (ReAct loop), inference, swarm coordination, MCP, A2A |
+
+Domain logic never imports infrastructure modules. Services and LiveViews access persistence exclusively through port modules, not adapters directly.
+
 ## Supported Providers
 
 | Provider | API Format | Type |
@@ -73,7 +99,7 @@ Sequential or orchestrated multi-agent workflows:
 Multi-agent collaboration with three modes:
 
 - **Circle** (Round Robin): Agents take turns in order, cycling until max turns
-- **Chain** (Relay): Agents hand off to the next via structured routing (`__relay__` tool)
+- **Chain** (Relay): Agents hand off to the next via structured routing (`__relay__` tool). Agents are encouraged to let other members contribute before signalling completion.
 - **Command** (Directed): A coordinator agent decides who speaks next via JSON routing decisions
 
 ### Agent-to-Agent Protocol (A2A)

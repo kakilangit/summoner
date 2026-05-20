@@ -30,6 +30,8 @@ defmodule Summoner.Domain.Schemas.User do
     * `:validate_unique` - Set to false if you don't want to validate the
       uniqueness of the email, useful when displaying live validations.
       Defaults to `true`.
+    * `:repo` - The Ecto repo module for `unsafe_validate_unique`.
+      Defaults to `Summoner.Repo`.
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
@@ -47,8 +49,10 @@ defmodule Summoner.Domain.Schemas.User do
       |> validate_length(:email, max: 160)
 
     if Keyword.get(opts, :validate_unique, true) do
+      repo = Keyword.get(opts, :repo, Summoner.Repo)
+
       changeset
-      |> unsafe_validate_unique(:email, Summoner.Repo)
+      |> unsafe_validate_unique(:email, repo)
       |> unique_constraint(:email)
       |> validate_email_changed()
     else

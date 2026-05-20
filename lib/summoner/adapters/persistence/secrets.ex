@@ -15,6 +15,8 @@ defmodule Summoner.Adapters.Persistence.Secrets do
   alias Summoner.Domain.Schemas.Secret
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Secrets.Adapter
+
   @doc """
   Creates a secret in a workspace or tenant.
   """
@@ -228,6 +230,15 @@ defmodule Summoner.Adapters.Persistence.Secrets do
     Secret
     |> where([s], s.tenant_id == ^tenant_id)
     |> Repo.get!(id)
+  end
+
+  @doc """
+  Gets a secret by ID without scoping.
+
+  Intended for infrastructure use (e.g. resolving auth secrets by foreign key).
+  """
+  def get_secret_by_id(secret_id) do
+    Repo.get(Secret, secret_id)
   end
 
   defp where_scope(query, workspace_id, tenant_id) do

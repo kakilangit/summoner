@@ -3,7 +3,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Ports.Persistence.Agents
 
   @impl true
   def mount(_params, _session, socket) do

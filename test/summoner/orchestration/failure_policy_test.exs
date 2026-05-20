@@ -2,7 +2,7 @@ defmodule Summoner.Domain.Policies.FailurePolicyTest do
   use Summoner.DataCase
 
   alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Domain.Policies.FailurePolicy
+  alias Summoner.Services.Orchestration.FailurePolicy
 
   import Summoner.Adapters.Persistence.AccountsFixtures
   import Summoner.Adapters.Persistence.AgentsFixtures

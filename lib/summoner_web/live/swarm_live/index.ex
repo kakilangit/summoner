@@ -4,7 +4,7 @@ defmodule SummonerWeb.SwarmLive.Index do
   import SummonerWeb.AuthorizeHelper
   import SummonerWeb.SwarmLive.Helpers
 
-  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Swarms
 
   @sort_options [{"Name", :name}, {"Mode", :mode}, {"Created", :inserted_at}]
   @default_sort_by :name

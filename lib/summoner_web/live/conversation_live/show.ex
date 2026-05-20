@@ -3,13 +3,13 @@ defmodule SummonerWeb.ConversationLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.MediaProviders
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Workspaces
-  alias Summoner.Adapters.Workers.MediaGeneration
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Workspaces
+  alias Summoner.Ports.Workers
 
   alias Summoner.Domain.Events.{
     ContentToken,
@@ -91,7 +91,7 @@ defmodule SummonerWeb.ConversationLive.Show do
     if agent && agent.id == agent_id do
       case Agents.update_agent(scope, agent, %{model: model}) do
         {:ok, updated_agent} ->
-          updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
+          updated_agent = Agents.preload_agent(updated_agent)
           conversation = %{socket.assigns.conversation | primary_agent: updated_agent}
 
           {:noreply,
@@ -128,10 +128,16 @@ defmodule SummonerWeb.ConversationLive.Show do
 
   @impl true
   def handle_event("send_message", %{"message" => message}, socket) do
-    authorize(socket, :operate, fn ->
-      message = String.trim(message)
-      dispatch_message(socket, message)
-    end)
+    agent = socket.assigns.conversation.primary_agent
+
+    if agent && agent.deleted_at do
+      {:noreply, put_flash(socket, :error, "This summon has been deleted.")}
+    else
+      authorize(socket, :operate, fn ->
+        message = String.trim(message)
+        dispatch_message(socket, message)
+      end)
+    end
   end
 
   def handle_event("send_message", _params, socket), do: {:noreply, socket}
@@ -325,9 +331,7 @@ defmodule SummonerWeb.ConversationLive.Show do
           </div>
         </div>
         <div :if={@conversation.primary_agent} class="flex items-center gap-2 mt-1">
-          <div class="size-5 rounded-full bg-primary/10 flex items-center justify-center">
-            <span class="hero-sparkles size-3 text-primary"></span>
-          </div>
+          <.agent_icon agent={@conversation.primary_agent} size={:sm} />
           <span class="text-sm font-medium text-base-content/70">
             {@conversation.primary_agent.name}
           </span>
@@ -368,12 +372,18 @@ defmodule SummonerWeb.ConversationLive.Show do
           editing_message_content={@editing_message_content}
         >
           <:avatar_assistant>
-            <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span class="hero-sparkles size-4 text-primary"></span>
-            </div>
+            <.agent_icon agent={@conversation.primary_agent} size={:md} />
           </:avatar_assistant>
           <:agent_label>
-            <div class="text-xs font-medium text-primary/70 mb-1">Summon</div>
+            <div class={[
+              "text-xs font-medium mb-1",
+              if(@conversation.primary_agent.type == :remote,
+                do: "text-secondary/70",
+                else: "text-primary/70"
+              )
+            ]}>
+              {if @conversation.primary_agent.type == :remote, do: "Envoy", else: "Summon"}
+            </div>
           </:agent_label>
         </SC.message_row>
 
@@ -400,9 +410,7 @@ defmodule SummonerWeb.ConversationLive.Show do
         <%!-- Streaming content --%>
         <div :if={@streaming_content != ""} class="flex items-start gap-2 justify-start">
           <div class="flex-shrink-0">
-            <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span class="hero-sparkles size-4 text-primary animate-pulse"></span>
-            </div>
+            <.agent_icon agent={@conversation.primary_agent} size={:md} animate />
           </div>
           <div class="max-w-prose rounded-2xl rounded-tl-sm px-3 py-1.5 bg-base-200 border border-base-300">
             <div class="prose prose-sm max-w-none break-words chat-prose whitespace-pre-wrap">
@@ -417,9 +425,7 @@ defmodule SummonerWeb.ConversationLive.Show do
           class="flex items-start gap-2 justify-start"
         >
           <div class="flex-shrink-0">
-            <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span class="hero-sparkles size-4 text-primary animate-pulse"></span>
-            </div>
+            <.agent_icon agent={@conversation.primary_agent} size={:md} animate />
           </div>
           <div class="rounded-2xl rounded-tl-sm px-3 py-2 bg-base-200 border border-base-300">
             <span class="loading loading-dots loading-sm text-primary"></span>
@@ -429,7 +435,14 @@ defmodule SummonerWeb.ConversationLive.Show do
 
       <SC.subtask_panel subtasks={@subtasks} />
       <SC.thought_stream invocation_events={@invocation_events} />
+      <div
+        :if={@conversation.primary_agent && @conversation.primary_agent.deleted_at}
+        class="px-4 py-3 bg-error/10 border-t border-error/20 text-sm text-error"
+      >
+        This summon has been deleted. Chat is disabled.
+      </div>
       <SC.message_input
+        :if={!@conversation.primary_agent || !@conversation.primary_agent.deleted_at}
         message_input={@message_input}
         processing={@processing}
         placeholder="Message..."
@@ -590,15 +603,13 @@ defmodule SummonerWeb.ConversationLive.Show do
         metadata: %{}
       })
 
-    %{
+    Workers.enqueue_media_generation(%{
       "attachment_id" => attachment.id,
       "media_provider_id" => media_provider.id,
       "message_id" => message_id,
       "type" => to_string(media_mode),
       "params" => %{"prompt" => prompt}
-    }
-    |> MediaGeneration.new()
-    |> Oban.insert()
+    })
 
     attachment
   end

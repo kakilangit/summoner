@@ -5,6 +5,8 @@ defmodule Summoner.Adapters.Persistence.Conversations do
   Manages conversations, participants, and messages within workspaces.
   """
 
+  @behaviour Summoner.Ports.Persistence.Conversations.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Agents

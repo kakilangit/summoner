@@ -13,8 +13,6 @@ defmodule Summoner.Domain.Types.Content do
 
   @max_blocks 100
 
-  alias Summoner.Adapters.Persistence.Media
-
   @doc """
   Extracts all text from content blocks, joined by newline.
   Returns empty string for nil or empty list.
@@ -108,29 +106,36 @@ defmodule Summoner.Domain.Types.Content do
   Attachments not found in the map or with no file on disk fall back to
   text placeholders.
 
+  An optional `file_reader` function (`fn attachment -> {:ok, binary} | {:error, term}`)
+  can be passed to read attachment files. Defaults to returning `:fallback`.
+
   Videos are always rendered as text placeholders (no model supports video input).
   """
-  @spec to_intent_blocks([map()] | nil, map()) :: [map()]
-  def to_intent_blocks(nil, _attachments_map), do: []
-  def to_intent_blocks([], _attachments_map), do: []
+  @spec to_intent_blocks([map()] | nil, map(), keyword()) :: [map()]
+  def to_intent_blocks(blocks, attachments_map, opts \\ [])
+  def to_intent_blocks(nil, _attachments_map, _opts), do: []
+  def to_intent_blocks([], _attachments_map, _opts), do: []
 
-  def to_intent_blocks(blocks, attachments_map)
+  def to_intent_blocks(blocks, attachments_map, opts)
       when is_list(blocks) and is_map(attachments_map) do
+    file_reader = Keyword.get(opts, :file_reader, fn _ -> {:error, :no_reader} end)
+
     blocks
     |> Enum.take(@max_blocks)
-    |> Enum.map(&to_intent_block(&1, attachments_map))
+    |> Enum.map(&to_intent_block(&1, attachments_map, file_reader))
     |> Enum.reject(&is_nil/1)
   end
 
-  defp to_intent_block(%{"type" => "text", "text" => text}, _attachments_map) do
+  defp to_intent_block(%{"type" => "text", "text" => text}, _attachments_map, _file_reader) do
     %{type: :text, text: text}
   end
 
   defp to_intent_block(
          %{"type" => "image", "media_attachment_id" => id} = block,
-         attachments_map
+         attachments_map,
+         file_reader
        ) do
-    case resolve_image_to_base64(id, attachments_map) do
+    case resolve_image_to_base64(id, attachments_map, file_reader) do
       {:ok, media_type, data} ->
         %{type: :image_base64, media_type: media_type, data: data}
 
@@ -139,25 +144,25 @@ defmodule Summoner.Domain.Types.Content do
     end
   end
 
-  defp to_intent_block(%{"type" => "video"} = block, _attachments_map) do
+  defp to_intent_block(%{"type" => "video"} = block, _attachments_map, _file_reader) do
     %{type: :text, text: "[Video: #{block["alt"] || "attached video"}]"}
   end
 
-  defp to_intent_block(_, _attachments_map), do: nil
+  defp to_intent_block(_, _attachments_map, _file_reader), do: nil
 
-  defp resolve_image_to_base64(id, attachments_map) when attachments_map == %{} do
-    # No attachments map provided — cannot resolve
+  defp resolve_image_to_base64(id, attachments_map, _file_reader)
+       when attachments_map == %{} do
     _ = id
     :fallback
   end
 
-  defp resolve_image_to_base64(id, attachments_map) do
+  defp resolve_image_to_base64(id, attachments_map, file_reader) do
     case Map.get(attachments_map, id) do
       nil ->
         :fallback
 
       %{status: :ready, content_type: content_type} = attachment ->
-        case Media.read_file(attachment) do
+        case file_reader.(attachment) do
           {:ok, binary} ->
             {:ok, content_type, Base.encode64(binary)}
 

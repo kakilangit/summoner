@@ -7,6 +7,8 @@ defmodule Summoner.Adapters.Persistence.MCP do
   tool listing and execution.
   """
 
+  @behaviour Summoner.Ports.Persistence.MCP.Adapter
+
   import Ecto.Query, warn: false
 
   require Logger

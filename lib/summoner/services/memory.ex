@@ -13,12 +13,12 @@ defmodule Summoner.Services.Memory do
   """
 
   alias Arcanum.Intent
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Schemas.Message
   alias Summoner.Domain.Types.Content
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Services.GitContext
 
   @doc """
@@ -253,7 +253,10 @@ defmodule Summoner.Services.Memory do
        when is_list(tool_calls) and tool_calls != [] do
     %{
       role: msg.role,
-      content: msg.content |> Content.to_intent_blocks(att_map) |> text_only_blocks(),
+      content:
+        msg.content
+        |> Content.to_intent_blocks(att_map, file_reader: &Media.read_file/1)
+        |> text_only_blocks(),
       tool_calls: tool_calls
     }
     |> maybe_add_thinking(msg.thinking)
@@ -278,7 +281,10 @@ defmodule Summoner.Services.Memory do
       nil ->
         %{
           role: :assistant,
-          content: msg.content |> Content.to_intent_blocks(att_map) |> text_only_blocks()
+          content:
+            msg.content
+            |> Content.to_intent_blocks(att_map, file_reader: &Media.read_file/1)
+            |> text_only_blocks()
         }
 
       callname ->
@@ -290,13 +296,19 @@ defmodule Summoner.Services.Memory do
   end
 
   defp maybe_reattribute(%Message{role: :user} = msg, _current_agent_id, _callname_map, att_map) do
-    %{role: :user, content: Content.to_intent_blocks(msg.content, att_map)}
+    %{
+      role: :user,
+      content: Content.to_intent_blocks(msg.content, att_map, file_reader: &Media.read_file/1)
+    }
   end
 
   defp maybe_reattribute(msg, _current_agent_id, _callname_map, att_map) do
     %{
       role: msg.role,
-      content: msg.content |> Content.to_intent_blocks(att_map) |> text_only_blocks()
+      content:
+        msg.content
+        |> Content.to_intent_blocks(att_map, file_reader: &Media.read_file/1)
+        |> text_only_blocks()
     }
   end
 

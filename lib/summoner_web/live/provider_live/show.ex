@@ -1,10 +1,10 @@
 defmodule SummonerWeb.ProviderLive.Show do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Ledger
-  alias Summoner.Adapters.Persistence.Providers
   alias Summoner.Domain.Types.Presets
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Ledger
+  alias Summoner.Ports.Persistence.Providers
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

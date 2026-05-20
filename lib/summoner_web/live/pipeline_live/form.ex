@@ -2,11 +2,11 @@ defmodule SummonerWeb.PipelineLive.Form do
   use SummonerWeb, :live_view
 
   alias Phoenix.HTML.Form
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Pipelines
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Pipeline
   alias Summoner.Domain.Types.CronBuilder
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Pipelines
 
   @impl true
   def mount(params, _session, socket) do
@@ -188,7 +188,11 @@ defmodule SummonerWeb.PipelineLive.Form do
            }) do
         {:ok, _stage} ->
           stages = Pipelines.list_stages(pipeline.id)
-          {:noreply, socket |> assign(stages: stages) |> put_flash(:info, "Phase added.")}
+
+          {:noreply,
+           socket
+           |> assign(stages: stages, stage_form_key: socket.assigns.stage_form_key + 1)
+           |> put_flash(:info, "Phase added.")}
 
         {:error, _changeset} ->
           {:noreply, put_flash(socket, :error, "Could not add phase.")}
@@ -216,15 +220,16 @@ defmodule SummonerWeb.PipelineLive.Form do
         |> List.wrap()
         |> Enum.map(&String.to_integer/1)
 
-      attrs = %{instruction: instruction, depends_on_positions: depends_on}
+      agent_id = Map.get(params, "agent_id", stage.agent_id)
+      attrs = %{instruction: instruction, depends_on_positions: depends_on, agent_id: agent_id}
 
       case Pipelines.update_stage(scope, stage, attrs) do
         {:ok, _} ->
           stages = Pipelines.list_stages(socket.assigns.pipeline.id)
-          {:noreply, socket |> assign(stages: stages) |> put_flash(:info, "Instruction saved.")}
+          {:noreply, socket |> assign(stages: stages) |> put_flash(:info, "Phase saved.")}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not update instruction.")}
+          {:noreply, put_flash(socket, :error, "Could not update phase.")}
       end
     else
       {:noreply, socket}
@@ -529,6 +534,14 @@ defmodule SummonerWeb.PipelineLive.Form do
             </div>
             <form phx-submit="save_instruction" class="px-4 py-3 space-y-3">
               <input type="hidden" name="stage_id" value={stage.id} />
+              <div class="form-control">
+                <label class="label">
+                  <span class="label-text text-xs">Summon</span>
+                </label>
+                <select name="agent_id" class="select select-bordered select-sm w-full">
+                  {Phoenix.HTML.Form.options_for_select(@agent_options, stage.agent_id)}
+                </select>
+              </div>
               <.text_editor
                 id={"stage-instruction-#{stage.id}"}
                 name="instruction"
@@ -574,6 +587,7 @@ defmodule SummonerWeb.PipelineLive.Form do
         </div>
 
         <form
+          id={"add-stage-form-#{@stage_form_key}"}
           phx-submit="add_stage"
           class="space-y-3 p-4 border border-dashed border-base-300 rounded-lg"
         >

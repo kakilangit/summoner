@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantMediaProviderLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.MediaProviders
-  alias Summoner.Adapters.Persistence.Providers
   alias Summoner.Domain.Schemas.MediaProvider
+  alias Summoner.Ports.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Providers
 
   @impl true
   def mount(params, _session, socket) do

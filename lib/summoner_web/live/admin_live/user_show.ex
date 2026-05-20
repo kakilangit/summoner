@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.UserShow do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Ports.Persistence.Admin
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

@@ -13,6 +13,8 @@ defmodule Summoner.Adapters.Persistence.Skills do
   alias Summoner.Domain.Schemas.{AgentSkill, Skill}
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Skills.Adapter
+
   # -------------------------------------------------------------------
   # CRUD
   # -------------------------------------------------------------------

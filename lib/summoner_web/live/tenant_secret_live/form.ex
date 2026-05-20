@@ -1,8 +1,8 @@
 defmodule SummonerWeb.TenantSecretLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Secrets
   alias Summoner.Domain.Schemas.Secret
+  alias Summoner.Ports.Persistence.Secrets
 
   @impl true
   def mount(params, _session, socket) do

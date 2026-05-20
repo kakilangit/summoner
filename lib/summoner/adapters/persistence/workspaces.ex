@@ -7,6 +7,8 @@ defmodule Summoner.Adapters.Persistence.Workspaces do
   (Agents, Skills, MCP servers, etc.) are scoped to a workspace.
   """
 
+  @behaviour Summoner.Ports.Persistence.Workspaces.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Pagination

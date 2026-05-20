@@ -200,6 +200,7 @@ A **Channel** is a conversation between a user and one or more agents.
 - Multimodal content: text, images, video
 - Soft delete and restore for messages
 - Message resend (deletes messages after a point and regenerates)
+- Message editing with Enter to save and resend (Shift+Enter for newline)
 - Conversation export as Markdown (up to 10,000 messages)
 - Context compaction via summarization
 
@@ -216,6 +217,8 @@ A **Quest** is a pipeline -- a multi-agent workflow with sequential or orchestra
    - **Orchestrated**: A manager agent coordinates which stages run and when
 4. Add stages: each stage has a position, an assigned agent, and an instruction
 5. Optionally set a schedule (cron-based) for automatic execution
+
+Existing stages can be edited: change the instruction, reassign the agent, or remove the stage. Removing a stage automatically repositions remaining stages to maintain contiguous ordering.
 
 **Schedule presets:** Every 1/5/10/15/30 minutes, hourly, every 2/4/6/12 hours, daily at midnight/6AM/9AM/noon/6PM, weekly (Mon 9AM, Fri 5PM, weekdays, weekends), monthly (1st, 15th), or custom cron.
 
@@ -238,7 +241,7 @@ A **Party** is a swarm -- multi-agent collaboration where agents take turns cont
 2. Click **New Party**
 3. Choose a mode:
    - **Circle** (Round Robin): Agents take turns in fixed order
-   - **Chain** (Relay): Agents hand off to the next via `__relay__` tool
+   - **Chain** (Relay): Agents hand off to the next via `__relay__` tool. Agents are encouraged to let others contribute before finishing.
    - **Command** (Directed): A coordinator agent decides who speaks next
 4. Add members (up to 20 agents) and set their order
 5. Set max turns (1-100, default 20)

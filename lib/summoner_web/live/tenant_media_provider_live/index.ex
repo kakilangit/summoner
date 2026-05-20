@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantMediaProviderLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.MediaProviders
 
   @impl true
   def mount(_params, _session, socket) do

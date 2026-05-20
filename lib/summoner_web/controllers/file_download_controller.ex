@@ -1,7 +1,7 @@
 defmodule SummonerWeb.FileDownloadController do
   use SummonerWeb, :controller
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Services.FileSystem
 
   @doc """

@@ -6,6 +6,8 @@ defmodule Summoner.Adapters.Persistence.Admin do
   Authorization is enforced at the router/LiveView level via AdminAuth.
   """
 
+  @behaviour Summoner.Ports.Persistence.Admin.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Accounts
@@ -181,6 +183,11 @@ defmodule Summoner.Adapters.Persistence.Admin do
     |> where([m], m.workspace_id == ^workspace_id)
     |> Repo.aggregate(:count)
   end
+
+  @doc """
+  Gets a workspace by ID. Raises if not found.
+  """
+  def get_workspace!(id), do: Repo.get!(Workspace, id)
 
   @doc """
   Deletes a workspace and all associated data (cascading via DB constraints).

@@ -3,8 +3,8 @@ defmodule SummonerWeb.SwarmLive.Show do
 
   import SummonerWeb.SwarmLive.Helpers
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Swarms
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

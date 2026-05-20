@@ -3,9 +3,9 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Pipelines
-  alias Summoner.Adapters.Workers.PipelineRunnerJob
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Pipelines
+  alias Summoner.Ports.Workers
 
   @sort_options [
     {"Name", :name},
@@ -95,12 +95,11 @@ defmodule SummonerWeb.PipelineLive.Index do
     authorize(socket, :operate, fn ->
       workspace = socket.assigns.workspace
 
-      case PipelineRunnerJob.new(%{
+      case Workers.enqueue_pipeline_run(%{
              pipeline_id: id,
              workspace_id: workspace.id,
              input: ""
-           })
-           |> Oban.insert() do
+           }) do
         {:ok, _job} ->
           {:noreply, put_flash(socket, :info, "Run enqueued.")}
 

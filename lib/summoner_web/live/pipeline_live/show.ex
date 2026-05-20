@@ -3,10 +3,10 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Pipelines
-  alias Summoner.Adapters.Workers.PipelineRunnerJob
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Pipelines
+  alias Summoner.Ports.Workers
   alias Summoner.Services.TimeZone
 
   @impl true
@@ -140,12 +140,11 @@ defmodule SummonerWeb.PipelineLive.Show do
     if Pipelines.has_active_run?(pipeline.id) do
       {:noreply, put_flash(socket, :error, "A run is already running.")}
     else
-      case PipelineRunnerJob.new(%{
+      case Workers.enqueue_pipeline_run(%{
              pipeline_id: pipeline.id,
              workspace_id: workspace.id,
              input: ""
-           })
-           |> Oban.insert() do
+           }) do
         {:ok, _job} ->
           {:noreply,
            socket
@@ -161,7 +160,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   defp switch_stage_model(socket, scope, pipeline, stage, model) do
     case Agents.update_agent(scope, stage.agent, %{model: model}) do
       {:ok, updated_agent} ->
-        updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
+        updated_agent = Agents.preload_agent(updated_agent)
         pipeline = replace_stage_agent(pipeline, stage.id, updated_agent)
 
         {:noreply,

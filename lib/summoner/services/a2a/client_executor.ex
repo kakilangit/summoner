@@ -15,9 +15,9 @@ defmodule Summoner.Services.A2A.ClientExecutor do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
   alias Summoner.Domain.Schemas.RemoteAgent
-  alias Summoner.Repo
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Ports.Persistence.Secrets
   alias Summoner.Services.A2A.ContentAdapter
   alias Summoner.Services.A2A.Discovery
 
@@ -243,7 +243,7 @@ defmodule Summoner.Services.A2A.ClientExecutor do
   defp load_secret_value(%RemoteAgent{api_key_secret_id: nil}), do: {:error, :no_secret}
 
   defp load_secret_value(%RemoteAgent{api_key_secret_id: secret_id}) do
-    case Repo.get(Summoner.Domain.Schemas.Secret, secret_id) do
+    case Secrets.get_secret_by_id(secret_id) do
       nil -> {:error, :secret_not_found}
       secret -> {:ok, secret.encrypted_value}
     end

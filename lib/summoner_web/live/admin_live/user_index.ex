@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.UserIndex do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Ports.Persistence.Admin
 
   @sort_options [{"Email", :email}, {"Role", :role}, {"Registered", :inserted_at}]
   @default_sort_by :email

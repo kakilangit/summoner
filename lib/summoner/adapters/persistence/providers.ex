@@ -5,6 +5,8 @@ defmodule Summoner.Adapters.Persistence.Providers do
   Manages LLM provider configurations within workspaces and tenants.
   """
 
+  @behaviour Summoner.Ports.Persistence.Providers.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Pagination

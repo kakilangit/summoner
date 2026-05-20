@@ -6,7 +6,7 @@ defmodule Summoner.Services.FileSystem do
   Prevents path traversal and symlink escapes.
   """
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
 
   @max_file_size 10 * 1_024 * 1_024
   @max_entries 1_000

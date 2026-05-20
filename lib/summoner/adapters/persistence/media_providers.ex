@@ -12,6 +12,8 @@ defmodule Summoner.Adapters.Persistence.MediaProviders do
   alias Summoner.Domain.Schemas.MediaProvider
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.MediaProviders.Adapter
+
   @max_media_providers_per_workspace 10
 
   @doc """

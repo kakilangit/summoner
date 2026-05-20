@@ -10,6 +10,8 @@ defmodule Summoner.Adapters.Persistence.Themes do
   alias Summoner.Domain.Schemas.Theme
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Themes.Adapter
+
   @max_themes 50
   @max_zip_size 1_048_576
 

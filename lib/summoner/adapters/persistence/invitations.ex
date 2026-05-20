@@ -13,6 +13,8 @@ defmodule Summoner.Adapters.Persistence.Invitations do
   alias Summoner.Domain.Schemas.User
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Invitations.Adapter
+
   # -------------------------------------------------------------------
   # Invitations
   # -------------------------------------------------------------------

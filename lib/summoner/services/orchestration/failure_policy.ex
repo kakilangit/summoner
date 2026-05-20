@@ -1,4 +1,4 @@
-defmodule Summoner.Domain.Policies.FailurePolicy do
+defmodule Summoner.Services.Orchestration.FailurePolicy do
   @moduledoc """
   Handles failure decisions for subtasks that exhaust their retry budget.
 
@@ -14,11 +14,11 @@ defmodule Summoner.Domain.Policies.FailurePolicy do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Audit
-  alias Summoner.Adapters.Persistence.Orchestration
   alias Summoner.Domain.Events.Escalation
   alias Summoner.Domain.Schemas.Subtask
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Audit
+  alias Summoner.Ports.Persistence.Orchestration
 
   @max_retries 1
 

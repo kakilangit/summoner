@@ -6,6 +6,8 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   Pipeline execution is handled by `Summoner.Services.Orchestration.PipelineRunner`.
   """
 
+  @behaviour Summoner.Ports.Persistence.Pipelines.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Conversations
@@ -212,7 +214,29 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   Removes a stage from a pipeline.
   """
   def remove_stage(%{user: _user}, %PipelineStage{} = stage) do
-    Repo.delete(stage)
+    case Repo.delete(stage) do
+      {:ok, deleted} ->
+        reposition_stages(deleted.pipeline_id)
+        {:ok, deleted}
+
+      error ->
+        error
+    end
+  end
+
+  defp reposition_stages(pipeline_id) do
+    PipelineStage
+    |> where([s], s.pipeline_id == ^pipeline_id)
+    |> order_by([s], asc: s.position)
+    |> Repo.all()
+    |> Enum.with_index()
+    |> Enum.each(fn {stage, idx} ->
+      if stage.position != idx do
+        stage
+        |> Ecto.Changeset.change(position: idx)
+        |> Repo.update!()
+      end
+    end)
   end
 
   @doc """
@@ -222,7 +246,7 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
     PipelineStage
     |> where([s], s.pipeline_id == ^pipeline_id)
     |> order_by([s], asc: s.position)
-    |> preload(:agent)
+    |> preload(agent: [:local_agent, :remote_agent])
     |> Repo.all()
   end
 

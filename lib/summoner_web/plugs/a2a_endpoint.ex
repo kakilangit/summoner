@@ -11,7 +11,7 @@ defmodule SummonerWeb.A2AEndpoint do
 
   import Plug.Conn
 
-  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Services.A2A.AgentBridge
   alias Summoner.Services.A2A.Auth
 

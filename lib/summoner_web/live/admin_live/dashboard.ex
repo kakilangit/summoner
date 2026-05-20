@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.Dashboard do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Ports.Persistence.Admin
 
   @impl true
   def mount(_params, _session, socket) do

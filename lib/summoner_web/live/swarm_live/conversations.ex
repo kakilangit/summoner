@@ -3,8 +3,8 @@ defmodule SummonerWeb.SwarmLive.Conversations do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Swarms
 
   @sort_options [{"Title", :title}, {"Created", :inserted_at}]
   @default_sort_by :inserted_at

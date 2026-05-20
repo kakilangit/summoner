@@ -6,12 +6,14 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   UI name: Party.
   """
 
+  @behaviour Summoner.Ports.Persistence.Swarms.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Conversations
   alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Adapters.Persistence.Workspaces
-  alias Summoner.Domain.Schemas.{Agent, Swarm, SwarmMember}
+  alias Summoner.Domain.Schemas.{Agent, Conversation, Swarm, SwarmMember}
   alias Summoner.Repo
 
   @max_members 20
@@ -253,6 +255,15 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     end
   end
 
+  @doc """
+  Preloads a swarm's members using the standard member query.
+
+  Returns the swarm with members preloaded (each member's agent is loaded).
+  """
+  def preload_members(%Swarm{} = swarm) do
+    Repo.preload(swarm, members: member_query())
+  end
+
   @doc false
   def member_query do
     from(m in SwarmMember,
@@ -269,7 +280,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   Lists conversations for a swarm with pagination.
   """
   def list_swarm_conversations_paginated(%{user: _user}, swarm_id, opts \\ []) do
-    Conversations.Conversation
+    Conversation
     |> where([c], c.kind == :swarm and c.swarm_id == ^swarm_id)
     |> Pagination.paginate(opts)
   end

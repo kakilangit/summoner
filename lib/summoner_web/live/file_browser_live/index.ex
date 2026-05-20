@@ -1,8 +1,8 @@
 defmodule SummonerWeb.FileBrowserLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Types.Features
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Services.FileSystem
 
   @max_upload_size 50 * 1_024 * 1_024

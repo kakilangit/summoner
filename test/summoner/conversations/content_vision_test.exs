@@ -39,7 +39,7 @@ defmodule Summoner.Domain.Types.ContentVisionTest do
       ]
 
       att_map = %{att.id => Media.get_attachment!(att.id)}
-      result = Content.to_intent_blocks(blocks, att_map)
+      result = Content.to_intent_blocks(blocks, att_map, file_reader: &Media.read_file/1)
 
       assert [
                %{type: :text, text: "Look at this:"},

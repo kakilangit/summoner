@@ -29,6 +29,14 @@ All notable changes to this project will be documented in this file.
   - `PubSubAdapter` with topic routing and fan-out (invocation events broadcast to both agent and invocation topics)
   - All publishers/subscribers migrated from raw tuples to struct-based pattern matching
 
+- **Hexagonal architecture**
+  - 18 persistence port behaviours (`Ports.Persistence.*/Adapter`) with `@callback` specs
+  - 18 port delegation modules with `Application.compile_env` adapter injection
+  - Worker port (`Ports.Workers`) decoupling from Oban
+  - All services and web layer access persistence exclusively via ports
+
+- **Agent icon component** — `hero-sparkles`/`bg-primary` for local agents, `hero-globe-alt`/`bg-secondary` for remote agents, with size and animation options
+
 ### Changed
 
 - **Full DDD codebase restructure** — four-layer module naming convention
@@ -36,11 +44,15 @@ All notable changes to this project will be documented in this file.
   - `Summoner.Ports.*` — behaviours and port interfaces
   - `Summoner.Adapters.*` — persistence, pubsub, workers, mailer, crypto
   - `Summoner.Services.*` — orchestration, inference, swarms, mcp, a2a, agents
+- **Domain purity enforced** — `FailurePolicy` moved to `Services.Orchestration` (has side effects), `Content` accepts injected `file_reader:` option (no adapter import), `EncryptedBinary` moved to `Domain.Types`
 - Pipeline runner dispatches by agent type (local via AgentServer, remote via A2A)
 - Swarm runner dispatches by agent type with per-type timeout resolution
 - Swarm round-robin passes last assistant message as context to remote agents
+- Relay chain prompt rebalanced to encourage agent collaboration over premature `__done__`
+- Model switcher disabled for remote agents (no local model selection)
 - `Broadcasts` module deleted — replaced by domain event structs
 - LiveViews pattern-match on `%Domain.Events.*{}` structs in `handle_info`
+- Swarm mode labels deduplicated — shared `SwarmLive.Helpers` module (Circle/Chain/Command)
 
 ### Fixed
 
@@ -57,9 +69,16 @@ All notable changes to this project will be documented in this file.
 - **Soft-delete cascade cleanup**: Deleting an agent now removes its pipeline stages, swarm members, and conversation participants in a transaction
 - **Soft-deleted agents blocked from execution**: `get_agent_with_provider!/1` filters by `deleted_at` — deleted agents can no longer be invoked
 - **Soft-deleted agents rejected in validations**: Pipeline orchestrator, pipeline stages, swarm coordinator, and swarm member validations reject deleted agents
-- **Conversations guard deleted agents**: Creating or switching to a deleted agent is rejected with a validation error
+- **Conversations guard deleted agents**: Creating or switching to a deleted agent is rejected with a validation error; chat input disabled with error banner
 - **Deleted agent badge in UI**: Conversation show page displays a "deleted" badge next to soft-deleted primary agents
 - **CI: native multi-arch Docker builds**: Replaced QEMU emulation with native arm64 runners, extracted reusable `docker-build.yml` workflow, manifest creation uses `docker buildx imagetools`
+- **Pipeline stage repositioning**: Removing a stage now compacts positions to avoid collisions when adding new stages
+- **Pipeline stage agent change**: Stage detail form includes agent selector, allowing reassignment without recreating the stage
+- **Add-stage form reset**: Form clears after successful submission instead of retaining stale values
+- **Swarm conversation page crash**: `Conversations.Conversation` alias resolved to adapter module instead of schema — fixed to use `Domain.Schemas.Conversation`
+- **Swarm relay chaining**: Agents now relay to other members instead of immediately calling `__done__` on first turn
+- **Message edit UX**: Enter key submits the edit form (Save & Resend); Shift+Enter inserts a newline
+- **Preload fix for pipeline stages**: `list_stages` now preloads `agent: [:local_agent, :remote_agent]` to avoid `Ecto.Association.NotLoaded` crashes
 
 ## [0.1.3] - 2026-05-19
 

@@ -1,10 +1,10 @@
 defmodule SummonerWeb.SkillLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Skills
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Skill
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.Skills
 
   @impl true
   def mount(params, _session, socket) do

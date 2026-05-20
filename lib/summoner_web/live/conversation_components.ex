@@ -9,8 +9,8 @@ defmodule SummonerWeb.ConversationComponents do
   """
   use Phoenix.Component
 
-  alias Summoner.Adapters.Persistence.Media
   alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Persistence.Media
 
   # -------------------------------------------------------------------
   # Content block rendering
@@ -39,7 +39,7 @@ defmodule SummonerWeb.ConversationComponents do
     ~H"""
     <div :if={@attachment && @attachment.status == :ready} class="my-2">
       <img
-        src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+        src={Summoner.Ports.Persistence.Media.media_url(@attachment)}
         alt={@block["alt"] || "Image"}
         class="rounded-lg max-w-sm max-h-80 cursor-pointer hover:opacity-90 transition-opacity border border-base-300"
         loading="lazy"
@@ -47,7 +47,7 @@ defmodule SummonerWeb.ConversationComponents do
       />
       <div class="flex items-center gap-1 mt-1">
         <a
-          href={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+          href={Summoner.Ports.Persistence.Media.media_url(@attachment)}
           download={@attachment.filename}
           class="btn btn-ghost btn-xs"
           title="Download"
@@ -62,7 +62,7 @@ defmodule SummonerWeb.ConversationComponents do
         phx-click={Phoenix.LiveView.JS.toggle(to: "#lightbox-#{@attachment.id}")}
       >
         <img
-          src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+          src={Summoner.Ports.Persistence.Media.media_url(@attachment)}
           alt={@block["alt"] || "Image"}
           class="max-w-full max-h-full rounded-lg shadow-2xl"
         />
@@ -92,14 +92,14 @@ defmodule SummonerWeb.ConversationComponents do
         class="rounded-lg max-w-sm max-h-80 border border-base-300"
       >
         <source
-          src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+          src={Summoner.Ports.Persistence.Media.media_url(@attachment)}
           type={@attachment.content_type}
         /> Your browser does not support video playback.
       </video>
       <div class="flex items-center gap-1 mt-1">
         <p :if={@block["alt"]} class="text-xs text-base-content/50">{@block["alt"]}</p>
         <a
-          href={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+          href={Summoner.Ports.Persistence.Media.media_url(@attachment)}
           download={@attachment.filename}
           class="btn btn-ghost btn-xs"
           title="Download"

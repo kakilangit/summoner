@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantSecretLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Secrets
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

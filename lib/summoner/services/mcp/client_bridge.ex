@@ -18,9 +18,9 @@ defmodule Summoner.Services.MCP.ClientBridge do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Secrets
-  alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Schemas.McpServer
+  alias Summoner.Ports.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Workspaces
 
   @allowed_executables ~w(npx uvx node python3 python docker docker-compose bash sh)
   @default_tool_timeout 120_000

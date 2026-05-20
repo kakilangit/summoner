@@ -1,9 +1,9 @@
 defmodule SummonerWeb.ConversationLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
   alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
 
   @sort_options [{"Title", :title}, {"Created", :inserted_at}]
   @default_sort_by :inserted_at
@@ -174,8 +174,16 @@ defmodule SummonerWeb.ConversationLive.Index do
               phx-value-agent_id={agent.id}
               class="group flex items-center gap-3 p-3 rounded-xl bg-base-100 border border-base-300 hover:border-primary hover:shadow-md transition-all duration-200 text-left cursor-pointer"
             >
-              <div class="flex-shrink-0 size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-content transition-colors">
-                <span class={role_icon(agent.role)}></span>
+              <div class={[
+                "flex-shrink-0 size-10 rounded-full flex items-center justify-center transition-colors",
+                if(agent.type == :remote,
+                  do:
+                    "bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-content",
+                  else:
+                    "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-content"
+                )
+              ]}>
+                <span class={role_icon(agent)}></span>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="font-medium truncate group-hover:text-primary transition-colors">
@@ -251,7 +259,8 @@ defmodule SummonerWeb.ConversationLive.Index do
     """
   end
 
-  defp role_icon(:worker), do: "hero-wrench size-5"
+  defp role_icon(%{type: :remote}), do: "hero-globe-alt size-5"
+  defp role_icon(%{role: :worker}), do: "hero-wrench size-5"
   defp role_icon(_), do: "hero-sparkles size-5"
 
   defp role_label(:worker), do: "Worker"

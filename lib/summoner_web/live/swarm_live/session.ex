@@ -2,11 +2,12 @@ defmodule SummonerWeb.SwarmLive.Session do
   use SummonerWeb, :live_view
 
   import SummonerWeb.AuthorizeHelper
+  import SummonerWeb.SwarmLive.Helpers, only: [mode_label: 1, mode_badge_class: 1, mode_icon: 1]
 
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Swarms
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Workspaces
 
   alias Summoner.Domain.Events.{
     ContentToken,
@@ -557,25 +558,4 @@ defmodule SummonerWeb.SwarmLive.Session do
       member -> member.agent.name
     end
   end
-
-  defp mode_label(:round_robin), do: "Round Robin"
-  defp mode_label(:relay), do: "Relay"
-  defp mode_label(:directed), do: "Directed"
-  defp mode_label(mode), do: mode
-
-  defp mode_badge_class(:round_robin),
-    do: "badge badge-sm gap-1 bg-info/10 text-info border-info/30"
-
-  defp mode_badge_class(:relay),
-    do: "badge badge-sm gap-1 bg-warning/10 text-warning border-warning/30"
-
-  defp mode_badge_class(:directed),
-    do: "badge badge-sm gap-1 bg-secondary/10 text-secondary border-secondary/30"
-
-  defp mode_badge_class(_), do: "badge badge-sm badge-outline gap-1"
-
-  defp mode_icon(:round_robin), do: "hero-arrow-path-rounded-square size-3"
-  defp mode_icon(:relay), do: "hero-link size-3"
-  defp mode_icon(:directed), do: "hero-bolt size-3"
-  defp mode_icon(_), do: ""
 end
