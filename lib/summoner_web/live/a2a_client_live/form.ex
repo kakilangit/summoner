@@ -85,7 +85,10 @@ defmodule SummonerWeb.A2AClientLive.Form do
          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: "agent"))}
+        {:noreply,
+         socket
+         |> maybe_flash_callname_error(changeset)
+         |> assign(form: to_form(changeset, as: "agent"))}
     end
   end
 
@@ -104,7 +107,10 @@ defmodule SummonerWeb.A2AClientLive.Form do
          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: "agent"))}
+        {:noreply,
+         socket
+         |> maybe_flash_callname_error(changeset)
+         |> assign(form: to_form(changeset, as: "agent"))}
     end
   end
 
@@ -208,5 +214,15 @@ defmodule SummonerWeb.A2AClientLive.Form do
       </.form>
     </div>
     """
+  end
+
+  defp maybe_flash_callname_error(socket, changeset) do
+    case Keyword.get(changeset.errors, :callname) do
+      {msg, _opts} ->
+        put_flash(socket, :error, "Callname #{msg}. Please rename the envoy.")
+
+      nil ->
+        socket
+    end
   end
 end

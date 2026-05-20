@@ -50,6 +50,10 @@ All notable changes to this project will be documented in this file.
 - Seeds file updated with renamed module references
 - Enforced agent type constraints: orchestrated pipeline manager, directed swarm coordinator, and relay swarm members must be local agents
 - Remote agents in round-robin swarms now receive the last assistant message as context instead of nil
+- **Auto-generated callnames never fail**: `unique_callname/2` queries existing callnames and appends `_2`, `_3`, etc. on conflict
+- **Callname uniqueness errors surfaced in UI**: Both summon and envoy forms flash a user-facing error when callname constraint is violated
+- **Bundled model changed to `qwen3:0.6b`**: Previous default `gemma3:1b` does not support tool use, causing HTTP 400 on all agent invocations
+- **Ollama error messages visible**: Upgraded arcanum to 0.1.3 which drains async response bodies on streaming errors — error details now shown in invocation output instead of opaque struct
 
 ## [0.1.3] - 2026-05-19
 

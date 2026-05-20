@@ -103,6 +103,7 @@ make docker.up
 | `ADMIN_EMAIL` | Yes | Initial admin user email |
 | `ADMIN_PASSWORD` | Yes | Initial admin user password |
 | `PHX_HOST` | No | Hostname (default: `localhost`) |
+| `PHX_SCHEME` | No | URL scheme: `http` or `https` (default: `https`) |
 | `PORT` | No | Host HTTP port (default: `4000`) |
 | `POOL_SIZE` | No | DB connection pool size (default: `10`) |
 | `SMTP_HOST` | No | SMTP server for email delivery |
