@@ -1,6 +1,8 @@
 defmodule Summoner.Adapters.Crypto.EncryptedBinary do
   @moduledoc """
-  Encrypted binary field type for Ecto schemas.
+  Deprecated — use `Summoner.Domain.Types.EncryptedBinary` instead.
+
+  Kept for backward compatibility with existing migration references.
   """
 
   use Cloak.Ecto.Binary, vault: Summoner.Adapters.Crypto.Vault

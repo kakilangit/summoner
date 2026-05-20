@@ -18,14 +18,12 @@ defmodule Summoner.Services.Orchestration.Manager do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Domain.Policies.FailurePolicy
-  alias Summoner.Domain.Schemas.Invocation
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Subtask
   alias Summoner.Ports.Harness
-  alias Summoner.Repo
   alias Summoner.Services.Orchestration.{Dispatcher, SubtaskPlan}
+  alias Summoner.Services.Orchestration.FailurePolicy
 
   @dispatch_retry_backoff_ms 2_000
 
@@ -113,10 +111,7 @@ defmodule Summoner.Services.Orchestration.Manager do
         if dep_ids == [] do
           subtask
         else
-          {:ok, updated} =
-            subtask
-            |> Ecto.Changeset.change(%{depends_on_ids: dep_ids})
-            |> Summoner.Repo.update()
+          {:ok, updated} = Orchestration.update_subtask_deps(subtask, dep_ids)
 
           updated
         end
@@ -232,7 +227,7 @@ defmodule Summoner.Services.Orchestration.Manager do
   end
 
   defp apply_failure_policy(_manager_state, subtask) do
-    invocation = Repo.get(Orchestration.Invocation, subtask.invocation_id)
+    invocation = Orchestration.get_invocation_by_id(subtask.invocation_id)
 
     if invocation do
       FailurePolicy.apply_policy(:abort, invocation, subtask)
@@ -261,7 +256,7 @@ defmodule Summoner.Services.Orchestration.Manager do
           |> Enum.reject(&is_nil/1)
           |> Enum.filter(&(&1.status == :completed && &1.worker_invocation_id != nil))
           |> Enum.map(fn dep ->
-            invocation = Repo.get(Invocation, dep.worker_invocation_id)
+            invocation = Orchestration.get_invocation_by_id(dep.worker_invocation_id)
             output = format_invocation_output(invocation)
             "- [Subtask #{dep.position}] #{dep.description}\n  Result: #{output}"
           end)

@@ -2,7 +2,7 @@ defmodule Summoner.Domain.Schemas.Secret do
   @moduledoc """
   Schema for workspace-scoped or tenant-scoped secrets (Seals).
 
-  Values are encrypted at rest via `Summoner.Adapters.Crypto.EncryptedBinary`
+  Values are encrypted at rest via `Summoner.Domain.Types.EncryptedBinary`
   (Cloak AES-256-GCM). Secret names follow shell variable conventions
   (uppercase, underscores) and are referenced as `$SECRET_NAME` in
   MCP server configs.
@@ -17,7 +17,7 @@ defmodule Summoner.Domain.Schemas.Secret do
 
   schema "secrets" do
     field :name, :string
-    field :encrypted_value, Summoner.Adapters.Crypto.EncryptedBinary
+    field :encrypted_value, Summoner.Domain.Types.EncryptedBinary
     field :description, :string
 
     belongs_to :workspace, Summoner.Domain.Schemas.Workspace
