@@ -95,8 +95,10 @@ AGENT_ID=$(psql -tAc "SELECT id FROM agents WHERE workspace_id = '$WORKSPACE_ID'
 if [ -z "$AGENT_ID" ]; then
   SYSTEM_PROMPT="You are a helpful AI assistant. Answer questions clearly, concisely, and accurately. When uncertain, say so. Break complex topics into understandable parts."
   PERSONALITY="Friendly, patient, and precise. Adapts communication style to the user''s level."
+  MODEL="${BUNDLED_MODEL:-qwen3:0.6b}"
 
-  psql -c "INSERT INTO agents (id, workspace_id, provider_id, name, callname, system_prompt, personality, model, role, max_steps, max_concurrent_invocations, max_delegation_concurrency, max_tokens_per_invocation, step_timeout_s, total_timeout_s, stream_tokens_to_observability, inserted_at, updated_at) VALUES ('$AGENT_NULID', '$WORKSPACE_ID', '$PROVIDER_ID', '$AGENT_NAME', '$AGENT_CALLNAME', '$SYSTEM_PROMPT', '$PERSONALITY', 'qwen3:0.6b', 'autonomous', 10, 1, 3, 50000, 60, 300, false, '$NOW', '$NOW')" > /dev/null
+  psql -c "INSERT INTO agents (id, workspace_id, name, callname, type, role, inserted_at, updated_at) VALUES ('$AGENT_NULID', '$WORKSPACE_ID', '$AGENT_NAME', '$AGENT_CALLNAME', 'local', 'autonomous', '$NOW', '$NOW')" > /dev/null
+  psql -c "INSERT INTO local_agents (agent_id, provider_id, model, system_prompt, personality, max_steps, max_concurrent_invocations, max_delegation_concurrency, max_tokens_per_invocation, step_timeout_s, total_timeout_s, stream_tokens_to_observability) VALUES ('$AGENT_NULID', '$PROVIDER_ID', '$MODEL', '$SYSTEM_PROMPT', '$PERSONALITY', 10, 1, 3, 50000, 60, 300, false)" > /dev/null
   AGENT_ID="$AGENT_NULID"
   echo "[Bundled Seed] Agent created: $AGENT_NAME ($AGENT_ID)"
 else
