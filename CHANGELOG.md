@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
   - `SkillResolver` — keyword-based skill inference from cached agent cards
   - `ClientExecutor` — raw JSON-RPC transport handling both Task and Message responses (works around upstream library limitation)
   - `pipeline_stages.skill` column for explicit A2A skill targeting
+  - `INPUT_REQUIRED` handling — remote agents can request more input; continuation uses the same A2A task/context
 
 - **Parallel tool execution**
   - `Summoner.Harness` module for concurrent tool call dispatch
@@ -37,6 +38,7 @@ All notable changes to this project will be documented in this file.
   - `Summoner.Services.*` — orchestration, inference, swarms, mcp, a2a, agents
 - Pipeline runner dispatches by agent type (local via AgentServer, remote via A2A)
 - Swarm runner dispatches by agent type with per-type timeout resolution
+- Swarm round-robin passes last assistant message as context to remote agents
 - `Broadcasts` module deleted — replaced by domain event structs
 - LiveViews pattern-match on `%Domain.Events.*{}` structs in `handle_info`
 
@@ -46,6 +48,8 @@ All notable changes to this project will be documented in this file.
 - Remote agent views guarded `@agent.local_agent.*` accesses for remote agents
 - Stale moduledoc in `conversation_helpers.ex` updated from tuple to struct patterns
 - Seeds file updated with renamed module references
+- Enforced agent type constraints: orchestrated pipeline manager, directed swarm coordinator, and relay swarm members must be local agents
+- Remote agents in round-robin swarms now receive the last assistant message as context instead of nil
 
 ## [0.1.3] - 2026-05-19
 

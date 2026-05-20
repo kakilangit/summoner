@@ -146,6 +146,31 @@ defmodule Summoner.Services.A2A.ClientExecutor do
     {:error, error_content}
   end
 
+  defp interpret_a2a_result(%A2A.Task{status: %{state: :input_required}} = a2a_task) do
+    # The remote agent needs more information from the user.
+    # Surface the status message as assistant content so the user can reply.
+    prompt = extract_status_message(a2a_task) || "The remote agent requires additional input."
+    content = [%{"type" => "text", "text" => prompt}]
+
+    {:ok,
+     %{
+       content: content,
+       task: a2a_task,
+       input_required: true,
+       task_id: a2a_task.id,
+       context_id: a2a_task.context_id,
+       output: %{"content" => content, "response" => prompt}
+     }}
+  end
+
+  defp interpret_a2a_result(%A2A.Task{status: %{state: :auth_required}} = a2a_task) do
+    prompt =
+      extract_status_message(a2a_task) ||
+        "The remote agent requires authentication before proceeding."
+
+    {:error, prompt}
+  end
+
   defp interpret_a2a_result(%A2A.Task{} = a2a_task) do
     content = extract_content(a2a_task)
 

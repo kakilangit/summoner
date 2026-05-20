@@ -11,7 +11,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   alias Summoner.Adapters.Persistence.Conversations
   alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Adapters.Persistence.Workspaces
-  alias Summoner.Domain.Schemas.{Swarm, SwarmMember}
+  alias Summoner.Domain.Schemas.{Agent, Swarm, SwarmMember}
   alias Summoner.Repo
 
   @max_members 20
@@ -23,6 +23,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   def create_swarm(%{user: _user}, attrs) do
     %Swarm{}
     |> Swarm.changeset(attrs)
+    |> validate_coordinator_is_local()
     |> Repo.insert()
   end
 
@@ -30,6 +31,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     changeset = Swarm.changeset(swarm, attrs)
 
     changeset
+    |> validate_coordinator_is_local()
     |> validate_max_turns_against_members(swarm)
     |> Repo.update()
   end
@@ -74,26 +76,41 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   """
   def add_member(%{user: _user}, attrs) do
     swarm_id = attrs[:swarm_id] || attrs["swarm_id"]
+    agent_id = attrs[:agent_id] || attrs["agent_id"]
     current_count = member_count(swarm_id)
     max_turns = get_swarm_max_turns(swarm_id)
 
-    if current_count >= max_turns do
-      {:error,
-       %Ecto.Changeset{
-         action: :insert,
-         errors: [
-           agent_id:
-             {"cannot add more members than max turns (#{max_turns}). " <>
-                "Increase max turns first or remove existing members.", []}
-         ],
-         valid?: false
-       }}
-    else
-      next_position = next_member_position(swarm_id)
+    cond do
+      current_count >= max_turns ->
+        {:error,
+         %Ecto.Changeset{
+           action: :insert,
+           errors: [
+             agent_id:
+               {"cannot add more members than max turns (#{max_turns}). " <>
+                  "Increase max turns first or remove existing members.", []}
+           ],
+           valid?: false
+         }}
 
-      %SwarmMember{}
-      |> SwarmMember.changeset(Map.put(attrs, :position, next_position))
-      |> Repo.insert()
+      reject_remote_in_relay?(swarm_id, agent_id) ->
+        {:error,
+         %Ecto.Changeset{
+           action: :insert,
+           errors: [
+             agent_id:
+               {"remote summons cannot participate in chain (relay) mode — " <>
+                  "they cannot use the relay handoff tool", []}
+           ],
+           valid?: false
+         }}
+
+      true ->
+        next_position = next_member_position(swarm_id)
+
+        %SwarmMember{}
+        |> SwarmMember.changeset(Map.put(attrs, :position, next_position))
+        |> Repo.insert()
     end
   end
 
@@ -146,6 +163,48 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     |> where([s], s.id == ^swarm_id)
     |> select([s], s.max_turns)
     |> Repo.one() || 20
+  end
+
+  # -------------------------------------------------------------------
+  # Agent type validation
+  # -------------------------------------------------------------------
+
+  defp validate_coordinator_is_local(changeset) do
+    mode = Ecto.Changeset.get_field(changeset, :mode)
+    coordinator_id = Ecto.Changeset.get_field(changeset, :coordinator_agent_id)
+
+    if mode == :directed && is_binary(coordinator_id) do
+      case Repo.get(Agent, coordinator_id) do
+        %Agent{type: :remote} ->
+          Ecto.Changeset.add_error(
+            changeset,
+            :coordinator_agent_id,
+            "must be a local summon — remote summons cannot coordinate parties"
+          )
+
+        _ ->
+          changeset
+      end
+    else
+      changeset
+    end
+  end
+
+  defp reject_remote_in_relay?(swarm_id, agent_id) do
+    swarm_mode =
+      Swarm
+      |> where([s], s.id == ^swarm_id)
+      |> select([s], s.mode)
+      |> Repo.one()
+
+    if swarm_mode == :relay do
+      case Repo.get(Agent, agent_id) do
+        %Agent{type: :remote} -> true
+        _ -> false
+      end
+    else
+      false
+    end
   end
 
   defp validate_max_turns_against_members(changeset, swarm) do

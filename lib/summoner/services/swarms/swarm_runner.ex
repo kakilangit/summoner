@@ -250,7 +250,10 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
     # The message is either the user's original message (first turn),
     # a directive from the coordinator, or nil for relay handoffs.
-    message = state.last_message || directive
+    # Remote agents can't read conversation history, so we fetch the
+    # last assistant message as context when no explicit message exists.
+    message =
+      state.last_message || directive || last_assistant_text(agent, state.conversation.id)
 
     # Use synchronous invoke so we can check the result for __done__
     result =
@@ -435,6 +438,24 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
   defp agent_timeout_s(%{type: :local} = agent), do: agent.local_agent.total_timeout_s
   defp agent_timeout_s(%{type: :remote} = agent), do: agent.remote_agent.timeout_s
+
+  # Fetches the last assistant message text for a conversation.
+  # Used to provide context to remote agents that can't read conversation history.
+  defp last_assistant_text(_agent, conversation_id) do
+    case Conversations.list_messages(conversation_id, visibility: :public, limit: 1) do
+      [%{role: :assistant, content: content}] ->
+        content
+        |> Enum.filter(&(&1["type"] == "text"))
+        |> Enum.map_join("\n", & &1["text"])
+        |> case do
+          "" -> nil
+          text -> text
+        end
+
+      _ ->
+        nil
+    end
+  end
 
   defp cancel_agent_invocations(workspace_id, agent_id, conversation_id) do
     # Find running invocations for this agent+conversation and cancel them
