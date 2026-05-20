@@ -128,10 +128,16 @@ defmodule SummonerWeb.ConversationLive.Show do
 
   @impl true
   def handle_event("send_message", %{"message" => message}, socket) do
-    authorize(socket, :operate, fn ->
-      message = String.trim(message)
-      dispatch_message(socket, message)
-    end)
+    agent = socket.assigns.conversation.primary_agent
+
+    if agent && agent.deleted_at do
+      {:noreply, put_flash(socket, :error, "This summon has been deleted.")}
+    else
+      authorize(socket, :operate, fn ->
+        message = String.trim(message)
+        dispatch_message(socket, message)
+      end)
+    end
   end
 
   def handle_event("send_message", _params, socket), do: {:noreply, socket}
@@ -429,7 +435,11 @@ defmodule SummonerWeb.ConversationLive.Show do
 
       <SC.subtask_panel subtasks={@subtasks} />
       <SC.thought_stream invocation_events={@invocation_events} />
+      <div :if={@conversation.primary_agent && @conversation.primary_agent.deleted_at} class="px-4 py-3 bg-error/10 border-t border-error/20 text-sm text-error">
+        This summon has been deleted. Chat is disabled.
+      </div>
       <SC.message_input
+        :if={!@conversation.primary_agent || !@conversation.primary_agent.deleted_at}
         message_input={@message_input}
         processing={@processing}
         placeholder="Message..."

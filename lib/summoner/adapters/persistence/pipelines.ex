@@ -224,7 +224,7 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
     PipelineStage
     |> where([s], s.pipeline_id == ^pipeline_id)
     |> order_by([s], asc: s.position)
-    |> preload(:agent)
+    |> preload(agent: [:local_agent, :remote_agent])
     |> Repo.all()
   end
 
