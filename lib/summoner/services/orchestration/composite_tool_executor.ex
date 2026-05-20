@@ -12,10 +12,10 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
   @behaviour Summoner.Services.Orchestration.ToolExecutor
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.MediaProviders
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Adapters.Workers.MediaGeneration
   alias Summoner.Services.Orchestration.{BuiltinTools, McpToolExecutor}
 

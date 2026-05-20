@@ -15,9 +15,9 @@ defmodule Summoner.Services.Orchestration.Handoff do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Agents.Server, as: AgentServer
 
   @default_context_steps 5

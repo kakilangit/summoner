@@ -18,14 +18,14 @@ defmodule Summoner.Services.Agents.Server do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Audit
-  alias Summoner.Adapters.Persistence.Ledger
-  alias Summoner.Adapters.Persistence.MCP
-  alias Summoner.Adapters.Persistence.MediaProviders
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Skills
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Audit
+  alias Summoner.Ports.Persistence.Ledger
+  alias Summoner.Ports.Persistence.MCP
+  alias Summoner.Ports.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Skills
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Ports.Events
   alias Summoner.Services.Agents.ProcessMonitor
   alias Summoner.Services.Memory

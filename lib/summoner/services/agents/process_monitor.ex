@@ -20,7 +20,7 @@ defmodule Summoner.Services.Agents.ProcessMonitor do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.EventLog
 
   # -------------------------------------------------------------------

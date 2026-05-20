@@ -20,10 +20,10 @@ defmodule Summoner.Services.Orchestration.PipelineRunner do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Domain.Events.{InvocationCompleted, InvocationFailed, InvocationStarted}
   alias Summoner.Domain.Events.{PipelineRunStatus, PipelineStageInvocation, PipelineStageStatus}
   alias Summoner.Domain.Schemas.Agent

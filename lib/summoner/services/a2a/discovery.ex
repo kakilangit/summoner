@@ -9,7 +9,7 @@ defmodule Summoner.Services.A2A.Discovery do
   require Logger
 
   alias Summoner.Domain.Schemas.RemoteAgent
-  alias Summoner.Repo
+  alias Summoner.Ports.Persistence.Agents
 
   @default_ttl_seconds 3_600
 
@@ -71,13 +71,11 @@ defmodule Summoner.Services.A2A.Discovery do
   end
 
   defp persist_card(%RemoteAgent{} = remote_agent, %A2A.AgentCard{} = card) do
-    remote_agent
-    |> Ecto.Changeset.change(%{
+    Agents.update_remote_agent_card(remote_agent, %{
       cached_agent_card: encode_card(card),
       card_refreshed_at: DateTime.utc_now(),
       status: :online
     })
-    |> Repo.update()
   end
 
   defp encode_card(%A2A.AgentCard{} = card) do

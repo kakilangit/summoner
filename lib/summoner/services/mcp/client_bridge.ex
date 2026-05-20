@@ -18,8 +18,8 @@ defmodule Summoner.Services.MCP.ClientBridge do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Secrets
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Schemas.McpServer
 
   @allowed_executables ~w(npx uvx node python3 python docker docker-compose bash sh)

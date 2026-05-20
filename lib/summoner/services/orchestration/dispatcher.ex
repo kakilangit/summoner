@@ -17,7 +17,7 @@ defmodule Summoner.Services.Orchestration.Dispatcher do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Subtask
   alias Summoner.Services.Agents.Server, as: AgentServer
 

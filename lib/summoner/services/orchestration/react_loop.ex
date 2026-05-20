@@ -23,9 +23,9 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
 
   alias Arcanum.{Intent, ModelProfile, Response}
   alias Arcanum.Response.Normalizer
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Ledger
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Ledger
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Adapters.Workers.CompactorJob
   alias Summoner.Domain.Events.ContentToken
   alias Summoner.Domain.Schemas.Agent

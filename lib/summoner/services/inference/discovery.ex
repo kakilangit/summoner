@@ -11,7 +11,7 @@ defmodule Summoner.Services.Inference.Discovery do
   require Logger
 
   alias Arcanum.Probe
-  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Ports.Persistence.Providers
 
   @default_interval :timer.seconds(60)
 

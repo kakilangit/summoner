@@ -22,14 +22,13 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Swarms
   alias Summoner.Domain.Events.{SwarmDone, SwarmTimeout, SwarmTurn}
   alias Summoner.Domain.Policies.TurnRouter
   alias Summoner.Ports.Events
-  alias Summoner.Repo
   alias Summoner.Services.Agents.Server, as: AgentServer
   alias Summoner.Services.Swarms.SwarmCoordinator
 
@@ -431,7 +430,7 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
   # -------------------------------------------------------------------
 
   defp load_members(swarm) do
-    swarm = Repo.preload(swarm, members: Swarms.member_query())
+    swarm = Swarms.preload_members(swarm)
 
     Enum.map(swarm.members, & &1.agent)
   end

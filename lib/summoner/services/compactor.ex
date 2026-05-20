@@ -25,7 +25,7 @@ defmodule Summoner.Services.Compactor do
   require Logger
 
   alias Arcanum.Intent
-  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Domain.Schemas.Message
   alias Summoner.Domain.Types.Content
   alias Summoner.Services.Inference

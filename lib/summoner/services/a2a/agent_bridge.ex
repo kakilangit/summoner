@@ -9,7 +9,7 @@ defmodule Summoner.Services.A2A.AgentBridge do
 
   ## Process Registration
 
-  Registered via `Summoner.Adapters.Persistence.A2ARegistry` with key `{:a2a_bridge, server_id}`.
+  Registered via `Summoner.Ports.Persistence.A2ARegistry` with key `{:a2a_bridge, server_id}`.
   """
 
   use GenServer
@@ -18,11 +18,11 @@ defmodule Summoner.Services.A2A.AgentBridge do
 
   require Logger
 
-  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
-  alias Summoner.Adapters.Persistence.A2ATaskStore, as: SummonerTaskStore
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.MCP
-  alias Summoner.Adapters.Persistence.Skills
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Ports.Persistence.A2ATaskStore, as: SummonerTaskStore
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.MCP
+  alias Summoner.Ports.Persistence.Skills
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Types.Content
   alias Summoner.Services.A2A.ContentAdapter
@@ -34,7 +34,7 @@ defmodule Summoner.Services.A2A.AgentBridge do
   alias A2A.Message
   alias A2A.Part
 
-  @registry Summoner.Adapters.Persistence.A2ARegistry
+  @registry Summoner.Ports.Persistence.A2ARegistry
 
   # -------------------------------------------------------------------
   # Client API
@@ -67,7 +67,7 @@ defmodule Summoner.Services.A2A.AgentBridge do
     opts = [server_id: server_id]
 
     case DynamicSupervisor.start_child(
-           Summoner.Adapters.Persistence.A2ASupervisor,
+           Summoner.Ports.Persistence.A2ASupervisor,
            {__MODULE__, opts}
          ) do
       {:ok, pid} -> {:ok, pid}

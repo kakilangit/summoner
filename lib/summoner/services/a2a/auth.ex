@@ -6,7 +6,7 @@ defmodule Summoner.Services.A2A.Auth do
   credentials against the A2A server's token system.
   """
 
-  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Domain.Schemas.A2AServer
 
   @doc """

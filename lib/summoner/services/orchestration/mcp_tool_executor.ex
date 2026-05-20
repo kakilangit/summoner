@@ -14,7 +14,7 @@ defmodule Summoner.Services.Orchestration.McpToolExecutor do
 
   @behaviour Summoner.Services.Orchestration.ToolExecutor
 
-  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Ports.Persistence.MCP
 
   @impl true
   def execute(tool_call, %{agent_id: agent_id, workspace_id: workspace_id}) do

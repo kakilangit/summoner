@@ -10,11 +10,8 @@ defmodule Summoner.Services.Orchestration.Cancellation do
   external state inconsistent) but their results are discarded.
   """
 
-  import Ecto.Query, warn: false
-
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Invocation
-  alias Summoner.Repo
   alias Summoner.Services.Agents.Server, as: AgentServer
 
   @doc """
@@ -35,12 +32,7 @@ defmodule Summoner.Services.Orchestration.Cancellation do
   end
 
   defp collect_descendants(parent_id) do
-    children =
-      Invocation
-      |> where([i], i.parent_invocation_id == ^parent_id)
-      |> where([i], i.status not in [:completed, :failed, :cancelled])
-      |> select([i], i.id)
-      |> Repo.all()
+    children = Orchestration.active_child_invocation_ids(parent_id)
 
     children ++ Enum.flat_map(children, &collect_descendants/1)
   end

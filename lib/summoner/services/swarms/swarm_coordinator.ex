@@ -11,8 +11,8 @@ defmodule Summoner.Services.Swarms.SwarmCoordinator do
   require Logger
 
   alias Arcanum.{Intent, Response}
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Domain.Schemas.Swarm
   alias Summoner.Domain.Types.Content
   alias Summoner.Services.Inference
