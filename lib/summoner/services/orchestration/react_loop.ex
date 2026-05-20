@@ -1152,15 +1152,15 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
         function: %{
           name: @relay_tool_name,
           description:
-            "Hand off to the next party member, or signal completion with \"__done__\". " <>
-              "You MUST call this exactly once at the end of your response. Prefer \"__done__\" when the task is addressed.",
+            "Hand off to another party member to contribute their perspective, or signal \"__done__\" when the task is complete. " <>
+              "You MUST call this exactly once at the end of your response. You are part of a team — prefer relaying to let others contribute before finishing.",
           parameters: %{
             "type" => "object",
             "properties" => %{
               "next_agent" => %{
                 "type" => "string",
                 "description" =>
-                  "The callname of the next member to respond, or \"__done__\" if the user's request is fully addressed.",
+                  "The callname of the next member to respond, or \"__done__\" when the task needs no further input.",
                 "enum" => other_callnames ++ ["__done__"]
               }
             },
@@ -1202,26 +1202,26 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
           :relay ->
             """
             ## Party Collaboration (Chain Spell Mode)
-            You are @#{current_agent.callname}. Other members:
+            You are @#{current_agent.callname} in a team of agents working together. Other members:
             #{member_list}
 
             IMPORTANT: You MUST call the __relay__ tool exactly once at the end of your response.
 
-            ## When to use "__done__"
-            Call __relay__ with next_agent="__done__" when ANY of these are true:
-            - The user's question has been directly answered with a clear conclusion.
-            - A deliverable (analysis, report, code, file) has been produced and no member can meaningfully improve it.
-            - The conversation is going in circles — members are repeating or rephrasing earlier points.
-            - You have nothing substantive to add beyond what has already been said.
-            - The previous member already provided a comprehensive answer.
+            ## How to collaborate
+            You are part of a team. After contributing your part, relay to the member whose
+            expertise best complements yours so they can add their perspective. Each member
+            brings unique value — let others contribute before finishing the chain.
 
             ## When to relay to another member
-            Relay to a specific member ONLY when:
-            - There is a clear, concrete gap that the other member's expertise can fill.
-            - The user explicitly asked for input from multiple perspectives AND that perspective has not yet been given.
+            - Another member has relevant expertise that would enrich the response.
+            - The task benefits from multiple perspectives or specializations.
+            - Not all members have had a chance to contribute yet.
 
-            Do NOT relay just to be polite, to "get another opinion", or to ask for validation.
-            When in doubt, prefer "__done__" over relaying. Finishing early is better than going in circles.
+            ## When to use "__done__"
+            - The task has been thoroughly addressed and no member can add meaningful value.
+            - The conversation is going in circles — members are repeating earlier points.
+            - You have nothing substantive to add beyond what has already been said.
+
             You must pick from the exact callnames listed above.\
             """
 

@@ -8,6 +8,12 @@ const AutoResize = {
     this.el.style.overflow = "hidden"
     this._resize()
     this.el.addEventListener("input", () => this._resize())
+    this.el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        this.el.closest("form")?.requestSubmit()
+      }
+    })
     this.el.focus()
     const len = this.el.value.length
     this.el.setSelectionRange(len, len)

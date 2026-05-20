@@ -13,7 +13,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   alias Summoner.Adapters.Persistence.Conversations
   alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Adapters.Persistence.Workspaces
-  alias Summoner.Domain.Schemas.{Agent, Swarm, SwarmMember}
+  alias Summoner.Domain.Schemas.{Agent, Conversation, Swarm, SwarmMember}
   alias Summoner.Repo
 
   @max_members 20
@@ -280,7 +280,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   Lists conversations for a swarm with pagination.
   """
   def list_swarm_conversations_paginated(%{user: _user}, swarm_id, opts \\ []) do
-    Conversations.Conversation
+    Conversation
     |> where([c], c.kind == :swarm and c.swarm_id == ^swarm_id)
     |> Pagination.paginate(opts)
   end
