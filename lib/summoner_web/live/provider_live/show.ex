@@ -1,8 +1,8 @@
 defmodule SummonerWeb.ProviderLive.Show do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Ledger
-  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Ports.Persistence.Ledger
+  alias Summoner.Ports.Persistence.Providers
   alias Summoner.Domain.Types.Presets
   alias Summoner.Ports.Events
 

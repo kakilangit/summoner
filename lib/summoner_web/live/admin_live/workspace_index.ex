@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.WorkspaceIndex do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Ports.Persistence.Admin
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name
@@ -45,7 +45,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
-    workspace = Summoner.Repo.get!(Summoner.Domain.Schemas.Workspace, id)
+    workspace = Admin.get_workspace!(id)
 
     case Admin.delete_workspace(workspace) do
       {:ok, _} ->

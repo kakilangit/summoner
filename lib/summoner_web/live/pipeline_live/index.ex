@@ -3,7 +3,7 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Adapters.Workers.PipelineRunnerJob
   alias Summoner.Ports.Events
 

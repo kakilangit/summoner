@@ -1,8 +1,8 @@
 defmodule SummonerWeb.TenantProviderLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Providers
-  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Providers
+  alias Summoner.Ports.Persistence.Secrets
   alias Summoner.Domain.Schemas.Provider
   alias Summoner.Domain.Types.Presets
 

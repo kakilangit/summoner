@@ -36,7 +36,7 @@
         phx-mounted={JS.focus()}
       />
 
-      <%= unless Summoner.Adapters.Persistence.Admin.smtp_configured?() do %>
+      <%= unless Summoner.Ports.Persistence.Admin.smtp_configured?() do %>
         <.input
           field={f[:password]}
           type="password"

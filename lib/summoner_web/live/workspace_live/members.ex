@@ -3,7 +3,7 @@ defmodule SummonerWeb.WorkspaceLive.Members do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
 
   @impl true
   def mount(_params, _session, socket) do

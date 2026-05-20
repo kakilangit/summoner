@@ -3,7 +3,7 @@ defmodule SummonerWeb.MediaProviderLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.MediaProviders
 
   @impl true
   def mount(_params, _session, socket) do

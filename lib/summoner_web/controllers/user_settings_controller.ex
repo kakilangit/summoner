@@ -1,7 +1,7 @@
 defmodule SummonerWeb.UserSettingsController do
   use SummonerWeb, :controller
 
-  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Accounts
   alias SummonerWeb.UserAuth
 
   import SummonerWeb.UserAuth, only: [require_sudo_mode: 2]

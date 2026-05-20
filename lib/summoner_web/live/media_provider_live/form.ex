@@ -1,8 +1,8 @@
 defmodule SummonerWeb.MediaProviderLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.MediaProviders
-  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Ports.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Providers
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.MediaProvider
 

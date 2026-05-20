@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantInvitationLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Invitations
+  alias Summoner.Ports.Persistence.Invitations
   alias Summoner.Domain.Schemas.Invitation
 
   @sort_options [{"Created", :inserted_at}, {"Expires", :expires_at}, {"Code", :code}]

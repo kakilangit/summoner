@@ -13,7 +13,7 @@ defmodule SummonerWeb.TenantAuth do
   import Phoenix.Component
   use SummonerWeb, :verified_routes
 
-  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Ports.Persistence.Tenants
   alias Summoner.Domain.Schemas.Scope
   alias Summoner.Domain.Schemas.TenantMembership
 

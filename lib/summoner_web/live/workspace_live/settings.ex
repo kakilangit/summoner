@@ -1,8 +1,8 @@
 defmodule SummonerWeb.WorkspaceLive.Settings do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Workspace
   alias Summoner.Domain.Schemas.WorkspaceSettings

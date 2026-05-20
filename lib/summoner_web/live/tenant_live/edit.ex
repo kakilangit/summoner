@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantLive.Edit do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Ports.Persistence.Tenants
   alias Summoner.Domain.Schemas.{Tenant, TenantSettings}
 
   @impl true

@@ -4,8 +4,8 @@ defmodule SummonerWeb.MediaRetry do
   ConversationLive.Show and SwarmLive.Session.
   """
 
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Adapters.Workers.MediaGeneration
 
   import Phoenix.LiveView, only: [put_flash: 3]

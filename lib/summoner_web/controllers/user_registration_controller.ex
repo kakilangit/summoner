@@ -1,10 +1,10 @@
 defmodule SummonerWeb.UserRegistrationController do
   use SummonerWeb, :controller
 
-  alias Summoner.Adapters.Persistence.Accounts
-  alias Summoner.Adapters.Persistence.Admin
-  alias Summoner.Adapters.Persistence.Invitations
-  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Ports.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Admin
+  alias Summoner.Ports.Persistence.Invitations
+  alias Summoner.Ports.Persistence.Tenants
   alias Summoner.Domain.Schemas.Invitation
   alias Summoner.Domain.Schemas.User
 
@@ -194,15 +194,11 @@ defmodule SummonerWeb.UserRegistrationController do
   end
 
   defp set_password(user, password) do
-    user
-    |> User.password_changeset(%{password: password})
-    |> Summoner.Repo.update()
+    Accounts.set_user_password(user, password)
   end
 
   defp confirm_user(user) do
-    user
-    |> User.confirm_changeset()
-    |> Summoner.Repo.update()
+    Accounts.confirm_user(user)
   end
 
   defp render_invitation_error(conn, user_params, tenant, message) do

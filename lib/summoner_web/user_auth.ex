@@ -8,7 +8,7 @@ defmodule SummonerWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Accounts
   alias Summoner.Domain.Schemas.Scope
 
   # -------------------------------------------------------------------

@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantSkillLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Skills
+  alias Summoner.Ports.Persistence.Skills
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

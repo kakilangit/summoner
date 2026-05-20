@@ -1,7 +1,7 @@
 defmodule SummonerWeb.SkillLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Skills
+  alias Summoner.Ports.Persistence.Skills
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Skill
   alias Summoner.Domain.Types.Presets

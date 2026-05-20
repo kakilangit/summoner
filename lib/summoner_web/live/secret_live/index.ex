@@ -3,7 +3,7 @@ defmodule SummonerWeb.SecretLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Secrets
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

@@ -1,7 +1,7 @@
 defmodule SummonerWeb.PipelineLive.RunShow do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Ports.Events
   alias Summoner.Services.TimeZone
 

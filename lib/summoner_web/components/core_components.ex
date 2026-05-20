@@ -798,14 +798,14 @@ defmodule SummonerWeb.CoreComponents do
   @doc """
   Renders pagination controls.
 
-  Expects a `%Summoner.Adapters.Persistence.Pagination{}` struct. Emits a `"paginate"`
+  Expects a `%Summoner.Ports.Persistence.Pagination{}` struct. Emits a `"paginate"`
   event with `%{"page" => page_number}` when a page button is clicked.
 
   ## Examples
 
       <.pagination page={@page} />
   """
-  attr :page, :any, required: true, doc: "a %Summoner.Adapters.Persistence.Pagination{} struct"
+  attr :page, :any, required: true, doc: "a %Summoner.Ports.Persistence.Pagination{} struct"
   attr :event, :string, default: "paginate", doc: "the event name to emit"
 
   def pagination(assigns) do
@@ -858,6 +858,37 @@ defmodule SummonerWeb.CoreComponents do
   end
 
   @doc """
+  Renders an agent icon with type-appropriate styling.
+
+  Local agents use sparkles (primary), remote agents use globe (secondary).
+
+  ## Examples
+
+      <.agent_icon agent={@agent} size={:sm} />
+      <.agent_icon agent={@agent} size={:md} animate={true} />
+  """
+  attr :agent, :map, required: true
+  attr :size, :atom, default: :sm, values: [:sm, :md]
+  attr :animate, :boolean, default: false
+
+  def agent_icon(assigns) do
+    ~H"""
+    <div class={[
+      "rounded-full flex items-center justify-center",
+      if(@agent.type == :remote, do: "bg-secondary/10", else: "bg-primary/10"),
+      if(@size == :sm, do: "size-5", else: "size-8")
+    ]}>
+      <span class={[
+        if(@agent.type == :remote, do: "hero-globe-alt", else: "hero-sparkles"),
+        if(@agent.type == :remote, do: "text-secondary", else: "text-primary"),
+        if(@size == :sm, do: "size-3", else: "size-4"),
+        @animate && "animate-pulse"
+      ]} />
+    </div>
+    """
+  end
+
+  @doc """
   Renders an inline model (spirit) switcher dropdown for an agent.
 
   Shows the current model as a compact badge with a dropdown to switch.
@@ -874,6 +905,10 @@ defmodule SummonerWeb.CoreComponents do
   """
   attr :agent, :map, required: true
   attr :id, :string, required: true
+
+  def model_switcher(%{agent: %{type: :remote}} = assigns) do
+    ~H""
+  end
 
   def model_switcher(assigns) do
     local = assigns.agent.local_agent

@@ -2,8 +2,8 @@ defmodule SummonerWeb.PipelineLive.Form do
   use SummonerWeb, :live_view
 
   alias Phoenix.HTML.Form
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Pipeline
   alias Summoner.Domain.Types.CronBuilder

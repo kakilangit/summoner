@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantMcpServerLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Ports.Persistence.MCP
   alias Summoner.Domain.Schemas.McpServer
   alias Summoner.Domain.Types.Presets
 

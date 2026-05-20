@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantMcpServerLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Ports.Persistence.MCP
 
   @sort_options [{"Name", :name}, {"Transport", :transport}, {"Created", :inserted_at}]
   @default_sort_by :name

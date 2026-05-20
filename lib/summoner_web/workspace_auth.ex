@@ -11,7 +11,7 @@ defmodule SummonerWeb.WorkspaceAuth do
   import Phoenix.Component
   use SummonerWeb, :verified_routes
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Types.Features
 

@@ -1,8 +1,8 @@
 defmodule SummonerWeb.AgentLive.Tools do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Agents
-  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.MCP
 
   @impl true
   def mount(%{"id" => agent_id}, _session, socket) do

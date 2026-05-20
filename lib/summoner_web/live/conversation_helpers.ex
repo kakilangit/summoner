@@ -20,9 +20,9 @@ defmodule SummonerWeb.ConversationHelpers do
       end
   """
 
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Media
-  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Events.{ContentToken, Escalation, InvocationEvent, InvocationStarted}
   alias Summoner.Domain.Types.Content
   alias Summoner.Ports.Events

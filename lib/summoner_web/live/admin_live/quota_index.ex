@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.QuotaIndex do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Invitations
+  alias Summoner.Ports.Persistence.Invitations
 
   @sort_options [{"Amount", :amount}, {"Created", :inserted_at}]
   @default_sort_by :amount

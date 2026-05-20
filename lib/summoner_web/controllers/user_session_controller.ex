@@ -1,7 +1,7 @@
 defmodule SummonerWeb.UserSessionController do
   use SummonerWeb, :controller
 
-  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Accounts
   alias SummonerWeb.UserAuth
 
   def new(conn, _params) do

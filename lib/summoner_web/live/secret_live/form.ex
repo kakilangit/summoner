@@ -1,7 +1,7 @@
 defmodule SummonerWeb.SecretLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Ports.Persistence.Secrets
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Secret
 

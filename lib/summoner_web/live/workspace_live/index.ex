@@ -1,7 +1,7 @@
 defmodule SummonerWeb.WorkspaceLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

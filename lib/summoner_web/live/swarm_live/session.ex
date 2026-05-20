@@ -3,10 +3,10 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Adapters.Persistence.Conversations
-  alias Summoner.Adapters.Persistence.Orchestration
-  alias Summoner.Adapters.Persistence.Swarms
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Persistence.Swarms
+  alias Summoner.Ports.Persistence.Workspaces
 
   alias Summoner.Domain.Events.{
     ContentToken,

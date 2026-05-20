@@ -1,7 +1,7 @@
 defmodule SummonerWeb.WorkspaceLive.New do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Schemas.Workspace
 
   @impl true

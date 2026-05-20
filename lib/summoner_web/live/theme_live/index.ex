@@ -1,8 +1,8 @@
 defmodule SummonerWeb.ThemeLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Adapters.Persistence.Accounts
-  alias Summoner.Adapters.Persistence.Themes
+  alias Summoner.Ports.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Themes
 
   @max_upload_size 1_048_576
 
