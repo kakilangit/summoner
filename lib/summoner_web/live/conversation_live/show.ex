@@ -435,7 +435,10 @@ defmodule SummonerWeb.ConversationLive.Show do
 
       <SC.subtask_panel subtasks={@subtasks} />
       <SC.thought_stream invocation_events={@invocation_events} />
-      <div :if={@conversation.primary_agent && @conversation.primary_agent.deleted_at} class="px-4 py-3 bg-error/10 border-t border-error/20 text-sm text-error">
+      <div
+        :if={@conversation.primary_agent && @conversation.primary_agent.deleted_at}
+        class="px-4 py-3 bg-error/10 border-t border-error/20 text-sm text-error"
+      >
         This summon has been deleted. Chat is disabled.
       </div>
       <SC.message_input

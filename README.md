@@ -11,8 +11,9 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Provider support: Ollama, OpenAI, Anthropic, DeepSeek, xAI, OpenRouter, GitHub Copilot
 - MCP server integration (stdio and SSE transports)
 - Pipelines (sequential/orchestrated multi-agent workflows)
-- Swarms (round-robin, relay, directed multi-agent collaboration)
+- Swarms (Circle, Chain, Command multi-agent collaboration)
 - A2A protocol support (Herald server, Envoy remote agents, skill-aware invocation)
+- Hexagonal architecture with persistence ports, worker ports, and domain event system
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)
 - Token usage tracking and cost budgeting
@@ -120,5 +121,5 @@ Multi-arch images (amd64 + arm64) are published to `ghcr.io/kakilangit/summoner`
 
 ```sh
 make build                            # build all images locally
-make build DOCKER_TAG=v0.1.3          # build with specific tag
+make build DOCKER_TAG=v0.1.4          # build with specific tag
 ```

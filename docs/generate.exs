@@ -14,7 +14,8 @@ defmodule Docs.Generator do
     {"03-setup.md", "Setup"},
     {"04-scroll.md", "Scroll"},
     {"05-archon.md", "Archon"},
-    {"06-themes.md", "Themes"}
+    {"06-themes.md", "Themes"},
+    {"07-a2a.md", "A2A"}
   ]
 
   def run do
