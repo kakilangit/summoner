@@ -5,6 +5,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
   alias Summoner.Adapters.Persistence.Secrets
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Schemas.RemoteAgent
 
   @impl true
   def mount(params, _session, socket) do
@@ -16,21 +17,22 @@ defmodule SummonerWeb.A2AClientLive.Form do
       {agent, title} =
         case params["id"] do
           nil ->
-            {%Agent{type: :remote, workspace_id: workspace.id}, "New Envoy"}
+            {%Agent{type: :remote, workspace_id: workspace.id, remote_agent: %RemoteAgent{}},
+             "New Envoy"}
 
           id ->
             {Agents.get_agent!(scope, workspace.id, id), "Edit Envoy"}
         end
 
-      changeset = Agents.change_agent(agent)
       secrets = Secrets.list_secrets(scope, workspace.id, workspace.tenant_id)
+      changeset = flat_changeset(flat_data(agent), %{})
 
       socket =
         socket
         |> assign(page_title: "#{title} - #{workspace.name}")
         |> assign(
           agent: agent,
-          form: to_form(changeset),
+          form: to_form(changeset, as: "agent"),
           title: title,
           editing: agent.id != nil,
           secrets: secrets
@@ -54,6 +56,15 @@ defmodule SummonerWeb.A2AClientLive.Form do
   end
 
   @impl true
+  def handle_event("validate", %{"agent" => params}, socket) do
+    changeset =
+      flat_changeset(flat_data(socket.assigns.agent), params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset, as: "agent"))}
+  end
+
+  @impl true
   def handle_event("save", %{"agent" => params}, socket) do
     if socket.assigns.editing do
       update_envoy(socket, params)
@@ -74,7 +85,10 @@ defmodule SummonerWeb.A2AClientLive.Form do
          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply,
+         socket
+         |> maybe_flash_callname_error(changeset)
+         |> assign(form: to_form(changeset, as: "agent"))}
     end
   end
 
@@ -93,8 +107,41 @@ defmodule SummonerWeb.A2AClientLive.Form do
          |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply,
+         socket
+         |> maybe_flash_callname_error(changeset)
+         |> assign(form: to_form(changeset, as: "agent"))}
     end
+  end
+
+  # -------------------------------------------------------------------
+  # Flat (schemaless) changeset for combined Agent + RemoteAgent form
+  # -------------------------------------------------------------------
+
+  @flat_types %{
+    name: :string,
+    agent_card_url: :string,
+    auth_mode: :string,
+    api_key_secret_id: :string,
+    timeout_s: :integer
+  }
+
+  defp flat_changeset(data, params) do
+    {data, @flat_types}
+    |> Ecto.Changeset.cast(params, Map.keys(@flat_types))
+    |> Ecto.Changeset.validate_required([:name, :agent_card_url])
+  end
+
+  defp flat_data(agent) do
+    remote = agent.remote_agent || %RemoteAgent{}
+
+    %{
+      name: agent.name,
+      agent_card_url: remote.agent_card_url,
+      auth_mode: remote.auth_mode,
+      api_key_secret_id: remote.api_key_secret_id,
+      timeout_s: remote.timeout_s
+    }
   end
 
   @impl true
@@ -103,7 +150,13 @@ defmodule SummonerWeb.A2AClientLive.Form do
     <div class="max-w-lg mx-auto space-y-6">
       <h1 class="text-2xl font-bold">{@title}</h1>
 
-      <.form for={@form} id="envoy-form" phx-submit="save" class="space-y-4">
+      <.form
+        for={@form}
+        id="envoy-form"
+        phx-change="validate"
+        phx-submit="save"
+        class="space-y-4"
+      >
         <.input field={@form[:name]} type="text" label="Name" placeholder="My Remote Agent" required />
 
         <.input
@@ -114,7 +167,8 @@ defmodule SummonerWeb.A2AClientLive.Form do
           required
         />
         <p class="text-xs text-base-content/50 -mt-2">
-          Base URL of the remote A2A agent. The agent card will be fetched from <code>/.well-known/agent-card.json</code>.
+          Base URL of the remote A2A agent (without <code>/.well-known/agent-card.json</code>).
+          The agent card will be discovered automatically.
         </p>
 
         <.input
@@ -160,5 +214,15 @@ defmodule SummonerWeb.A2AClientLive.Form do
       </.form>
     </div>
     """
+  end
+
+  defp maybe_flash_callname_error(socket, changeset) do
+    case Keyword.get(changeset.errors, :callname) do
+      {msg, _opts} ->
+        put_flash(socket, :error, "Callname #{msg}. Please rename the envoy.")
+
+      nil ->
+        socket
+    end
   end
 end

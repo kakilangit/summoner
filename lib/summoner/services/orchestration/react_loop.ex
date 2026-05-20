@@ -1591,8 +1591,16 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
     "Provider returned HTTP #{status}: #{msg}"
   end
 
+  defp format_api_error(status, %{"error" => msg}) when is_binary(msg) do
+    "Provider returned HTTP #{status}: #{msg}"
+  end
+
   defp format_api_error(status, body) when is_binary(body) and body != "" do
     "Provider returned HTTP #{status}: #{String.slice(body, 0, 200)}"
+  end
+
+  defp format_api_error(status, body) when is_map(body) do
+    "Provider returned HTTP #{status}: #{inspect(body) |> String.slice(0, 200)}"
   end
 
   defp format_api_error(status, _body) do

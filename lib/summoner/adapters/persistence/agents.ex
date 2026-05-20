@@ -36,7 +36,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   Atomically creates both the `agents` row and its `local_agents` detail row.
   """
   def create_agent(%{user: _user}, attrs) do
-    attrs = maybe_generate_callname(attrs)
+    attrs = maybe_generate_unique_callname(attrs)
     {agent_attrs, local_attrs} = split_attrs(attrs)
 
     agent_attrs =
@@ -73,7 +73,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   `remote_agents` detail row with A2A client configuration.
   """
   def create_remote_agent(%{user: _user}, attrs) do
-    attrs = maybe_generate_callname(attrs)
+    attrs = maybe_generate_unique_callname(attrs)
     {agent_attrs, remote_attrs} = split_remote_attrs(attrs)
 
     agent_attrs =
@@ -167,7 +167,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   def list_agents_paginated(%{user: _user}, workspace_id, opts \\ []) do
     Agent
     |> Workspaces.where_workspace(workspace_id)
-    |> where([a], is_nil(a.deleted_at))
+    |> where([a], a.type == :local and is_nil(a.deleted_at))
     |> preload(local_agent: [:provider, :media_provider])
     |> Pagination.paginate(opts)
   end
@@ -377,10 +377,36 @@ defmodule Summoner.Adapters.Persistence.Agents do
 
     skill = explicit_skill || SkillResolver.resolve(remote.cached_agent_card, message)
 
-    case ClientExecutor.send_message(agent, remote, message,
-           conversation_id: conversation_id,
-           skill: skill
+    # Continue a previous A2A task if the remote agent requested more input
+    a2a_context = resolve_a2a_context(agent.id, conversation_id)
+
+    case ClientExecutor.send_message(
+           agent,
+           remote,
+           message,
+           [conversation_id: conversation_id, skill: skill] ++ a2a_context
          ) do
+      {:ok, %{content: content, input_required: true} = result} ->
+        Conversations.add_message(%{
+          conversation_id: conversation_id,
+          agent_id: agent.id,
+          role: :assistant,
+          visibility: :public,
+          kind: :chat,
+          content: content,
+          invocation_id: invocation.id
+        })
+
+        Orchestration.update_invocation_status(invocation, :completed, %{
+          end_reason: :completed,
+          output: %{
+            "response" => content_to_text(content),
+            "a2a_input_required" => true,
+            "a2a_task_id" => result[:task_id],
+            "a2a_context_id" => result[:context_id]
+          }
+        })
+
       {:ok, %{content: content}} ->
         Conversations.add_message(%{
           conversation_id: conversation_id,
@@ -425,6 +451,24 @@ defmodule Summoner.Adapters.Persistence.Agents do
 
   defp content_to_text(_), do: ""
 
+  # Looks up the most recent completed invocation for this agent+conversation
+  # to find an A2A task_id/context_id from a previous input_required response.
+  # Returns keyword opts to pass through to ClientExecutor.send_message.
+  defp resolve_a2a_context(agent_id, conversation_id) do
+    case Orchestration.last_invocation(agent_id, conversation_id) do
+      %{output: %{"a2a_input_required" => true} = output} ->
+        []
+        |> put_a2a_opt(:task_id, output["a2a_task_id"])
+        |> put_a2a_opt(:context_id, output["a2a_context_id"])
+
+      _ ->
+        []
+    end
+  end
+
+  defp put_a2a_opt(opts, _key, nil), do: opts
+  defp put_a2a_opt(opts, key, value), do: [{key, value} | opts]
+
   # -------------------------------------------------------------------
   # Linking
   # -------------------------------------------------------------------
@@ -465,15 +509,36 @@ defmodule Summoner.Adapters.Persistence.Agents do
   # Private helpers
   # -------------------------------------------------------------------
 
-  defp maybe_generate_callname(attrs) do
+  defp maybe_generate_unique_callname(attrs) do
     callname = attrs[:callname] || attrs["callname"]
     name = attrs[:name] || attrs["name"]
 
     if callname_blank?(callname) && is_binary(name) do
-      generated = Agent.to_callname(name)
-      put_attr(attrs, :callname, generated)
+      workspace_id = attrs[:workspace_id] || attrs["workspace_id"]
+      base = Agent.to_callname(name)
+      unique = unique_callname(base, workspace_id)
+      put_attr(attrs, :callname, unique)
     else
       attrs
+    end
+  end
+
+  defp unique_callname(base, workspace_id) do
+    query =
+      from(a in Agent,
+        where: a.workspace_id == ^workspace_id and is_nil(a.deleted_at),
+        where: a.callname == ^base or like(a.callname, ^"#{base}_%"),
+        select: a.callname
+      )
+
+    existing = Repo.all(query) |> MapSet.new()
+
+    if MapSet.member?(existing, base) do
+      Stream.iterate(2, &(&1 + 1))
+      |> Enum.find(fn n -> not MapSet.member?(existing, "#{base}_#{n}") end)
+      |> then(fn n -> "#{base}_#{n}" end)
+    else
+      base
     end
   end
 

@@ -86,4 +86,4 @@ Summoner supports the [A2A protocol](https://github.com/google/A2A) for inter-ag
 
 **Skill-aware invocation:** Remote agents that advertise skills on their agent card can be invoked with explicit skill targeting (in pipelines via `pipeline_stages.skill`) or inferred skill matching (in conversations and swarms via keyword matching against skill names, descriptions, and tags).
 
-**Remote agents in workflows:** Remote agents participate in pipelines and swarms alongside local agents. The pipeline runner and swarm runner dispatch by agent type, using A2A for remote agents and the local AgentServer for local agents.
+**Remote agents in workflows:** Remote agents participate in pipelines and swarms alongside local agents. The pipeline runner and swarm runner dispatch by agent type, using A2A for remote agents and the local AgentServer for local agents. Orchestrated pipeline managers and directed swarm coordinators must be local agents. Relay swarm members must also be local (they need the `__relay__` handoff tool).

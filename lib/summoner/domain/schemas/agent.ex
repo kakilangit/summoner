@@ -76,7 +76,8 @@ defmodule Summoner.Domain.Schemas.Agent do
     |> validate_length(:name, min: 1, max: 100)
     |> validate_callname_if_present()
     |> unique_constraint([:workspace_id, :callname],
-      name: :agents_workspace_id_callname_active_index
+      name: :agents_workspace_id_callname_active_index,
+      message: "already taken by another summon or envoy in this realm"
     )
     |> foreign_key_constraint(:workspace_id)
   end

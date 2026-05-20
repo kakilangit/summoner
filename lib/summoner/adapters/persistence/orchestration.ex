@@ -74,6 +74,22 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
   end
 
   @doc """
+  Returns the most recent completed invocation for an agent in a conversation.
+
+  Used to retrieve A2A continuation context (task_id, context_id) when a
+  remote agent previously responded with `input_required`.
+  """
+  def last_invocation(agent_id, conversation_id) do
+    Invocation
+    |> where([i], i.agent_id == ^agent_id)
+    |> where([i], i.conversation_id == ^conversation_id)
+    |> where([i], i.status == :completed)
+    |> order_by([i], desc: i.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
   Transitions an invocation to a new status.
 
   Accepts optional fields: `end_reason`, `output`, `started_at`, `completed_at`.

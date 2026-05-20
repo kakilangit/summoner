@@ -16,6 +16,8 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   alias Summoner.Repo
   alias Summoner.Services.Orchestration.Cancellation
 
+  alias Summoner.Domain.Schemas.Agent
+
   # -------------------------------------------------------------------
   # Pipelines
   # -------------------------------------------------------------------
@@ -26,6 +28,7 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   def create_pipeline(%{user: _user}, attrs) do
     %Pipeline{}
     |> Pipeline.changeset(attrs)
+    |> validate_orchestrator_is_local()
     |> Repo.insert()
   end
 
@@ -80,6 +83,7 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   def update_pipeline(%{user: _user}, %Pipeline{} = pipeline, attrs) do
     pipeline
     |> Pipeline.changeset(attrs)
+    |> validate_orchestrator_is_local()
     |> Repo.update()
   end
 
@@ -125,6 +129,31 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
         {:error, reason} ->
           {:error, reason}
       end
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # Validation
+  # -------------------------------------------------------------------
+
+  defp validate_orchestrator_is_local(changeset) do
+    mode = Ecto.Changeset.get_field(changeset, :mode)
+    orchestrator_id = Ecto.Changeset.get_field(changeset, :orchestrator_agent_id)
+
+    if mode == :orchestrated && is_binary(orchestrator_id) do
+      case Repo.get(Agent, orchestrator_id) do
+        %Agent{type: :remote} ->
+          Ecto.Changeset.add_error(
+            changeset,
+            :orchestrator_agent_id,
+            "must be a local summon — remote summons cannot orchestrate quests"
+          )
+
+        _ ->
+          changeset
+      end
+    else
+      changeset
     end
   end
 

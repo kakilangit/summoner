@@ -67,7 +67,14 @@ defmodule SummonerWeb.A2AClientLive.Index do
         >
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <span class="font-medium">{agent.name}</span>
+              <.link
+                navigate={
+                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys/#{agent.id}"
+                }
+                class="font-medium hover:underline"
+              >
+                {agent.name}
+              </.link>
               <span class={"badge badge-xs #{status_badge(agent.remote_agent)}"}>
                 {agent.remote_agent.status}
               </span>

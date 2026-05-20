@@ -11,23 +11,31 @@ defmodule SummonerWeb.AgentLive.Show do
     workspace = socket.assigns.workspace
     scope = socket.assigns.current_scope
     agent = Agents.get_agent!(scope, workspace.id, id)
-    usage = Ledger.usage_for_agent(agent.id)
 
-    socket =
-      socket
-      |> assign(page_title: "#{agent.name} - #{workspace.name}")
-      |> assign(agent: agent, usage: usage)
-      |> assign(
-        breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
-          {agent.name, nil}
-        ]
-      )
-      |> load_herald()
+    if agent.type == :remote do
+      {:ok,
+       push_navigate(socket,
+         to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys/#{agent.id}"
+       )}
+    else
+      usage = Ledger.usage_for_agent(agent.id)
 
-    {:ok, socket}
+      socket =
+        socket
+        |> assign(page_title: "#{agent.name} - #{workspace.name}")
+        |> assign(agent: agent, usage: usage)
+        |> assign(
+          breadcrumbs: [
+            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+            {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+            {agent.name, nil}
+          ]
+        )
+        |> load_herald()
+
+      {:ok, socket}
+    end
   end
 
   @impl true
@@ -233,11 +241,7 @@ defmodule SummonerWeb.AgentLive.Show do
   end
 
   defp herald_url(agent) do
-    endpoint = SummonerWeb.Endpoint
-    host = endpoint.host()
-    port = endpoint.config(:http)[:port] || 4000
-    scheme = if endpoint.config(:https), do: "https", else: "http"
-    "#{scheme}://#{host}:#{port}/summons/#{agent.id}"
+    "#{SummonerWeb.Endpoint.url()}/summons/#{agent.id}"
   end
 
   # -------------------------------------------------------------------
