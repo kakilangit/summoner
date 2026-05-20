@@ -23,21 +23,21 @@ defmodule Summoner.Adapters.Persistence.Conversations do
   Creates a conversation and adds the primary agent as the first participant.
   """
   def create_conversation(%{user: user}, attrs) do
-    attrs =
+    agent_id = attrs[:primary_agent_id] || attrs["primary_agent_id"]
+
+    if agent_id && agent_deleted?(agent_id) do
+      {:error,
+       %Ecto.Changeset{
+         action: :insert,
+         errors: [primary_agent_id: {"cannot start a channel with a deleted summon", []}],
+         valid?: false
+       }}
+    else
       attrs
       |> Map.put(:user_id, user.id)
       |> maybe_add_inference_snapshot()
-
-    Repo.transact(fn ->
-      with {:ok, conversation} <-
-             %Conversation{}
-             |> Conversation.changeset(attrs)
-             |> Repo.insert(),
-           {:ok, _participant} <-
-             add_participant(conversation.id, conversation.primary_agent_id) do
-        {:ok, conversation}
-      end
-    end)
+      |> insert_conversation()
+    end
   end
 
   @doc """
@@ -46,8 +46,12 @@ defmodule Summoner.Adapters.Persistence.Conversations do
   Used by pipelines for persistent cross-run context.
   """
   def create_system_conversation(attrs) do
-    attrs = maybe_add_inference_snapshot(attrs)
+    attrs
+    |> maybe_add_inference_snapshot()
+    |> insert_conversation()
+  end
 
+  defp insert_conversation(attrs) do
     Repo.transact(fn ->
       with {:ok, conversation} <-
              %Conversation{}
@@ -97,9 +101,18 @@ defmodule Summoner.Adapters.Persistence.Conversations do
   Updates the primary agent for a conversation.
   """
   def update_primary_agent(%{user: _user}, %Conversation{} = conversation, agent_id) do
-    conversation
-    |> Conversation.update_changeset(%{primary_agent_id: agent_id})
-    |> Repo.update()
+    if agent_deleted?(agent_id) do
+      {:error,
+       %Ecto.Changeset{
+         action: :update,
+         errors: [primary_agent_id: {"cannot switch to a deleted summon", []}],
+         valid?: false
+       }}
+    else
+      conversation
+      |> Conversation.update_changeset(%{primary_agent_id: agent_id})
+      |> Repo.update()
+    end
   end
 
   @doc """
@@ -354,6 +367,13 @@ defmodule Summoner.Adapters.Persistence.Conversations do
       Map.merge(attrs, Agent.inference_snapshot(agent))
     else
       attrs
+    end
+  end
+
+  defp agent_deleted?(agent_id) do
+    case Repo.get(Agent, agent_id) do
+      %Agent{deleted_at: deleted_at} when not is_nil(deleted_at) -> true
+      _ -> false
     end
   end
 end

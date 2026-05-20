@@ -2,6 +2,8 @@ defmodule Summoner.Adapters.Persistence.AgentsTest do
   use Summoner.DataCase
 
   alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Adapters.Persistence.Swarms
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Schemas.AgentLink
 
@@ -160,6 +162,68 @@ defmodule Summoner.Adapters.Persistence.AgentsTest do
       assert_raise Ecto.NoResultsError, fn ->
         Agents.get_agent!(scope, w.id, agent.id)
       end
+    end
+
+    test "cascade-removes pipeline stages", %{scope: scope, workspace: w, provider: p} do
+      agent = agent_fixture(scope, w.id, p.id)
+
+      {:ok, pipeline} =
+        Pipelines.create_pipeline(scope, %{
+          name: "test-pipeline",
+          workspace_id: w.id
+        })
+
+      {:ok, _stage} =
+        Pipelines.add_stage(scope, %{
+          pipeline_id: pipeline.id,
+          agent_id: agent.id,
+          position: 0,
+          instruction: "do something"
+        })
+
+      assert {:ok, _} = Agents.delete_agent(scope, agent)
+      assert [] = Pipelines.list_stages(pipeline.id)
+    end
+
+    test "cascade-removes swarm members", %{scope: scope, workspace: w, provider: p} do
+      agent = agent_fixture(scope, w.id, p.id)
+
+      {:ok, swarm} =
+        Swarms.create_swarm(scope, %{
+          name: "test-swarm",
+          workspace_id: w.id
+        })
+
+      {:ok, _member} =
+        Swarms.add_member(scope, %{
+          swarm_id: swarm.id,
+          agent_id: agent.id
+        })
+
+      assert {:ok, _} = Agents.delete_agent(scope, agent)
+      assert [] = Swarms.list_members(swarm.id)
+    end
+
+    test "get_agent_with_provider! raises for deleted agent", %{
+      scope: scope,
+      workspace: w,
+      provider: p
+    } do
+      agent = agent_fixture(scope, w.id, p.id)
+      assert {:ok, _} = Agents.delete_agent(scope, agent)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Agents.get_agent_with_provider!(agent.id)
+      end
+    end
+
+    test "deleted agent callname can be reused", %{scope: scope, workspace: w, provider: p} do
+      agent = agent_fixture(scope, w.id, p.id, %{name: "reusable"})
+      assert agent.callname == "reusable"
+      assert {:ok, _} = Agents.delete_agent(scope, agent)
+
+      new_agent = agent_fixture(scope, w.id, p.id, %{name: "reusable"})
+      assert new_agent.callname == "reusable"
     end
   end
 

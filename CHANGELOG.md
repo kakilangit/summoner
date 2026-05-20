@@ -54,6 +54,12 @@ All notable changes to this project will be documented in this file.
 - **Callname uniqueness errors surfaced in UI**: Both summon and envoy forms flash a user-facing error when callname constraint is violated
 - **Bundled model changed to `qwen3:0.6b`**: Previous default `gemma3:1b` does not support tool use, causing HTTP 400 on all agent invocations
 - **Ollama error messages visible**: Upgraded arcanum to 0.1.3 which drains async response bodies on streaming errors — error details now shown in invocation output instead of opaque struct
+- **Soft-delete cascade cleanup**: Deleting an agent now removes its pipeline stages, swarm members, and conversation participants in a transaction
+- **Soft-deleted agents blocked from execution**: `get_agent_with_provider!/1` filters by `deleted_at` — deleted agents can no longer be invoked
+- **Soft-deleted agents rejected in validations**: Pipeline orchestrator, pipeline stages, swarm coordinator, and swarm member validations reject deleted agents
+- **Conversations guard deleted agents**: Creating or switching to a deleted agent is rejected with a validation error
+- **Deleted agent badge in UI**: Conversation show page displays a "deleted" badge next to soft-deleted primary agents
+- **CI: native multi-arch Docker builds**: Replaced QEMU emulation with native arm64 runners, extracted reusable `docker-build.yml` workflow, manifest creation uses `docker buildx imagetools`
 
 ## [0.1.3] - 2026-05-19
 
