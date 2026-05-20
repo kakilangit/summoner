@@ -10,11 +10,6 @@ env:
   DB_PORT: 5432
   ELIXIR_VERSION: "1.19"
   OTP_VERSION: "28"
-  REGISTRY: ghcr.io
-  DOCKER_IMAGE: ghcr.io/kakilangit/summoner
-  BUILDER_IMAGE: ghcr.io/kakilangit/summoner-builder
-  BASE_IMAGE: ghcr.io/kakilangit/summoner-base
-  SEED_IMAGE: ghcr.io/kakilangit/summoner-seed
 
 jobs:
   check-version:
@@ -91,100 +86,15 @@ jobs:
 
   docker:
     name: Docker Images
-    runs-on: ubuntu-latest
     needs: [check-version, test]
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      images: all
+      tag: ${{ needs.check-version.outputs.version }}
+      latest: true
     permissions:
       contents: read
       packages: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: recursive
-
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push builder image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/builder/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.BUILDER_IMAGE }}:${{ needs.check-version.outputs.version }}
-            ${{ env.BUILDER_IMAGE }}:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Summoner builder image (Elixir + Rust)
-            org.opencontainers.image.licenses=MIT
-          cache-from: |
-            type=registry,ref=${{ env.BUILDER_IMAGE }}:latest
-          cache-to: type=inline
-
-      - name: Build and push base image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/base/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.BASE_IMAGE }}:${{ needs.check-version.outputs.version }}
-            ${{ env.BASE_IMAGE }}:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Summoner runtime base image
-            org.opencontainers.image.licenses=MIT
-          cache-from: |
-            type=registry,ref=${{ env.BASE_IMAGE }}:latest
-          cache-to: type=inline
-
-      - name: Build and push app image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE }}:${{ needs.check-version.outputs.version }}
-            ${{ env.DOCKER_IMAGE }}:latest
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}:${{ needs.check-version.outputs.version }}
-            BASE_IMAGE=${{ env.BASE_IMAGE }}:${{ needs.check-version.outputs.version }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Summoner - Local-first AI agent platform
-            org.opencontainers.image.licenses=MIT
-          cache-from: |
-            type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
-          cache-to: type=inline
-
-      - name: Build and push seed image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/seed/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.SEED_IMAGE }}:${{ needs.check-version.outputs.version }}
-            ${{ env.SEED_IMAGE }}:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Summoner database seed image
-            org.opencontainers.image.licenses=MIT
-          cache-from: |
-            type=registry,ref=${{ env.SEED_IMAGE }}:latest
-          cache-to: type=inline
 
   check-release:
     name: Check if GitHub Release Exists
