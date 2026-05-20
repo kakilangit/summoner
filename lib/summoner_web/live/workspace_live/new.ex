@@ -1,8 +1,8 @@
 defmodule SummonerWeb.WorkspaceLive.New do
   use SummonerWeb, :live_view
 
-  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Schemas.Workspace
+  alias Summoner.Ports.Persistence.Workspaces
 
   @impl true
   def mount(_params, _session, socket) do

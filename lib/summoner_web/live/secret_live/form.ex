@@ -1,9 +1,9 @@
 defmodule SummonerWeb.SecretLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Ports.Persistence.Secrets
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Secret
+  alias Summoner.Ports.Persistence.Secrets
 
   @impl true
   def mount(params, _session, socket) do

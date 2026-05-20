@@ -15,9 +15,9 @@ defmodule Summoner.Services.A2A.ClientExecutor do
 
   require Logger
 
+  alias Summoner.Domain.Schemas.RemoteAgent
   alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Ports.Persistence.Secrets
-  alias Summoner.Domain.Schemas.RemoteAgent
   alias Summoner.Services.A2A.ContentAdapter
   alias Summoner.Services.A2A.Discovery
 

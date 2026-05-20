@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantLive.New do
   use SummonerWeb, :live_view
 
-  alias Summoner.Ports.Persistence.Tenants
   alias Summoner.Domain.Schemas.Scope
   alias Summoner.Domain.Schemas.Tenant
+  alias Summoner.Ports.Persistence.Tenants
 
   @impl true
   def mount(_params, _session, socket) do

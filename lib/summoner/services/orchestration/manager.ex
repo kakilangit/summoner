@@ -18,10 +18,10 @@ defmodule Summoner.Services.Orchestration.Manager do
 
   require Logger
 
-  alias Summoner.Ports.Persistence.Agents
-  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Subtask
   alias Summoner.Ports.Harness
+  alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Orchestration.{Dispatcher, SubtaskPlan}
   alias Summoner.Services.Orchestration.FailurePolicy
 

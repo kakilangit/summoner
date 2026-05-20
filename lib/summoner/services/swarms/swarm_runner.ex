@@ -22,13 +22,13 @@ defmodule Summoner.Services.Swarms.SwarmRunner do
 
   require Logger
 
+  alias Summoner.Domain.Events.{SwarmDone, SwarmTimeout, SwarmTurn}
+  alias Summoner.Domain.Policies.TurnRouter
+  alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Ports.Persistence.Swarms
-  alias Summoner.Domain.Events.{SwarmDone, SwarmTimeout, SwarmTurn}
-  alias Summoner.Domain.Policies.TurnRouter
-  alias Summoner.Ports.Events
   alias Summoner.Services.Agents.Server, as: AgentServer
   alias Summoner.Services.Swarms.SwarmCoordinator
 

@@ -3,8 +3,8 @@ defmodule SummonerWeb.ProviderLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Ports.Persistence.Providers
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.Providers
 
   @sort_options [{"Name", :name}, {"Kind", :kind}, {"Status", :status}, {"Created", :inserted_at}]
   @default_sort_by :name

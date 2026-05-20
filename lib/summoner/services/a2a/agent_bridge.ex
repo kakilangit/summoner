@@ -18,13 +18,13 @@ defmodule Summoner.Services.A2A.AgentBridge do
 
   require Logger
 
+  alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Types.Content
   alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Ports.Persistence.A2ATaskStore, as: SummonerTaskStore
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.MCP
   alias Summoner.Ports.Persistence.Skills
-  alias Summoner.Domain.Schemas.Agent
-  alias Summoner.Domain.Types.Content
   alias Summoner.Services.A2A.ContentAdapter
   alias Summoner.Services.Agents.Server, as: AgentServer
 

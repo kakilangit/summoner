@@ -10,8 +10,8 @@ defmodule Summoner.Services.Orchestration.Cancellation do
   external state inconsistent) but their results are discarded.
   """
 
-  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Invocation
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Agents.Server, as: AgentServer
 
   @doc """

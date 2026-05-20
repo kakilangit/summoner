@@ -1,10 +1,10 @@
 defmodule SummonerWeb.AgentLive.Show do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Ledger
-  alias Summoner.Domain.Schemas.Agent
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

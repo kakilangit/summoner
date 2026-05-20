@@ -25,9 +25,9 @@ defmodule Summoner.Services.Compactor do
   require Logger
 
   alias Arcanum.Intent
-  alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Domain.Schemas.Message
   alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Services.Inference
 
   @compact_threshold 40

@@ -1,9 +1,9 @@
 defmodule SummonerWeb.A2AClientLive.Show do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Ledger
-  alias Summoner.Domain.Schemas.Agent
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

@@ -9,8 +9,8 @@ defmodule SummonerWeb.ConversationComponents do
   """
   use Phoenix.Component
 
-  alias Summoner.Ports.Persistence.Media
   alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Persistence.Media
 
   # -------------------------------------------------------------------
   # Content block rendering

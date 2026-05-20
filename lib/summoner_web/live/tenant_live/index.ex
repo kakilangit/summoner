@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantLive.Index do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Schemas.Scope
   alias Summoner.Ports.Persistence.Admin
   alias Summoner.Ports.Persistence.Tenants
-  alias Summoner.Domain.Schemas.Scope
 
   @sort_options [{"Name", :name}, {"Created", :inserted_at}]
   @default_sort_by :name

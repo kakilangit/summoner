@@ -13,9 +13,9 @@ defmodule SummonerWeb.TenantAuth do
   import Phoenix.Component
   use SummonerWeb, :verified_routes
 
-  alias Summoner.Ports.Persistence.Tenants
   alias Summoner.Domain.Schemas.Scope
   alias Summoner.Domain.Schemas.TenantMembership
+  alias Summoner.Ports.Persistence.Tenants
 
   def on_mount(:ensure_tenant_member, params, _session, socket) do
     tenant_id = params["tenant_id"]

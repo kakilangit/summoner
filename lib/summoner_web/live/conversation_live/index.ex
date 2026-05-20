@@ -1,9 +1,9 @@
 defmodule SummonerWeb.ConversationLive.Index do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Conversations
-  alias Summoner.Domain.Schemas.Agent
 
   @sort_options [{"Title", :title}, {"Created", :inserted_at}]
   @default_sort_by :inserted_at

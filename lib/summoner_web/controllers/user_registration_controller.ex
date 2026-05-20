@@ -1,12 +1,12 @@
 defmodule SummonerWeb.UserRegistrationController do
   use SummonerWeb, :controller
 
+  alias Summoner.Domain.Schemas.Invitation
+  alias Summoner.Domain.Schemas.User
   alias Summoner.Ports.Persistence.Accounts
   alias Summoner.Ports.Persistence.Admin
   alias Summoner.Ports.Persistence.Invitations
   alias Summoner.Ports.Persistence.Tenants
-  alias Summoner.Domain.Schemas.Invitation
-  alias Summoner.Domain.Schemas.User
 
   def new(conn, params) do
     with {:ok, tenant} <- fetch_tenant(params),

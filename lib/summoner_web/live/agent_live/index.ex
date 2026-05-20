@@ -3,8 +3,8 @@ defmodule SummonerWeb.AgentLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Ports.Persistence.Agents
   alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Ports.Persistence.Agents
 
   @sort_options [{"Name", :name}, {"Role", :role}, {"Created", :inserted_at}]
   @default_sort_by :name

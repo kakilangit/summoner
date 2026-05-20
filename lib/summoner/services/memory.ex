@@ -13,12 +13,12 @@ defmodule Summoner.Services.Memory do
   """
 
   alias Arcanum.Intent
-  alias Summoner.Ports.Persistence.Conversations
-  alias Summoner.Ports.Persistence.Media
-  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Schemas.Message
   alias Summoner.Domain.Types.Content
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Services.GitContext
 
   @doc """

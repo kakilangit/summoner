@@ -17,8 +17,8 @@ defmodule Summoner.Services.Orchestration.Dispatcher do
 
   require Logger
 
-  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Schemas.Subtask
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Agents.Server, as: AgentServer
 
   @task_offer_timeout 10_000

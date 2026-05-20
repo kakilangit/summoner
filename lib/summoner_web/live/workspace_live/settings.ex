@@ -1,12 +1,12 @@
 defmodule SummonerWeb.WorkspaceLive.Settings do
   use SummonerWeb, :live_view
 
-  alias Summoner.Ports.Persistence.Media
-  alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Workspace
   alias Summoner.Domain.Schemas.WorkspaceSettings
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Workspaces
 
   @impl true
   def mount(_params, _session, socket) do

@@ -18,6 +18,7 @@ defmodule Summoner.Services.Agents.Server do
 
   require Logger
 
+  alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Audit
   alias Summoner.Ports.Persistence.Ledger
@@ -26,7 +27,6 @@ defmodule Summoner.Services.Agents.Server do
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Ports.Persistence.Skills
   alias Summoner.Ports.Persistence.Workspaces
-  alias Summoner.Ports.Events
   alias Summoner.Services.Agents.ProcessMonitor
   alias Summoner.Services.Memory
 

@@ -20,12 +20,12 @@ defmodule SummonerWeb.ConversationHelpers do
       end
   """
 
-  alias Summoner.Ports.Persistence.Conversations
-  alias Summoner.Ports.Persistence.Media
-  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Domain.Events.{ContentToken, Escalation, InvocationEvent, InvocationStarted}
   alias Summoner.Domain.Types.Content
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Media
+  alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Orchestration.Cancellation
 
   import Phoenix.Component, only: [assign: 2]
