@@ -233,11 +233,7 @@ defmodule SummonerWeb.AgentLive.Show do
   end
 
   defp herald_url(agent) do
-    endpoint = SummonerWeb.Endpoint
-    host = endpoint.host()
-    port = endpoint.config(:http)[:port] || 4000
-    scheme = if endpoint.config(:https), do: "https", else: "http"
-    "#{scheme}://#{host}:#{port}/summons/#{agent.id}"
+    "#{SummonerWeb.Endpoint.url()}/summons/#{agent.id}"
   end
 
   # -------------------------------------------------------------------
