@@ -5,6 +5,8 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
   Manages invocations, steps, and events — the lifecycle of agent work.
   """
 
+  @behaviour Summoner.Ports.Persistence.Orchestration.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Workspaces
@@ -443,6 +445,26 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
   # -------------------------------------------------------------------
   # Internal
   # -------------------------------------------------------------------
+
+  @doc """
+  Returns IDs of active (non-terminal) child invocations for a parent invocation.
+  """
+  def active_child_invocation_ids(parent_invocation_id) do
+    Invocation
+    |> where([i], i.parent_invocation_id == ^parent_invocation_id)
+    |> where([i], i.status not in [:completed, :failed, :cancelled])
+    |> select([i], i.id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Updates a subtask's `depends_on_ids` field.
+  """
+  def update_subtask_deps(%Subtask{} = subtask, deps) do
+    subtask
+    |> Ecto.Changeset.change(%{depends_on_ids: deps})
+    |> Repo.update()
+  end
 
   defp maybe_filter(query, _field, nil), do: query
 

@@ -6,6 +6,8 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   UI name: Party.
   """
 
+  @behaviour Summoner.Ports.Persistence.Swarms.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Conversations
@@ -251,6 +253,15 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     else
       changeset
     end
+  end
+
+  @doc """
+  Preloads a swarm's members using the standard member query.
+
+  Returns the swarm with members preloaded (each member's agent is loaded).
+  """
+  def preload_members(%Swarm{} = swarm) do
+    Repo.preload(swarm, members: member_query())
   end
 
   @doc false

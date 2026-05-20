@@ -3,6 +3,8 @@ defmodule Summoner.Adapters.Persistence.Accounts do
   The Accounts context.
   """
 
+  @behaviour Summoner.Ports.Persistence.Accounts.Adapter
+
   import Ecto.Query, warn: false
   alias Summoner.Repo
 
@@ -300,6 +302,20 @@ defmodule Summoner.Adapters.Persistence.Accounts do
         {:ok, {user, tokens_to_expire}}
       end
     end)
+  end
+
+  @doc "Sets a password on a user account during registration."
+  def set_user_password(%User{} = user, password) do
+    user
+    |> User.password_changeset(%{password: password})
+    |> Repo.update()
+  end
+
+  @doc "Confirms a user account by setting `confirmed_at`."
+  def confirm_user(%User{} = user) do
+    user
+    |> User.confirm_changeset()
+    |> Repo.update()
   end
 
   @doc "Updates the user's active theme."

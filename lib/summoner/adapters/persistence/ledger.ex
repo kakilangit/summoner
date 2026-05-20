@@ -15,6 +15,8 @@ defmodule Summoner.Adapters.Persistence.Ledger do
   alias Summoner.Domain.Types.Pricing
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Ledger.Adapter
+
   @doc """
   Checks whether a workspace has exceeded its monthly token quota.
 

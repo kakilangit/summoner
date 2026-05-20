@@ -7,6 +7,8 @@ defmodule Summoner.Adapters.Persistence.Tenants do
   belong to tenants, and resources can be shared at the tenant level.
   """
 
+  @behaviour Summoner.Ports.Persistence.Tenants.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Domain.Schemas.{Tenant, TenantMembership, TenantSettings}

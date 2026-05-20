@@ -12,6 +12,8 @@ defmodule Summoner.Adapters.Persistence.Audit do
   alias Summoner.Domain.Schemas.AuditLog
   alias Summoner.Repo
 
+  @behaviour Summoner.Ports.Persistence.Audit.Adapter
+
   @doc """
   Logs an audit entry.
 

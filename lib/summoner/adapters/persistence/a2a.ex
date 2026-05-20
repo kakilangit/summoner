@@ -5,6 +5,8 @@ defmodule Summoner.Adapters.Persistence.A2A do
   Manages Herald (A2A server), A2A tokens, and A2A task CRUD operations.
   """
 
+  @behaviour Summoner.Ports.Persistence.A2A.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Domain.Schemas.A2AServer

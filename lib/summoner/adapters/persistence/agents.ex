@@ -11,6 +11,8 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Config stored in `remote_agents` detail table.
   """
 
+  @behaviour Summoner.Ports.Persistence.Agents.Adapter
+
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
@@ -258,6 +260,26 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   # -------------------------------------------------------------------
+  # Preloading
+  # -------------------------------------------------------------------
+
+  @doc """
+  Preloads an agent's type-specific associations.
+
+  For local agents, preloads `local_agent: :provider`.
+  For remote agents, preloads `:remote_agent`.
+  """
+  def preload_agent(%Agent{type: :local} = agent) do
+    Repo.preload(agent, local_agent: :provider)
+  end
+
+  def preload_agent(%Agent{type: :remote} = agent) do
+    Repo.preload(agent, :remote_agent)
+  end
+
+  def preload_agent(%Agent{} = agent), do: agent
+
+  # -------------------------------------------------------------------
   # Internal API (for infrastructure use)
   # -------------------------------------------------------------------
 
@@ -496,6 +518,17 @@ defmodule Summoner.Adapters.Persistence.Agents do
     |> preload(:worker)
     |> Repo.all()
     |> Enum.map(& &1.worker)
+  end
+
+  @doc """
+  Updates a remote agent's cached agent card and metadata.
+
+  Used by Discovery to persist fetched agent cards without requiring a scope.
+  """
+  def update_remote_agent_card(%RemoteAgent{} = remote_agent, attrs) do
+    remote_agent
+    |> Ecto.Changeset.change(attrs)
+    |> Repo.update()
   end
 
   # -------------------------------------------------------------------

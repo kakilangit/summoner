@@ -6,6 +6,8 @@ defmodule Summoner.Adapters.Persistence.Pagination do
   and return a `%Pagination{}` struct with entries, metadata, and navigation info.
   """
 
+  @behaviour Summoner.Ports.Persistence.Pagination.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Repo

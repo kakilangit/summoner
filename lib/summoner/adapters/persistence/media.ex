@@ -7,6 +7,8 @@ defmodule Summoner.Adapters.Persistence.Media do
   file storage on local disk and lifecycle transitions.
   """
 
+  @behaviour Summoner.Ports.Persistence.Media.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Domain.Schemas.MediaAttachment

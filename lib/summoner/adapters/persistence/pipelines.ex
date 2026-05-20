@@ -6,6 +6,8 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   Pipeline execution is handled by `Summoner.Services.Orchestration.PipelineRunner`.
   """
 
+  @behaviour Summoner.Ports.Persistence.Pipelines.Adapter
+
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Conversations
