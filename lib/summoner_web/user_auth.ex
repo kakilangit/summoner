@@ -8,8 +8,8 @@ defmodule SummonerWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Summoner.Accounts
-  alias Summoner.Accounts.Scope
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Domain.Schemas.Scope
 
   # -------------------------------------------------------------------
   # LiveView on_mount hooks

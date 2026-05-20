@@ -1,16 +1,16 @@
 defmodule SummonerWeb.MediaProviderLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.MediaProviders
-  alias Summoner.MediaProviders.MediaProvider
-  alias Summoner.Providers
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.MediaProvider
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
       providers = Providers.list_providers(scope, workspace.id, workspace.tenant_id)
 

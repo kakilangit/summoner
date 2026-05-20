@@ -1,15 +1,15 @@
 defmodule SummonerWeb.SecretLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Secrets
-  alias Summoner.Secrets.Secret
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Secret
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
 
       {secret, title} =

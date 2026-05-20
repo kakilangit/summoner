@@ -1,17 +1,17 @@
-defmodule Summoner.Orchestration.HandoffTest do
+defmodule Summoner.Services.Orchestration.HandoffTest do
   use Summoner.DataCase
 
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
-  alias Summoner.Orchestration
-  alias Summoner.Orchestration.Handoff
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Services.Orchestration.Handoff
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     scope = user_scope_fixture()
@@ -39,7 +39,8 @@ defmodule Summoner.Orchestration.HandoffTest do
 
   test "marks originator invocation as handed_off", ctx do
     start_supervised!(
-      {Summoner.Agents.Server, [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
+      {Summoner.Services.Agents.Server,
+       [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
       id: :receiver_server
     )
 
@@ -56,7 +57,8 @@ defmodule Summoner.Orchestration.HandoffTest do
 
   test "writes public system message", ctx do
     start_supervised!(
-      {Summoner.Agents.Server, [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
+      {Summoner.Services.Agents.Server,
+       [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
       id: :receiver_server
     )
 
@@ -80,7 +82,8 @@ defmodule Summoner.Orchestration.HandoffTest do
 
   test "writes handoff_completed invocation event", ctx do
     start_supervised!(
-      {Summoner.Agents.Server, [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
+      {Summoner.Services.Agents.Server,
+       [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
       id: :receiver_server
     )
 
@@ -93,7 +96,8 @@ defmodule Summoner.Orchestration.HandoffTest do
 
   test "updates conversation primary agent", ctx do
     start_supervised!(
-      {Summoner.Agents.Server, [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
+      {Summoner.Services.Agents.Server,
+       [workspace_id: ctx.workspace.id, agent_id: ctx.receiver.id]},
       id: :receiver_server
     )
 

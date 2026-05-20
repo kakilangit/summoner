@@ -1,7 +1,7 @@
-defmodule Summoner.Orchestration.SubtaskPlanTest do
+defmodule Summoner.Services.Orchestration.SubtaskPlanTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.Orchestration.SubtaskPlan
+  alias Summoner.Services.Orchestration.SubtaskPlan
 
   describe "validate/2" do
     test "accepts a valid plan with no dependencies" do

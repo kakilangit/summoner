@@ -1,7 +1,7 @@
-defmodule Summoner.Workers.PipelineSchedulerTest do
+defmodule Summoner.Adapters.Workers.PipelineSchedulerTest do
   use Summoner.DataCase
 
-  alias Summoner.Workers.PipelineScheduler
+  alias Summoner.Adapters.Workers.PipelineScheduler
 
   describe "cron_matches?/2" do
     test "wildcard matches any value" do

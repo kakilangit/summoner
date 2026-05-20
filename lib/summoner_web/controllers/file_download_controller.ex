@@ -1,8 +1,8 @@
 defmodule SummonerWeb.FileDownloadController do
   use SummonerWeb, :controller
 
-  alias Summoner.FileSystem
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Services.FileSystem
 
   @doc """
   Downloads a single file from the workspace.

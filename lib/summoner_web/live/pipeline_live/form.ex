@@ -2,16 +2,17 @@ defmodule SummonerWeb.PipelineLive.Form do
   use SummonerWeb, :live_view
 
   alias Phoenix.HTML.Form
-  alias Summoner.Agents
-  alias Summoner.Pipelines
-  alias Summoner.Pipelines.{CronBuilder, Pipeline}
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Pipeline
+  alias Summoner.Domain.Types.CronBuilder
 
   @impl true
   def mount(params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :configure) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :configure) do
       scope = socket.assigns.current_scope
       agents = Agents.list_agents(scope, workspace.id)
 
@@ -421,7 +422,9 @@ defmodule SummonerWeb.PipelineLive.Form do
             <span class="badge badge-neutral badge-sm font-mono">#{idx + 1}</span>
             <div class="flex-1 min-w-0">
               <span class="font-medium text-sm">{stage.agent.name}</span>
-              <span class="text-xs text-base-content/50 ml-2">{stage.agent.model}</span>
+              <span class="text-xs text-base-content/50 ml-2">
+                {stage.agent.local_agent && stage.agent.local_agent.model}
+              </span>
               <p :if={stage.instruction != ""} class="text-xs text-base-content/60 mt-0.5 truncate">
                 {stage.instruction}
               </p>
@@ -490,7 +493,9 @@ defmodule SummonerWeb.PipelineLive.Form do
                 </span>
                 <div>
                   <span class="font-medium">{stage.agent.name}</span>
-                  <div class="text-sm text-base-content/60">{stage.agent.model}</div>
+                  <div class="text-sm text-base-content/60">
+                    {stage.agent.local_agent && stage.agent.local_agent.model}
+                  </div>
                 </div>
                 <span
                   :if={stage.depends_on_positions != [] && stage.depends_on_positions != nil}

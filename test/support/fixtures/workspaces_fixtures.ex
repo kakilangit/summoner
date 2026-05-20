@@ -1,11 +1,11 @@
-defmodule Summoner.WorkspacesFixtures do
+defmodule Summoner.Adapters.Persistence.WorkspacesFixtures do
   @moduledoc """
   Test helpers for creating workspace-related entities.
   """
 
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Workspaces
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   def unique_workspace_name, do: "workspace-#{System.unique_integer([:positive])}"
 

@@ -1,12 +1,14 @@
-defmodule Summoner.WorkspacesTest do
+defmodule Summoner.Adapters.Persistence.WorkspacesTest do
   use Summoner.DataCase
 
-  alias Summoner.Workspaces
-  alias Summoner.Workspaces.{Workspace, WorkspaceMembership, WorkspaceSettings}
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Schemas.Workspace
+  alias Summoner.Domain.Schemas.WorkspaceMembership
+  alias Summoner.Domain.Schemas.WorkspaceSettings
 
-  import Summoner.AccountsFixtures
-  import Summoner.TenantsFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_scope(_context) do
     scope = user_scope_fixture()

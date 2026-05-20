@@ -1,7 +1,7 @@
-defmodule Summoner.Swarms.SwarmCoordinatorTest do
+defmodule Summoner.Services.Swarms.SwarmCoordinatorTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.Swarms.SwarmCoordinator
+  alias Summoner.Services.Swarms.SwarmCoordinator
 
   defp agent(name, callname),
     do: %{id: "id_#{callname}", name: name, callname: callname}

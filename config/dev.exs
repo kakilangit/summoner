@@ -97,7 +97,7 @@ config :phoenix_live_view,
 config :swoosh, :api_client, false
 
 # Cloak encryption key for dev (generate with: 32 |> :crypto.strong_rand_bytes() |> Base.encode64())
-config :summoner, Summoner.Vault,
+config :summoner, Summoner.Adapters.Crypto.Vault,
   ciphers: [
     default: {
       Cloak.Ciphers.AES.GCM,

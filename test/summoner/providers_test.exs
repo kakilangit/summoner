@@ -1,15 +1,15 @@
-defmodule Summoner.ProvidersTest do
+defmodule Summoner.Adapters.Persistence.ProvidersTest do
   use Summoner.DataCase
 
   import Mox
 
-  alias Summoner.HTTPClientMock
-  alias Summoner.Providers
-  alias Summoner.Providers.Provider
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Domain.Schemas.Provider
+  alias Summoner.Ports.HTTPClientMock
 
-  import Summoner.AccountsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup :verify_on_exit!
 

@@ -3,10 +3,11 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Agents
-  alias Summoner.Broadcasts
-  alias Summoner.Pipelines
-  alias Summoner.Workers.PipelineRunnerJob
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Adapters.Workers.PipelineRunnerJob
+  alias Summoner.Ports.Events
+  alias Summoner.Services.TimeZone
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -16,7 +17,7 @@ defmodule SummonerWeb.PipelineLive.Show do
     runs_page = Pipelines.list_runs_paginated(pipeline.id)
 
     if connected?(socket) do
-      Broadcasts.subscribe(Broadcasts.pipeline_topic(workspace.id, pipeline.id))
+      Events.subscribe({:pipeline, workspace.id, pipeline.id})
     end
 
     socket =
@@ -105,7 +106,7 @@ defmodule SummonerWeb.PipelineLive.Show do
 
   # PubSub handlers — refresh runs on any status change
   @impl true
-  def handle_info({:pipeline_run_status, _run_id, _status}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineRunStatus{}, socket) do
     pipeline_id = socket.assigns.pipeline.id
 
     runs_page =
@@ -120,7 +121,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   end
 
   @impl true
-  def handle_info({:pipeline_run_stage_status, _run_id, _position, _status}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineStageStatus{}, socket) do
     runs_page =
       Pipelines.list_runs_paginated(socket.assigns.pipeline.id,
         page: socket.assigns.runs_page.page
@@ -160,7 +161,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   defp switch_stage_model(socket, scope, pipeline, stage, model) do
     case Agents.update_agent(scope, stage.agent, %{model: model}) do
       {:ok, updated_agent} ->
-        updated_agent = Summoner.Repo.preload(updated_agent, :provider)
+        updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
         pipeline = replace_stage_agent(pipeline, stage.id, updated_agent)
 
         {:noreply,
@@ -208,7 +209,7 @@ defmodule SummonerWeb.PipelineLive.Show do
               {@pipeline.trigger_type}
             </span>
             <span :if={@pipeline.cron_expression} class="text-sm text-base-content/60">
-              {Summoner.Pipelines.CronBuilder.to_human(@pipeline.cron_expression)}
+              {Summoner.Domain.Types.CronBuilder.to_human(@pipeline.cron_expression)}
             </span>
           </div>
         </div>
@@ -368,7 +369,7 @@ defmodule SummonerWeb.PipelineLive.Show do
   defp format_datetime(nil), do: "-"
 
   defp format_datetime(dt) do
-    Summoner.TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
+    TimeZone.format(dt, format: "%Y-%m-%d %H:%M:%S")
   end
 
   defp format_duration(_, nil), do: "-"

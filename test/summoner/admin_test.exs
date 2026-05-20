@@ -1,11 +1,13 @@
-defmodule Summoner.AdminTest do
+defmodule Summoner.Adapters.Persistence.AdminTest do
   use Summoner.DataCase, async: true
 
-  alias Summoner.Accounts.{Scope, User}
-  alias Summoner.Admin
+  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Adapters.Persistence.Admin
+  alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Domain.Schemas.User
 
-  import Summoner.AccountsFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   describe "list_users/1" do
     test "returns paginated users ordered by email" do
@@ -123,7 +125,7 @@ defmodule Summoner.AdminTest do
       assert {:ok, _} = Admin.delete_workspace(workspace)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Summoner.Repo.get!(Summoner.Workspaces.Workspace, workspace.id)
+        Summoner.Repo.get!(Summoner.Domain.Schemas.Workspace, workspace.id)
       end
     end
 
@@ -181,7 +183,7 @@ defmodule Summoner.AdminTest do
       {:ok, _disabled} = Admin.disable_user(user)
 
       assert is_nil(
-               Summoner.Accounts.get_user_by_email_and_password(
+               Accounts.get_user_by_email_and_password(
                  user.email,
                  valid_user_password()
                )

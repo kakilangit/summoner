@@ -1,19 +1,20 @@
 defmodule SummonerWeb.WorkspaceLive.Settings do
   use SummonerWeb, :live_view
 
-  alias Summoner.Media
-  alias Summoner.Presets
-  alias Summoner.Workspaces
-  alias Summoner.Workspaces.Policy
-  alias Summoner.Workspaces.Workspace
+  alias Summoner.Adapters.Persistence.Media
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Policies.WorkspacePolicy
+  alias Summoner.Domain.Schemas.Workspace
+  alias Summoner.Domain.Schemas.WorkspaceSettings
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(_params, _session, socket) do
     workspace = socket.assigns.workspace
 
-    if Policy.can?(socket.assigns.membership, :manage_workspace) do
+    if WorkspacePolicy.can?(socket.assigns.membership, :manage_workspace) do
       ws_changeset = Workspace.changeset(workspace, %{})
-      settings_changeset = Workspaces.WorkspaceSettings.changeset(workspace.settings, %{})
+      settings_changeset = WorkspaceSettings.changeset(workspace.settings, %{})
 
       socket =
         socket
@@ -89,7 +90,7 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
   def handle_event("reset_harness", _params, socket) do
     default = Presets.default_harness()
     settings = socket.assigns.workspace.settings
-    changeset = Workspaces.WorkspaceSettings.changeset(settings, %{"harness" => default})
+    changeset = WorkspaceSettings.changeset(settings, %{"harness" => default})
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
@@ -220,6 +221,16 @@ defmodule SummonerWeb.WorkspaceLive.Settings do
             <strong>Tool Timeout</strong>
             — max time per tool call. <strong>Invocation Timeout</strong>
             — max total time for a summon's full response (also used as the per-turn timeout in partys).
+          </p>
+          <.input
+            field={@form[:default_max_tool_concurrency]}
+            type="number"
+            label="Default Tool Concurrency"
+            min="1"
+            required
+          />
+          <p class="text-xs text-base-content/50">
+            Maximum parallel tool executions per step. Individual summons can override this.
           </p>
           <div>
             <.button phx-disable-with="Saving..." class="btn btn-primary btn-sm">

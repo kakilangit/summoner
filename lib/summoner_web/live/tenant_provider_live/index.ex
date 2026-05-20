@@ -1,7 +1,8 @@
 defmodule SummonerWeb.TenantProviderLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Providers
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Domain.Types.Presets
 
   @sort_options [{"Name", :name}, {"Kind", :kind}, {"Status", :status}, {"Created", :inserted_at}]
   @default_sort_by :name
@@ -185,7 +186,7 @@ defmodule SummonerWeb.TenantProviderLive.Index do
   defp toggle_dir(:desc), do: :asc
 
   defp provider_kind_label(kind) do
-    case Summoner.Presets.provider(kind) do
+    case Presets.provider(kind) do
       %{label: label} -> label
       _ -> kind
     end

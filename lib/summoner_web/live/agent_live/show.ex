@@ -1,9 +1,10 @@
 defmodule SummonerWeb.AgentLive.Show do
   use SummonerWeb, :live_view
 
-  alias Summoner.Agents
-  alias Summoner.Agents.Agent
-  alias Summoner.Ledger
+  alias Summoner.Adapters.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Ledger
+  alias Summoner.Domain.Schemas.Agent
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -24,8 +25,50 @@ defmodule SummonerWeb.AgentLive.Show do
           {agent.name, nil}
         ]
       )
+      |> load_herald()
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_event("toggle_herald", _params, socket) do
+    agent = socket.assigns.agent
+    workspace = socket.assigns.workspace
+
+    case socket.assigns.herald do
+      nil ->
+        {:ok, server} =
+          SummonerA2A.create_server(%{
+            agent_id: agent.id,
+            workspace_id: workspace.id,
+            access_mode: :public
+          })
+
+        {:noreply,
+         socket
+         |> assign(herald: server)
+         |> put_flash(:info, "Herald enabled.")}
+
+      server ->
+        {:ok, _} = SummonerA2A.delete_server(server)
+
+        {:noreply,
+         socket
+         |> assign(herald: nil)
+         |> put_flash(:info, "Herald disabled.")}
+    end
+  end
+
+  def handle_event("toggle_access_mode", _params, socket) do
+    herald = socket.assigns.herald
+    new_mode = if herald.access_mode == :public, do: :protected, else: :public
+    {:ok, updated} = SummonerA2A.update_server(herald, %{access_mode: new_mode})
+    {:noreply, assign(socket, herald: updated)}
+  end
+
+  defp load_herald(socket) do
+    herald = SummonerA2A.get_server_by_agent_id(socket.assigns.agent.id)
+    assign(socket, herald: herald)
   end
 
   @impl true
@@ -35,6 +78,7 @@ defmodule SummonerWeb.AgentLive.Show do
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">{@agent.name}</h1>
         <.link
+          :if={@can?.(:operate)}
           navigate={
             ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/edit"
           }
@@ -56,19 +100,31 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             {@agent.role}
           </span>
-          <span class="text-sm text-base-content/60">{@agent.model}</span>
+          <span :if={@agent.local_agent} class="text-sm text-base-content/60">
+            {@agent.local_agent.model}
+          </span>
         </div>
 
-        <div :if={@agent.system_prompt} class="collapse collapse-arrow bg-base-200">
+        <div
+          :if={@agent.local_agent && @agent.local_agent.system_prompt}
+          class="collapse collapse-arrow bg-base-200"
+        >
           <input type="checkbox" checked />
           <div class="collapse-title text-sm font-medium">Instructions</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">{@agent.system_prompt}</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.system_prompt}
+          </div>
         </div>
 
-        <div :if={@agent.personality} class="collapse collapse-arrow bg-base-200">
+        <div
+          :if={@agent.local_agent && @agent.local_agent.personality}
+          class="collapse collapse-arrow bg-base-200"
+        >
           <input type="checkbox" checked />
           <div class="collapse-title text-sm font-medium">Persona</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">{@agent.personality}</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.personality}
+          </div>
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -90,25 +146,27 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
         </div>
 
-        <div class="collapse collapse-arrow bg-base-200">
+        <.herald_section herald={@herald} agent={@agent} can?={@can?} />
+
+        <div :if={@agent.local_agent} class="collapse collapse-arrow bg-base-200">
           <input type="checkbox" />
           <div class="collapse-title font-medium text-sm">Advanced Settings</div>
           <div class="collapse-content">
             <div class="grid grid-cols-2 gap-2 text-sm">
               <div class="text-base-content/60">Max Steps</div>
-              <div>{@agent.max_steps}</div>
+              <div>{@agent.local_agent.max_steps}</div>
               <div class="text-base-content/60">Max Concurrent</div>
-              <div>{@agent.max_concurrent_invocations}</div>
+              <div>{@agent.local_agent.max_concurrent_invocations}</div>
               <div class="text-base-content/60">Max Delegation</div>
-              <div>{@agent.max_delegation_concurrency}</div>
+              <div>{@agent.local_agent.max_delegation_concurrency}</div>
               <div class="text-base-content/60">Token Limit</div>
-              <div>{@agent.max_tokens_per_invocation}</div>
+              <div>{@agent.local_agent.max_tokens_per_invocation}</div>
               <div class="text-base-content/60">Context Length</div>
-              <div>{@agent.context_length || "Default (131072)"}</div>
+              <div>{@agent.local_agent.context_length || "Default (131072)"}</div>
               <div class="text-base-content/60">Step Timeout</div>
-              <div>{@agent.step_timeout_s}s</div>
+              <div>{@agent.local_agent.step_timeout_s}s</div>
               <div class="text-base-content/60">Total Timeout</div>
-              <div>{@agent.total_timeout_s}s</div>
+              <div>{@agent.local_agent.total_timeout_s}s</div>
             </div>
           </div>
         </div>
@@ -118,6 +176,73 @@ defmodule SummonerWeb.AgentLive.Show do
     </div>
     """
   end
+
+  # -------------------------------------------------------------------
+  # Herald — toggle + access mode only
+  # -------------------------------------------------------------------
+
+  attr :herald, :any, required: true
+  attr :agent, :any, required: true
+  attr :can?, :any, required: true
+
+  defp herald_section(assigns) do
+    ~H"""
+    <div class="collapse collapse-arrow bg-base-200">
+      <input type="checkbox" checked={@herald != nil} />
+      <div class="collapse-title font-medium text-sm">
+        Herald (A2A) <span :if={@herald} class="badge badge-xs badge-success ml-2">Active</span>
+      </div>
+      <div class="collapse-content space-y-3">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-base-content/60">
+            Expose this summon as a remote A2A agent.
+          </p>
+          <button
+            :if={@can?.(:operate)}
+            phx-click="toggle_herald"
+            class={["btn btn-xs", (@herald && "btn-error") || "btn-primary"]}
+          >
+            {if @herald, do: "Disable", else: "Enable"}
+          </button>
+        </div>
+
+        <div :if={@herald} class="space-y-2">
+          <div class="text-xs font-mono bg-base-300 p-2 rounded select-all overflow-x-auto">
+            {herald_url(@agent)}
+          </div>
+
+          <div :if={@can?.(:operate)} class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <button phx-click="toggle_access_mode" class="btn btn-xs btn-ghost">
+              <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+                {@herald.access_mode}
+              </span>
+            </button>
+          </div>
+
+          <div :if={!@can?.(:operate)} class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+              {@herald.access_mode}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp herald_url(agent) do
+    endpoint = SummonerWeb.Endpoint
+    host = endpoint.host()
+    port = endpoint.config(:http)[:port] || 4000
+    scheme = if endpoint.config(:https), do: "https", else: "http"
+    "#{scheme}://#{host}:#{port}/summons/#{agent.id}"
+  end
+
+  # -------------------------------------------------------------------
+  # Usage stats
+  # -------------------------------------------------------------------
 
   attr :usage, :map, required: true
 

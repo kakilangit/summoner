@@ -1,14 +1,15 @@
-defmodule Summoner.MemoryTest do
+defmodule Summoner.Services.MemoryTest do
   use Summoner.DataCase
 
   alias Arcanum.Intent
-  alias Summoner.Conversations
-  alias Summoner.Memory
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Services.Memory
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()
@@ -22,7 +23,7 @@ defmodule Summoner.MemoryTest do
       )
 
     conversation =
-      Summoner.ConversationsFixtures.conversation_fixture(scope, workspace.id, agent.id)
+      conversation_fixture(scope, workspace.id, agent.id)
 
     %{scope: scope, workspace: workspace, agent: agent, conversation: conversation}
   end
@@ -41,31 +42,31 @@ defmodule Summoner.MemoryTest do
     end
 
     test "handles nil personality" do
-      agent = %{system_prompt: "Instructions here.", personality: nil}
+      agent = %{local_agent: %{system_prompt: "Instructions here.", personality: nil}}
       result = Memory.build_system_prompt(agent, nil, harness: "")
       assert result.content == Intent.text("Instructions here.")
     end
 
     test "handles nil system_prompt" do
-      agent = %{system_prompt: nil, personality: "Be friendly."}
+      agent = %{local_agent: %{system_prompt: nil, personality: "Be friendly."}}
       result = Memory.build_system_prompt(agent, nil, harness: "")
       assert result.content == Intent.text("Be friendly.")
     end
 
     test "handles both nil" do
-      agent = %{system_prompt: nil, personality: nil}
+      agent = %{local_agent: %{system_prompt: nil, personality: nil}}
       result = Memory.build_system_prompt(agent, nil, harness: "")
       assert result.content == Intent.text("")
     end
 
     test "prepends harness when provided" do
-      agent = %{system_prompt: "Do the thing.", personality: nil}
+      agent = %{local_agent: %{system_prompt: "Do the thing.", personality: nil}}
       result = Memory.build_system_prompt(agent, nil, harness: "## Rules\nBe safe.")
       assert result.content == Intent.text("## Rules\nBe safe.\n\nDo the thing.")
     end
 
     test "uses default harness from presets when harness is nil" do
-      agent = %{system_prompt: "Hello.", personality: nil}
+      agent = %{local_agent: %{system_prompt: "Hello.", personality: nil}}
       result = Memory.build_system_prompt(agent)
       assert Intent.to_text(result.content) =~ "Operational Guidelines"
       assert Intent.to_text(result.content) =~ "Hello."

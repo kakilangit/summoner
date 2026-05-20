@@ -5,6 +5,9 @@ defmodule Summoner.Application do
 
   use Application
 
+  alias Summoner.Adapters.Persistence.Themes
+  alias Summoner.Services.Inference.Discovery
+
   @impl true
   def start(_type, _args) do
     Application.put_env(:summoner, :admin_email, System.get_env("ADMIN_EMAIL"))
@@ -19,11 +22,14 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
+        {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
+        {DynamicSupervisor,
+         name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
         {Task.Supervisor, name: Summoner.TaskSupervisor},
-        Summoner.EventLog,
-        Summoner.Agents.ProcessMonitor,
+        Summoner.Services.EventLog,
+        Summoner.Services.Agents.ProcessMonitor,
         {Oban, Application.fetch_env!(:summoner, Oban)},
-        Summoner.Vault
+        Summoner.Adapters.Crypto.Vault
       ] ++
         maybe_registry() ++
         maybe_discovery() ++
@@ -57,7 +63,7 @@ defmodule Summoner.Application do
 
   defp maybe_discovery do
     if Application.get_env(:summoner, :start_discovery, true) do
-      [Summoner.Inference.Discovery]
+      [Discovery]
     else
       []
     end
@@ -65,7 +71,7 @@ defmodule Summoner.Application do
 
   defp maybe_theme_init do
     if Application.get_env(:summoner, :start_theme_init, true) do
-      [{Task, &Summoner.Themes.seed_builtins/0}]
+      [{Task, &Themes.seed_builtins/0}]
     else
       []
     end

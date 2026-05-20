@@ -7,7 +7,7 @@ defmodule SummonerWeb.AuthorizeHelper do
 
   import Phoenix.LiveView
 
-  alias Summoner.Workspaces.Policy
+  alias Summoner.Domain.Policies.WorkspacePolicy
 
   @doc """
   Checks if the current membership can perform the action.
@@ -23,7 +23,7 @@ defmodule SummonerWeb.AuthorizeHelper do
   def authorize(socket, action, callback) do
     membership = socket.assigns.membership
 
-    if Policy.can?(membership, action) do
+    if WorkspacePolicy.can?(membership, action) do
       callback.()
     else
       {:noreply, put_flash(socket, :error, "You don't have permission to do that.")}

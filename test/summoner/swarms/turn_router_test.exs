@@ -1,8 +1,8 @@
-defmodule Summoner.Swarms.TurnRouterTest do
+defmodule Summoner.Domain.Policies.TurnRouterTest do
   use Summoner.DataCase
 
-  alias Summoner.Swarms.Swarm
-  alias Summoner.Swarms.TurnRouter
+  alias Summoner.Domain.Policies.TurnRouter
+  alias Summoner.Domain.Schemas.Swarm
 
   # Build minimal agent structs for testing
   defp agent(name, id \\ nil) do

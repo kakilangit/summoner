@@ -23,7 +23,7 @@
 
     <.form
       :let={f}
-      :if={Summoner.Admin.smtp_configured?()}
+      :if={Summoner.Adapters.Persistence.Admin.smtp_configured?()}
       for={@form}
       as={:user}
       id="login_form_magic"
@@ -44,7 +44,7 @@
       </.button>
     </.form>
 
-    <div :if={Summoner.Admin.smtp_configured?()} class="divider">or</div>
+    <div :if={Summoner.Adapters.Persistence.Admin.smtp_configured?()} class="divider">or</div>
 
     <.form :let={f} for={@form} as={:user} id="login_form_password" action={~p"/users/log-in"}>
       <.input

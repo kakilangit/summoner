@@ -1,13 +1,13 @@
-defmodule Summoner.Inference.DiscoveryTest do
+defmodule Summoner.Services.Inference.DiscoveryTest do
   use Summoner.DataCase, async: false
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias Summoner.Inference.Discovery
-  alias Summoner.Providers.Provider
+  alias Summoner.Domain.Schemas.Provider
+  alias Summoner.Services.Inference.Discovery
 
-  import Summoner.AccountsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup do
     # Discovery spawns tasks that need DB access

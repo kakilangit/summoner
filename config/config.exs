@@ -10,13 +10,13 @@ import Config
 config :summoner, :scopes,
   user: [
     default: true,
-    module: Summoner.Accounts.Scope,
+    module: Summoner.Domain.Schemas.Scope,
     assign_key: :current_scope,
     access_path: [:user, :id],
     schema_key: :user_id,
     schema_type: :binary_id,
     schema_table: :users,
-    test_data_fixture: Summoner.AccountsFixtures,
+    test_data_fixture: Summoner.Adapters.Persistence.AccountsFixtures,
     test_setup_helper: :register_and_log_in_user
   ]
 
@@ -47,7 +47,7 @@ config :summoner, SummonerWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :summoner, Summoner.Mailer, adapter: Swoosh.Adapters.Local
+config :summoner, Summoner.Adapters.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
@@ -86,10 +86,10 @@ config :summoner, Oban,
     {Oban.Plugins.Pruner, max_age: 3_600},
     {Oban.Plugins.Cron,
      crontab: [
-       {"* * * * *", Summoner.Workers.InvocationReaper},
-       {"* * * * *", Summoner.Workers.SubtaskReaper},
-       {"* * * * *", Summoner.Workers.PipelineScheduler},
-       {"0 3 * * *", Summoner.Workers.MediaCleanup}
+       {"* * * * *", Summoner.Adapters.Workers.InvocationReaper},
+       {"* * * * *", Summoner.Adapters.Workers.SubtaskReaper},
+       {"* * * * *", Summoner.Adapters.Workers.PipelineScheduler},
+       {"0 3 * * *", Summoner.Adapters.Workers.MediaCleanup}
      ]}
   ]
 

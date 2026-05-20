@@ -3,9 +3,9 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Broadcasts
-  alias Summoner.Pipelines
-  alias Summoner.Workers.PipelineRunnerJob
+  alias Summoner.Adapters.Persistence.Pipelines
+  alias Summoner.Adapters.Workers.PipelineRunnerJob
+  alias Summoner.Ports.Events
 
   @sort_options [
     {"Name", :name},
@@ -41,7 +41,7 @@ defmodule SummonerWeb.PipelineLive.Index do
 
     if connected?(socket) do
       Enum.each(socket.assigns.page.entries, fn p ->
-        Broadcasts.subscribe(Broadcasts.pipeline_topic(workspace.id, p.id))
+        Events.subscribe({:pipeline, workspace.id, p.id})
       end)
     end
 
@@ -128,13 +128,13 @@ defmodule SummonerWeb.PipelineLive.Index do
 
   # PubSub — refresh latest runs on status changes
   @impl true
-  def handle_info({:pipeline_run_status, _run_id, _status}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineRunStatus{}, socket) do
     latest_runs = load_latest_runs(socket.assigns.page.entries)
     {:noreply, assign(socket, latest_runs: latest_runs)}
   end
 
   @impl true
-  def handle_info({:pipeline_run_stage_status, _run_id, _position, _status}, socket) do
+  def handle_info(%Summoner.Domain.Events.PipelineStageStatus{}, socket) do
     latest_runs = load_latest_runs(socket.assigns.page.entries)
     {:noreply, assign(socket, latest_runs: latest_runs)}
   end
@@ -222,7 +222,7 @@ defmodule SummonerWeb.PipelineLive.Index do
             <div class="text-sm text-base-content/60">
               {length(pipeline.stages)} phase(s)
               <span :if={pipeline.cron_expression}>
-                &middot; {Summoner.Pipelines.CronBuilder.to_human(pipeline.cron_expression)}
+                &middot; {Summoner.Domain.Types.CronBuilder.to_human(pipeline.cron_expression)}
               </span>
               <span :if={@latest_runs[pipeline.id]}>
                 &middot; last run {format_relative(@latest_runs[pipeline.id].started_at)}

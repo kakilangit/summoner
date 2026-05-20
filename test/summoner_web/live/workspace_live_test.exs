@@ -3,9 +3,10 @@ defmodule SummonerWeb.WorkspaceLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Summoner.Workspaces
+  alias Summoner.Adapters.Persistence.Workspaces
 
-  import Summoner.TenantsFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.TenantsFixtures
 
   setup :register_and_log_in_user
 
@@ -93,7 +94,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     end
 
     test "redirects for non-member workspace", %{conn: conn} do
-      other_scope = Summoner.AccountsFixtures.user_scope_fixture()
+      other_scope = user_scope_fixture()
       other_tenant = tenant_fixture(other_scope)
 
       {:ok, other_ws} =

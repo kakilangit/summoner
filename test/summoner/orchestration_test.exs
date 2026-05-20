@@ -1,14 +1,14 @@
-defmodule Summoner.OrchestrationTest do
+defmodule Summoner.Adapters.Persistence.OrchestrationTest do
   use Summoner.DataCase
 
-  alias Summoner.Orchestration
+  alias Summoner.Adapters.Persistence.Orchestration
 
-  import Summoner.AccountsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

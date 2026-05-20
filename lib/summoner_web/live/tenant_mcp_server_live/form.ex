@@ -1,9 +1,9 @@
 defmodule SummonerWeb.TenantMcpServerLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.MCP
-  alias Summoner.MCP.McpServer
-  alias Summoner.Presets
+  alias Summoner.Adapters.Persistence.MCP
+  alias Summoner.Domain.Schemas.McpServer
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do

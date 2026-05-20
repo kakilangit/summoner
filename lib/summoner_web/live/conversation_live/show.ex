@@ -3,15 +3,29 @@ defmodule SummonerWeb.ConversationLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Agents
-  alias Summoner.Agents.Server, as: AgentServer
-  alias Summoner.Broadcasts
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Content
-  alias Summoner.Media
-  alias Summoner.MediaProviders
-  alias Summoner.Orchestration
-  alias Summoner.Workers.MediaGeneration
+  alias Summoner.Adapters.Persistence.Agents
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Media
+  alias Summoner.Adapters.Persistence.MediaProviders
+  alias Summoner.Adapters.Persistence.Orchestration
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Adapters.Workers.MediaGeneration
+
+  alias Summoner.Domain.Events.{
+    ContentToken,
+    Escalation,
+    InvocationCompleted,
+    InvocationEvent,
+    InvocationFailed,
+    InvocationStarted,
+    MediaGenerationCompleted,
+    MediaGenerationFailed,
+    MediaGenerationStarted
+  }
+
+  alias Summoner.Domain.Schemas.Agent
+  alias Summoner.Domain.Types.Content
+  alias Summoner.Ports.Events
 
   alias SummonerWeb.ConversationComponents, as: SC
   alias SummonerWeb.ConversationHelpers, as: SH
@@ -25,11 +39,11 @@ defmodule SummonerWeb.ConversationLive.Show do
     messages = Conversations.list_messages(conversation_id, visibility: :public)
 
     if connected?(socket) do
-      Broadcasts.subscribe(Broadcasts.escalations_topic(workspace.id))
-      Broadcasts.subscribe(Broadcasts.conversation_topic(workspace.id, conversation_id))
+      Events.subscribe({:escalations, workspace.id})
+      Events.subscribe({:conversation, workspace.id, conversation_id})
 
       if conversation.primary_agent_id do
-        Broadcasts.subscribe(Broadcasts.agent_topic(workspace.id, conversation.primary_agent_id))
+        Events.subscribe({:agent, workspace.id, conversation.primary_agent_id})
       end
     end
 
@@ -77,7 +91,7 @@ defmodule SummonerWeb.ConversationLive.Show do
     if agent && agent.id == agent_id do
       case Agents.update_agent(scope, agent, %{model: model}) do
         {:ok, updated_agent} ->
-          updated_agent = Summoner.Repo.preload(updated_agent, :provider)
+          updated_agent = Summoner.Repo.preload(updated_agent, local_agent: :provider)
           conversation = %{socket.assigns.conversation | primary_agent: updated_agent}
 
           {:noreply,
@@ -184,7 +198,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   def handle_event("open_workspace", _params, socket) do
     workspace = socket.assigns.workspace
 
-    case Summoner.Workspaces.open_workspace_dir(workspace.id) do
+    case Workspaces.open_workspace_dir(workspace.id) do
       :ok ->
         {:noreply, socket}
 
@@ -206,35 +220,31 @@ defmodule SummonerWeb.ConversationLive.Show do
   # -------------------------------------------------------------------
 
   @impl true
-  def handle_info({:content_token, _, _} = msg, socket),
-    do: SH.handle_content_token(msg, socket)
+  def handle_info(%ContentToken{} = event, socket),
+    do: SH.handle_content_token(event, socket)
 
   @impl true
-  def handle_info({:invocation_status, _, :running} = msg, socket),
-    do: SH.handle_invocation_running(msg, socket)
+  def handle_info(%InvocationStarted{} = event, socket),
+    do: SH.handle_invocation_running(event, socket)
 
   @impl true
-  def handle_info({:invocation_status, _, :completed}, socket),
+  def handle_info(%InvocationCompleted{}, socket),
     do: SH.handle_invocation_completed(socket)
 
   @impl true
-  def handle_info({:invocation_status, _, :failed, output}, socket),
+  def handle_info(%InvocationFailed{output: output}, socket),
     do: SH.handle_invocation_failed(socket, output)
 
   @impl true
-  def handle_info({:invocation_status, _, :failed}, socket),
-    do: SH.handle_invocation_failed(socket, nil)
+  def handle_info(%InvocationEvent{} = event, socket),
+    do: SH.handle_invocation_event(event, socket)
 
   @impl true
-  def handle_info({:invocation_event, _} = msg, socket),
-    do: SH.handle_invocation_event(msg, socket)
+  def handle_info(%Escalation{} = event, socket),
+    do: SH.handle_escalation(event, socket)
 
   @impl true
-  def handle_info({:escalation, _, _} = msg, socket),
-    do: SH.handle_escalation(msg, socket)
-
-  @impl true
-  def handle_info({:media_generation_complete, _conv_id, %{attachment_id: id}}, socket) do
+  def handle_info(%MediaGenerationCompleted{attachment_id: id}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -246,7 +256,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   end
 
   @impl true
-  def handle_info({:media_generation_failed, _conv_id, %{attachment_id: id}}, socket) do
+  def handle_info(%MediaGenerationFailed{attachment_id: id}, socket) do
     messages =
       Conversations.list_messages(socket.assigns.conversation.id, visibility: :public)
 
@@ -258,7 +268,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   end
 
   @impl true
-  def handle_info({:media_generation_started, _conv_id, _payload}, socket) do
+  def handle_info(%MediaGenerationStarted{}, socket) do
     {:noreply, socket}
   end
 
@@ -322,11 +332,11 @@ defmodule SummonerWeb.ConversationLive.Show do
             {@conversation.primary_agent.name}
           </span>
           <span
-            :if={@conversation.primary_agent.personality}
+            :if={Agent.description(@conversation.primary_agent)}
             class="text-xs text-base-content/40 truncate max-w-xs"
-            title={@conversation.primary_agent.personality}
+            title={Agent.description(@conversation.primary_agent)}
           >
-            — {@conversation.primary_agent.personality}
+            — {Agent.description(@conversation.primary_agent)}
           </span>
           <.model_switcher agent={@conversation.primary_agent} id="chat-model-switcher" />
         </div>
@@ -459,8 +469,8 @@ defmodule SummonerWeb.ConversationLive.Show do
     workspace = socket.assigns.workspace
     scope = socket.assigns.current_scope
 
-    if conversation.primary_agent_id do
-      AgentServer.invoke_async(workspace.id, conversation.primary_agent_id, %{
+    if conversation.primary_agent do
+      Agents.execute_async(conversation.primary_agent, workspace.id, %{
         conversation_id: conversation.id,
         message: content,
         scope: scope
@@ -483,10 +493,10 @@ defmodule SummonerWeb.ConversationLive.Show do
         message
       )
 
-    if user_msg && conversation.primary_agent_id do
-      text = Conversations.Content.text_only(user_msg.content)
+    if user_msg && conversation.primary_agent do
+      text = Content.text_only(user_msg.content)
 
-      AgentServer.invoke_async(workspace.id, conversation.primary_agent_id, %{
+      Agents.execute_async(conversation.primary_agent, workspace.id, %{
         conversation_id: conversation.id,
         message: text,
         scope: scope

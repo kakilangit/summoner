@@ -1,13 +1,13 @@
-defmodule Summoner.SkillsTest do
+defmodule Summoner.Adapters.Persistence.SkillsTest do
   use Summoner.DataCase
 
-  alias Summoner.Skills
+  alias Summoner.Adapters.Persistence.Skills
 
-  import Summoner.AccountsFixtures
-  import Summoner.WorkspacesFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.SkillsFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.SkillsFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

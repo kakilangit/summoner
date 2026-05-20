@@ -3,7 +3,7 @@ defmodule SummonerWeb.McpServerLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.MCP
+  alias Summoner.Adapters.Persistence.MCP
 
   @sort_options [{"Name", :name}, {"Transport", :transport}, {"Created", :inserted_at}]
   @default_sort_by :name

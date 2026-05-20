@@ -41,7 +41,7 @@ if config_env() == :prod do
       Generate one with: 32 |> :crypto.strong_rand_bytes() |> Base.encode64()
       """
 
-  config :summoner, Summoner.Vault,
+  config :summoner, Summoner.Adapters.Crypto.Vault,
     ciphers: [
       default: {
         Cloak.Ciphers.AES.GCM,
@@ -133,7 +133,7 @@ if config_env() == :prod do
   smtp_host = System.get_env("SMTP_HOST")
 
   if smtp_host do
-    config :summoner, Summoner.Mailer,
+    config :summoner, Summoner.Adapters.Mailer,
       adapter: Swoosh.Adapters.SMTP,
       relay: smtp_host,
       port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
@@ -148,8 +148,8 @@ if config_env() == :prod do
   end
 
   config :summoner, :smtp_configured?, !!smtp_host
+end
 
-  if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
-    config :arcanum, copilot_client_id: copilot_client_id
-  end
+if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
+  config :arcanum, copilot_client_id: copilot_client_id
 end

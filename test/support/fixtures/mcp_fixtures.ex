@@ -1,9 +1,9 @@
-defmodule Summoner.MCPFixtures do
+defmodule Summoner.Adapters.Persistence.MCPFixtures do
   @moduledoc """
   Test helpers for creating MCP-related entities.
   """
 
-  alias Summoner.MCP
+  alias Summoner.Adapters.Persistence.MCP
 
   def unique_mcp_server_name, do: "mcp-server-#{System.unique_integer([:positive])}"
 

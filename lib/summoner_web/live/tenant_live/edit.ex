@@ -1,8 +1,8 @@
 defmodule SummonerWeb.TenantLive.Edit do
   use SummonerWeb, :live_view
 
-  alias Summoner.Tenants
-  alias Summoner.Tenants.{Tenant, TenantSettings}
+  alias Summoner.Adapters.Persistence.Tenants
+  alias Summoner.Domain.Schemas.{Tenant, TenantSettings}
 
   @impl true
   def mount(_params, _session, socket) do

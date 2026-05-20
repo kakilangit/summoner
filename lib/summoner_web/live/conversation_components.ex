@@ -9,7 +9,8 @@ defmodule SummonerWeb.ConversationComponents do
   """
   use Phoenix.Component
 
-  alias Summoner.Conversations.Content
+  alias Summoner.Adapters.Persistence.Media
+  alias Summoner.Domain.Types.Content
 
   # -------------------------------------------------------------------
   # Content block rendering
@@ -38,7 +39,7 @@ defmodule SummonerWeb.ConversationComponents do
     ~H"""
     <div :if={@attachment && @attachment.status == :ready} class="my-2">
       <img
-        src={Summoner.Media.media_url(@attachment)}
+        src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
         alt={@block["alt"] || "Image"}
         class="rounded-lg max-w-sm max-h-80 cursor-pointer hover:opacity-90 transition-opacity border border-base-300"
         loading="lazy"
@@ -46,7 +47,7 @@ defmodule SummonerWeb.ConversationComponents do
       />
       <div class="flex items-center gap-1 mt-1">
         <a
-          href={Summoner.Media.media_url(@attachment)}
+          href={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
           download={@attachment.filename}
           class="btn btn-ghost btn-xs"
           title="Download"
@@ -61,7 +62,7 @@ defmodule SummonerWeb.ConversationComponents do
         phx-click={Phoenix.LiveView.JS.toggle(to: "#lightbox-#{@attachment.id}")}
       >
         <img
-          src={Summoner.Media.media_url(@attachment)}
+          src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
           alt={@block["alt"] || "Image"}
           class="max-w-full max-h-full rounded-lg shadow-2xl"
         />
@@ -90,13 +91,15 @@ defmodule SummonerWeb.ConversationComponents do
         preload="metadata"
         class="rounded-lg max-w-sm max-h-80 border border-base-300"
       >
-        <source src={Summoner.Media.media_url(@attachment)} type={@attachment.content_type} />
-        Your browser does not support video playback.
+        <source
+          src={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
+          type={@attachment.content_type}
+        /> Your browser does not support video playback.
       </video>
       <div class="flex items-center gap-1 mt-1">
         <p :if={@block["alt"]} class="text-xs text-base-content/50">{@block["alt"]}</p>
         <a
-          href={Summoner.Media.media_url(@attachment)}
+          href={Summoner.Adapters.Persistence.Media.media_url(@attachment)}
           download={@attachment.filename}
           class="btn btn-ghost btn-xs"
           title="Download"
@@ -279,7 +282,7 @@ defmodule SummonerWeb.ConversationComponents do
             class="flex items-center justify-between mt-1"
           >
             <div class="text-[10px] opacity-40 flex items-center gap-1">
-              {Summoner.TimeZone.format_chat_timestamp(@msg.inserted_at)}
+              {Summoner.Services.TimeZone.format_chat_timestamp(@msg.inserted_at)}
               <span
                 :if={@msg.kind == :generate_image}
                 class={[
@@ -648,7 +651,7 @@ defmodule SummonerWeb.ConversationComponents do
   defp upload_error_to_string(err), do: inspect(err)
 
   defp resolve_attachment(%{"media_attachment_id" => id}) when is_binary(id) do
-    Summoner.Media.get_attachment(id)
+    Media.get_attachment(id)
   end
 
   defp resolve_attachment(_block), do: nil

@@ -1,7 +1,7 @@
-defmodule Summoner.TimeZoneTest do
+defmodule Summoner.Services.TimeZoneTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.TimeZone
+  alias Summoner.Services.TimeZone
 
   describe "local_timezone/0" do
     test "returns configured timezone" do

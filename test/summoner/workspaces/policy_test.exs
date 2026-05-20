@@ -1,8 +1,8 @@
-defmodule Summoner.Workspaces.PolicyTest do
+defmodule Summoner.Domain.Policies.WorkspacePolicyTest do
   use ExUnit.Case, async: true
 
-  alias Summoner.Workspaces.Policy
-  alias Summoner.Workspaces.WorkspaceMembership
+  alias Summoner.Domain.Policies.WorkspacePolicy, as: Policy
+  alias Summoner.Domain.Schemas.WorkspaceMembership
 
   describe "can?/2" do
     test "admin can do everything" do
@@ -58,7 +58,7 @@ defmodule Summoner.Workspaces.PolicyTest do
     test "raises UnauthorizedError when not authorized" do
       membership = %WorkspaceMembership{role: :viewer}
 
-      assert_raise Summoner.Workspaces.UnauthorizedError, fn ->
+      assert_raise Summoner.Domain.Policies.UnauthorizedError, fn ->
         Policy.authorize!(membership, :configure)
       end
     end

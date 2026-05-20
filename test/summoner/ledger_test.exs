@@ -1,18 +1,18 @@
-defmodule Summoner.LedgerTest do
+defmodule Summoner.Adapters.Persistence.LedgerTest do
   use Summoner.DataCase
 
-  alias Summoner.Conversations
-  alias Summoner.Conversations.Message
-  alias Summoner.Ledger
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Ledger
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Domain.Schemas.Message
   alias Summoner.Repo
-  alias Summoner.Workspaces
 
-  import Summoner.AccountsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.OrchestrationFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.OrchestrationFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()

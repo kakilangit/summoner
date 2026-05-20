@@ -1,14 +1,15 @@
-defmodule Summoner.SwarmsTest do
+defmodule Summoner.Adapters.Persistence.SwarmsTest do
   use Summoner.DataCase
 
-  alias Summoner.Swarms
-  alias Summoner.Swarms.Swarm
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Swarms
+  alias Summoner.Domain.Schemas.Swarm
 
-  import Summoner.AccountsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.SwarmsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.SwarmsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   defp create_context(_ctx) do
     scope = user_scope_fixture()
@@ -169,7 +170,7 @@ defmodule Summoner.SwarmsTest do
       assert conversation.workspace_id == ws.id
       assert conversation.title == "#{swarm.name} Channel"
 
-      participants = Summoner.Conversations.list_participants(conversation.id)
+      participants = Conversations.list_participants(conversation.id)
       assert length(participants) == 2
     end
 

@@ -156,6 +156,26 @@ defmodule SummonerWeb.WorkspaceLive.Show do
                 <p class="text-sm text-base-content/60">Browse and manage workspace files</p>
               </div>
             </.link>
+
+            <.link
+              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys"}
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Envoys</h2>
+                <p class="text-sm text-base-content/60">Connect remote A2A agents</p>
+              </div>
+            </.link>
+
+            <.link
+              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/wards"}
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Wards</h2>
+                <p class="text-sm text-base-content/60">Access tokens for protected Heralds</p>
+              </div>
+            </.link>
           </div>
         </section>
       </div>

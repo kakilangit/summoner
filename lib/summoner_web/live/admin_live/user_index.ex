@@ -1,7 +1,7 @@
 defmodule SummonerWeb.AdminLive.UserIndex do
   use SummonerWeb, :live_view
 
-  alias Summoner.Admin
+  alias Summoner.Adapters.Persistence.Admin
 
   @sort_options [{"Email", :email}, {"Role", :role}, {"Registered", :inserted_at}]
   @default_sort_by :email
@@ -184,7 +184,7 @@ defmodule SummonerWeb.AdminLive.UserIndex do
                 </span>
               </td>
               <td class="text-xs text-base-content/60">
-                {Summoner.TimeZone.format(user.inserted_at,
+                {Summoner.Services.TimeZone.format(user.inserted_at,
                   format: "%Y-%m-%d",
                   show_zone: false
                 )}

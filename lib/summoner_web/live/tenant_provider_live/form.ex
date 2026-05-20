@@ -1,10 +1,10 @@
 defmodule SummonerWeb.TenantProviderLive.Form do
   use SummonerWeb, :live_view
 
-  alias Summoner.Presets
-  alias Summoner.Providers
-  alias Summoner.Providers.Provider
-  alias Summoner.Secrets
+  alias Summoner.Adapters.Persistence.Providers
+  alias Summoner.Adapters.Persistence.Secrets
+  alias Summoner.Domain.Schemas.Provider
+  alias Summoner.Domain.Types.Presets
 
   @impl true
   def mount(params, _session, socket) do

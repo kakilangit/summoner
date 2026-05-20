@@ -26,7 +26,7 @@ config :summoner, SummonerWeb.Endpoint,
   server: false
 
 # In test we don't send emails
-config :summoner, Summoner.Mailer, adapter: Swoosh.Adapters.Test
+config :summoner, Summoner.Adapters.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
@@ -49,7 +49,7 @@ config :phoenix,
   sort_verified_routes_query_params: true
 
 # Cloak encryption key for test
-config :summoner, Summoner.Vault,
+config :summoner, Summoner.Adapters.Crypto.Vault,
   ciphers: [
     default: {
       Cloak.Ciphers.AES.GCM,
@@ -58,8 +58,8 @@ config :summoner, Summoner.Vault,
   ]
 
 # Use Mox HTTP client for inference adapters in tests
-config :summoner, :http_client, Summoner.HTTPClientMock
-config :arcanum, :http_client, Summoner.HTTPClientMock
+config :summoner, :http_client, Summoner.Ports.HTTPClientMock
+config :arcanum, :http_client, Summoner.Ports.HTTPClientMock
 
 # Disable Discovery GenServer in tests
 config :summoner, :start_discovery, false

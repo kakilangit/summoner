@@ -1,8 +1,8 @@
 defmodule SummonerWeb.TenantInvitationLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Invitations
-  alias Summoner.Invitations.Invitation
+  alias Summoner.Adapters.Persistence.Invitations
+  alias Summoner.Domain.Schemas.Invitation
 
   @sort_options [{"Created", :inserted_at}, {"Expires", :expires_at}, {"Code", :code}]
   @default_sort_by :inserted_at
@@ -134,13 +134,13 @@ defmodule SummonerWeb.TenantInvitationLive.Index do
               <td class="text-sm">{inv.invited_by.email}</td>
               <td class="text-sm">{if inv.used_by, do: inv.used_by.email, else: "—"}</td>
               <td class="text-xs text-base-content/60">
-                {Summoner.TimeZone.format(inv.expires_at,
+                {Summoner.Services.TimeZone.format(inv.expires_at,
                   format: "%Y-%m-%d",
                   show_zone: false
                 )}
               </td>
               <td class="text-xs text-base-content/60">
-                {Summoner.TimeZone.format(inv.inserted_at,
+                {Summoner.Services.TimeZone.format(inv.inserted_at,
                   format: "%Y-%m-%d",
                   show_zone: false
                 )}

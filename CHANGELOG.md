@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-05-20
+
+### Added
+
+- **A2A protocol (Agent-to-Agent)**
+  - Herald (A2A server) — workspace-scoped multi-token endpoint with access mode control
+  - Envoy (A2A client) — outbound agent communication with bearer/API key auth
+  - Agent card discovery, caching, and auto-refresh
+  - A2A task tracking (inbound/outbound) with state lifecycle
+  - Three-table agent split: `agents` + `local_agents` + `remote_agents`
+  - Remote agents can now participate in pipelines and swarms
+  - Skill-aware invocation: explicit skill per pipeline stage, inferred from agent card for conversations/swarms
+  - `SkillResolver` — keyword-based skill inference from cached agent cards
+  - `ClientExecutor` — raw JSON-RPC transport handling both Task and Message responses (works around upstream library limitation)
+  - `pipeline_stages.skill` column for explicit A2A skill targeting
+
+- **Parallel tool execution**
+  - `Summoner.Harness` module for concurrent tool call dispatch
+  - Manager dispatch migrated to Harness
+
+- **Domain event system**
+  - 18 domain event structs under `Summoner.Domain.Events.*`
+  - `Summoner.Ports.Events` port with compile-time adapter injection
+  - `PubSubAdapter` with topic routing and fan-out (invocation events broadcast to both agent and invocation topics)
+  - All publishers/subscribers migrated from raw tuples to struct-based pattern matching
+
+### Changed
+
+- **Full DDD codebase restructure** — four-layer module naming convention
+  - `Summoner.Domain.*` — schemas, events, policies, types
+  - `Summoner.Ports.*` — behaviours and port interfaces
+  - `Summoner.Adapters.*` — persistence, pubsub, workers, mailer, crypto
+  - `Summoner.Services.*` — orchestration, inference, swarms, mcp, a2a, agents
+- Pipeline runner dispatches by agent type (local via AgentServer, remote via A2A)
+- Swarm runner dispatches by agent type with per-type timeout resolution
+- `Broadcasts` module deleted — replaced by domain event structs
+- LiveViews pattern-match on `%Domain.Events.*{}` structs in `handle_info`
+
+### Fixed
+
+- Mixed atom/string keys in `create_remote_agent` params
+- Remote agent views guarded `@agent.local_agent.*` accesses for remote agents
+- Stale moduledoc in `conversation_helpers.ex` updated from tuple to struct patterns
+- Seeds file updated with renamed module references
+
 ## [0.1.3] - 2026-05-19
 
 ### Added
@@ -66,6 +111,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.4]: https://github.com/kakilangit/summoner/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/kakilangit/summoner/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kakilangit/summoner/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kakilangit/summoner/compare/v0.1.0...v0.1.1

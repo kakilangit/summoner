@@ -12,6 +12,7 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - MCP server integration (stdio and SSE transports)
 - Pipelines (sequential/orchestrated multi-agent workflows)
 - Swarms (round-robin, relay, directed multi-agent collaboration)
+- A2A protocol support (Herald server, Envoy remote agents, skill-aware invocation)
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)
 - Token usage tracking and cost budgeting

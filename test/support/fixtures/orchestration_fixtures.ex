@@ -1,9 +1,9 @@
-defmodule Summoner.OrchestrationFixtures do
+defmodule Summoner.Adapters.Persistence.OrchestrationFixtures do
   @moduledoc """
   Test helpers for creating orchestration-related entities.
   """
 
-  alias Summoner.Orchestration
+  alias Summoner.Adapters.Persistence.Orchestration
 
   def valid_invocation_attributes(workspace_id, agent_id, attrs \\ %{}) do
     Enum.into(attrs, %{

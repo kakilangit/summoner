@@ -42,8 +42,8 @@ defmodule Summoner.Release do
   end
 
   defp do_seed_admin do
-    alias Summoner.Accounts
-    alias Summoner.Accounts.User
+    alias Summoner.Adapters.Persistence.Accounts
+    alias Summoner.Domain.Schemas.User
     alias Summoner.Repo
 
     email = fetch_env!("ADMIN_EMAIL")

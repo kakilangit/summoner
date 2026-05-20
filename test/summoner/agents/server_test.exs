@@ -1,16 +1,18 @@
-defmodule Summoner.Agents.ServerTest do
+defmodule Summoner.Services.Agents.ServerTest do
   use Summoner.DataCase
 
   import Mox
 
   alias Arcanum.{Intent, Response}
-  alias Summoner.Agents.Server
+  alias Summoner.Adapters.Persistence.Conversations
+  alias Summoner.Adapters.Persistence.Workspaces
+  alias Summoner.Services.Agents.Server
 
-  import Summoner.AccountsFixtures
-  import Summoner.ConversationsFixtures
-  import Summoner.AgentsFixtures
-  import Summoner.ProvidersFixtures
-  import Summoner.WorkspacesFixtures
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  import Summoner.Adapters.Persistence.ConversationsFixtures
+  import Summoner.Adapters.Persistence.AgentsFixtures
+  import Summoner.Adapters.Persistence.ProvidersFixtures
+  import Summoner.Adapters.Persistence.WorkspacesFixtures
 
   setup :set_mox_global
   setup :verify_on_exit!
@@ -43,7 +45,7 @@ defmodule Summoner.Agents.ServerTest do
        [
          agent_id: agent.id,
          workspace_id: agent.workspace_id,
-         adapter: Summoner.InferenceAdapterMock,
+         adapter: Summoner.Services.InferenceAdapterMock,
          tool_executor: Keyword.get(opts, :tool_executor)
        ]
        |> Keyword.merge(opts)}
@@ -51,7 +53,7 @@ defmodule Summoner.Agents.ServerTest do
   end
 
   defp stub_chat_response(content \\ "Hello!") do
-    Summoner.InferenceAdapterMock
+    Summoner.Services.InferenceAdapterMock
     |> expect(:stream, fn _provider, _intent, _profile ->
       {:ok,
        [
@@ -103,7 +105,7 @@ defmodule Summoner.Agents.ServerTest do
       # First call blocks in the adapter
       test_pid = self()
 
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, 2, fn _provider, _intent, _profile ->
         send(test_pid, :call_started)
         Process.sleep(200)
@@ -183,7 +185,7 @@ defmodule Summoner.Agents.ServerTest do
       agent: fam,
       conversation: conv
     } do
-      Summoner.InferenceAdapterMock
+      Summoner.Services.InferenceAdapterMock
       |> expect(:stream, fn _provider, _intent, _profile ->
         Process.sleep(300)
 
@@ -231,11 +233,11 @@ defmodule Summoner.Agents.ServerTest do
       conversation: conv
     } do
       # Set a very low quota
-      {:ok, _} = Summoner.Workspaces.update_settings(scope, ws, %{token_quota_monthly: 1})
+      {:ok, _} = Workspaces.update_settings(scope, ws, %{token_quota_monthly: 1})
 
       # Add a message that exceeds the quota
       {:ok, _} =
-        Summoner.Conversations.add_message(%{
+        Conversations.add_message(%{
           conversation_id: conv.id,
           role: :assistant,
           content: "used up",

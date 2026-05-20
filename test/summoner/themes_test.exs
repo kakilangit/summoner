@@ -1,8 +1,8 @@
-defmodule Summoner.ThemesTest do
+defmodule Summoner.Adapters.Persistence.ThemesTest do
   use Summoner.DataCase
 
-  alias Summoner.Themes
-  alias Summoner.Themes.Theme
+  alias Summoner.Adapters.Persistence.Themes
+  alias Summoner.Domain.Schemas.Theme
 
   @valid_tokens %{
     "color-base-100" => "oklch(30% 0.016 252.42)",

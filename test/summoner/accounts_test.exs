@@ -1,10 +1,11 @@
-defmodule Summoner.AccountsTest do
+defmodule Summoner.Adapters.Persistence.AccountsTest do
   use Summoner.DataCase
 
-  alias Summoner.Accounts
+  alias Summoner.Adapters.Persistence.Accounts
 
-  import Summoner.AccountsFixtures
-  alias Summoner.Accounts.{User, UserToken}
+  import Summoner.Adapters.Persistence.AccountsFixtures
+  alias Summoner.Domain.Schemas.User
+  alias Summoner.Domain.Schemas.UserToken
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
