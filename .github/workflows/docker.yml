@@ -15,17 +15,28 @@ on:
           - all
         default: app
       tag:
-        description: "Image tag"
-        required: false
+        description: "Image tag (cannot be 'latest')"
+        required: true
         type: string
-        default: latest
 
 jobs:
+  validate:
+    name: Validate Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject 'latest' tag
+        if: ${{ inputs.tag == 'latest' }}
+        run: |
+          echo "::error::Tag 'latest' is not allowed for manual dispatch. Use a version tag instead."
+          exit 1
+
   build:
+    needs: validate
     uses: ./.github/workflows/docker-build.yml
     with:
       images: ${{ inputs.images }}
       tag: ${{ inputs.tag }}
+      latest: false
     permissions:
       contents: read
       packages: write
