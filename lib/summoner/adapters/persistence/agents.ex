@@ -167,7 +167,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   def list_agents_paginated(%{user: _user}, workspace_id, opts \\ []) do
     Agent
     |> Workspaces.where_workspace(workspace_id)
-    |> where([a], is_nil(a.deleted_at))
+    |> where([a], a.type == :local and is_nil(a.deleted_at))
     |> preload(local_agent: [:provider, :media_provider])
     |> Pagination.paginate(opts)
   end
