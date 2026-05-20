@@ -6,7 +6,7 @@ defmodule SummonerWeb.MediaRetry do
 
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
-  alias Summoner.Adapters.Workers.MediaGeneration
+  alias Summoner.Ports.Workers
 
   import Phoenix.LiveView, only: [put_flash: 3]
 
@@ -36,15 +36,13 @@ defmodule SummonerWeb.MediaRetry do
         {:noreply, put_flash(socket, :error, "No forge configured for retry.")}
 
       media_provider ->
-        %{
+        Workers.enqueue_media_generation(%{
           "attachment_id" => new_attachment.id,
           "media_provider_id" => media_provider.id,
           "message_id" => original.message_id,
           "type" => to_string(new_attachment.type),
           "params" => %{"prompt" => new_attachment.prompt}
-        }
-        |> MediaGeneration.new()
-        |> Oban.insert()
+        })
 
         {:noreply, put_flash(socket, :info, "Retrying artifact...")}
     end

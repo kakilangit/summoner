@@ -16,7 +16,7 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Workspaces
-  alias Summoner.Adapters.Workers.MediaGeneration
+  alias Summoner.Ports.Workers
   alias Summoner.Services.Orchestration.{BuiltinTools, McpToolExecutor}
 
   @impl true
@@ -71,14 +71,12 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
               metadata: %{}
             })
 
-          %{
+          Workers.enqueue_media_generation(%{
             "attachment_id" => attachment.id,
             "media_provider_id" => media_provider.id,
             "type" => "image",
             "params" => args
-          }
-          |> MediaGeneration.new()
-          |> Oban.insert()
+          })
 
           {:ok,
            "Image generation started (ID: #{attachment.id}). " <>
@@ -112,14 +110,12 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
               metadata: %{}
             })
 
-          %{
+          Workers.enqueue_media_generation(%{
             "attachment_id" => attachment.id,
             "media_provider_id" => media_provider.id,
             "type" => "video",
             "params" => args
-          }
-          |> MediaGeneration.new()
-          |> Oban.insert()
+          })
 
           {:ok,
            "Video generation started (ID: #{attachment.id}). " <>

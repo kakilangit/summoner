@@ -9,7 +9,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Ports.Persistence.Workspaces
-  alias Summoner.Adapters.Workers.MediaGeneration
+  alias Summoner.Ports.Workers
 
   alias Summoner.Domain.Events.{
     ContentToken,
@@ -590,15 +590,13 @@ defmodule SummonerWeb.ConversationLive.Show do
         metadata: %{}
       })
 
-    %{
+    Workers.enqueue_media_generation(%{
       "attachment_id" => attachment.id,
       "media_provider_id" => media_provider.id,
       "message_id" => message_id,
       "type" => to_string(media_mode),
       "params" => %{"prompt" => prompt}
-    }
-    |> MediaGeneration.new()
-    |> Oban.insert()
+    })
 
     attachment
   end

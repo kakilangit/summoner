@@ -23,14 +23,14 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
 
   alias Arcanum.{Intent, ModelProfile, Response}
   alias Arcanum.Response.Normalizer
-  alias Summoner.Ports.Persistence.Conversations
-  alias Summoner.Ports.Persistence.Ledger
-  alias Summoner.Ports.Persistence.Orchestration
-  alias Summoner.Adapters.Workers.CompactorJob
   alias Summoner.Domain.Events.ContentToken
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Events
   alias Summoner.Ports.Harness
+  alias Summoner.Ports.Persistence.Conversations
+  alias Summoner.Ports.Persistence.Ledger
+  alias Summoner.Ports.Persistence.Orchestration
+  alias Summoner.Ports.Workers
   alias Summoner.Services.EventLog
   alias Summoner.Services.Inference
   alias Summoner.Services.Orchestration.BuiltinTools
@@ -1477,9 +1477,10 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
 
   defp maybe_enqueue_compaction(invocation, agent) do
     if invocation.conversation_id do
-      %{conversation_id: invocation.conversation_id, agent_id: agent.id}
-      |> CompactorJob.new()
-      |> Oban.insert()
+      Workers.enqueue_compaction(%{
+        conversation_id: invocation.conversation_id,
+        agent_id: agent.id
+      })
     end
 
     :ok
