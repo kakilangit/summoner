@@ -133,8 +133,6 @@ defmodule Summoner.Adapters.Workers.CopilotPoller do
   end
 
   defp upsert_seal(workspace_id, name, value) do
-    import Ecto.Query, warn: false
-
     case Repo.get_by(Summoner.Domain.Schemas.Secret,
            workspace_id: workspace_id,
            name: name

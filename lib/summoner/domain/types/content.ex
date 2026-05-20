@@ -13,6 +13,8 @@ defmodule Summoner.Domain.Types.Content do
 
   @max_blocks 100
 
+  alias Summoner.Adapters.Persistence.Media
+
   @doc """
   Extracts all text from content blocks, joined by newline.
   Returns empty string for nil or empty list.
@@ -150,8 +152,6 @@ defmodule Summoner.Domain.Types.Content do
   end
 
   defp resolve_image_to_base64(id, attachments_map) do
-    alias Summoner.Adapters.Persistence.Media
-
     case Map.get(attachments_map, id) do
       nil ->
         :fallback
