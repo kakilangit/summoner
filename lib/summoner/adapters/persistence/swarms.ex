@@ -81,6 +81,16 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     max_turns = get_swarm_max_turns(swarm_id)
 
     cond do
+      agent_deleted?(agent_id) ->
+        {:error,
+         %Ecto.Changeset{
+           action: :insert,
+           errors: [
+             agent_id: {"cannot add a deleted summon to a party", []}
+           ],
+           valid?: false
+         }}
+
       current_count >= max_turns ->
         {:error,
          %Ecto.Changeset{
@@ -175,6 +185,13 @@ defmodule Summoner.Adapters.Persistence.Swarms do
 
     if mode == :directed && is_binary(coordinator_id) do
       case Repo.get(Agent, coordinator_id) do
+        %Agent{deleted_at: deleted_at} when not is_nil(deleted_at) ->
+          Ecto.Changeset.add_error(
+            changeset,
+            :coordinator_agent_id,
+            "references a deleted summon"
+          )
+
         %Agent{type: :remote} ->
           Ecto.Changeset.add_error(
             changeset,
@@ -204,6 +221,13 @@ defmodule Summoner.Adapters.Persistence.Swarms do
       end
     else
       false
+    end
+  end
+
+  defp agent_deleted?(agent_id) do
+    case Repo.get(Agent, agent_id) do
+      %Agent{deleted_at: deleted_at} when not is_nil(deleted_at) -> true
+      _ -> false
     end
   end
 

@@ -142,6 +142,13 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
 
     if mode == :orchestrated && is_binary(orchestrator_id) do
       case Repo.get(Agent, orchestrator_id) do
+        %Agent{deleted_at: deleted_at} when not is_nil(deleted_at) ->
+          Ecto.Changeset.add_error(
+            changeset,
+            :orchestrator_agent_id,
+            "references a deleted summon"
+          )
+
         %Agent{type: :remote} ->
           Ecto.Changeset.add_error(
             changeset,
@@ -165,18 +172,40 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
   Adds a stage to a pipeline at the given position.
   """
   def add_stage(%{user: _user}, attrs) do
-    %PipelineStage{}
-    |> PipelineStage.changeset(attrs)
-    |> Repo.insert()
+    agent_id = attrs[:agent_id] || attrs["agent_id"]
+
+    if agent_id && stage_agent_deleted?(agent_id) do
+      {:error,
+       %Ecto.Changeset{
+         action: :insert,
+         errors: [agent_id: {"cannot add a deleted summon to a quest stage", []}],
+         valid?: false
+       }}
+    else
+      %PipelineStage{}
+      |> PipelineStage.changeset(attrs)
+      |> Repo.insert()
+    end
   end
 
   @doc """
   Updates a stage (e.g. changing its instruction).
   """
   def update_stage(%{user: _user}, %PipelineStage{} = stage, attrs) do
-    stage
-    |> PipelineStage.changeset(attrs)
-    |> Repo.update()
+    agent_id = attrs[:agent_id] || attrs["agent_id"]
+
+    if agent_id && stage_agent_deleted?(agent_id) do
+      {:error,
+       %Ecto.Changeset{
+         action: :update,
+         errors: [agent_id: {"cannot assign a deleted summon to a quest stage", []}],
+         valid?: false
+       }}
+    else
+      stage
+      |> PipelineStage.changeset(attrs)
+      |> Repo.update()
+    end
   end
 
   @doc """
@@ -342,6 +371,13 @@ defmodule Summoner.Adapters.Persistence.Pipelines do
 
       %PipelineRun{} ->
         {:error, :still_running}
+    end
+  end
+
+  defp stage_agent_deleted?(agent_id) do
+    case Repo.get(Agent, agent_id) do
+      %Agent{deleted_at: deleted_at} when not is_nil(deleted_at) -> true
+      _ -> false
     end
   end
 end

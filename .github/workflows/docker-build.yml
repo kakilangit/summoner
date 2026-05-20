@@ -47,9 +47,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -76,7 +76,9 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -84,16 +86,14 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker manifest create ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }} \
+          docker buildx imagetools create -t ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }} \
             ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }}-amd64 \
             ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }}-arm64
-          docker manifest push ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }}
 
           if [ "${{ inputs.latest }}" = "true" ]; then
-            docker manifest create ${{ env.BUILDER_IMAGE }}:latest \
+            docker buildx imagetools create -t ${{ env.BUILDER_IMAGE }}:latest \
               ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }}-amd64 \
               ${{ env.BUILDER_IMAGE }}:${{ inputs.tag }}-arm64
-            docker manifest push ${{ env.BUILDER_IMAGE }}:latest
           fi
 
   # ---------- Base ----------
@@ -118,9 +118,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -147,7 +147,9 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -155,16 +157,14 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker manifest create ${{ env.BASE_IMAGE }}:${{ inputs.tag }} \
+          docker buildx imagetools create -t ${{ env.BASE_IMAGE }}:${{ inputs.tag }} \
             ${{ env.BASE_IMAGE }}:${{ inputs.tag }}-amd64 \
             ${{ env.BASE_IMAGE }}:${{ inputs.tag }}-arm64
-          docker manifest push ${{ env.BASE_IMAGE }}:${{ inputs.tag }}
 
           if [ "${{ inputs.latest }}" = "true" ]; then
-            docker manifest create ${{ env.BASE_IMAGE }}:latest \
+            docker buildx imagetools create -t ${{ env.BASE_IMAGE }}:latest \
               ${{ env.BASE_IMAGE }}:${{ inputs.tag }}-amd64 \
               ${{ env.BASE_IMAGE }}:${{ inputs.tag }}-arm64
-            docker manifest push ${{ env.BASE_IMAGE }}:latest
           fi
 
   # ---------- App ----------
@@ -190,9 +190,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -222,7 +222,9 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -230,16 +232,14 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker manifest create ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }} \
+          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }} \
             ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}-amd64 \
             ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}-arm64
-          docker manifest push ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}
 
           if [ "${{ inputs.latest }}" = "true" ]; then
-            docker manifest create ${{ env.DOCKER_IMAGE }}:latest \
+            docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:latest \
               ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}-amd64 \
               ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}-arm64
-            docker manifest push ${{ env.DOCKER_IMAGE }}:latest
           fi
 
   # ---------- Seed ----------
@@ -264,9 +264,9 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -293,7 +293,9 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -301,14 +303,12 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker manifest create ${{ env.SEED_IMAGE }}:${{ inputs.tag }} \
+          docker buildx imagetools create -t ${{ env.SEED_IMAGE }}:${{ inputs.tag }} \
             ${{ env.SEED_IMAGE }}:${{ inputs.tag }}-amd64 \
             ${{ env.SEED_IMAGE }}:${{ inputs.tag }}-arm64
-          docker manifest push ${{ env.SEED_IMAGE }}:${{ inputs.tag }}
 
           if [ "${{ inputs.latest }}" = "true" ]; then
-            docker manifest create ${{ env.SEED_IMAGE }}:latest \
+            docker buildx imagetools create -t ${{ env.SEED_IMAGE }}:latest \
               ${{ env.SEED_IMAGE }}:${{ inputs.tag }}-amd64 \
               ${{ env.SEED_IMAGE }}:${{ inputs.tag }}-arm64
-            docker manifest push ${{ env.SEED_IMAGE }}:latest
           fi

@@ -332,6 +332,12 @@ defmodule SummonerWeb.ConversationLive.Show do
             {@conversation.primary_agent.name}
           </span>
           <span
+            :if={@conversation.primary_agent.deleted_at}
+            class="badge badge-xs badge-error"
+          >
+            deleted
+          </span>
+          <span
             :if={Agent.description(@conversation.primary_agent)}
             class="text-xs text-base-content/40 truncate max-w-xs"
             title={Agent.description(@conversation.primary_agent)}

@@ -20,6 +20,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Events.InvocationStarted
   alias Summoner.Domain.Schemas.{Agent, AgentLink, LocalAgent, RemoteAgent}
+  alias Summoner.Domain.Schemas.{ConversationParticipant, PipelineStage, SwarmMember}
   alias Summoner.Ports.Events
   alias Summoner.Repo
   alias Summoner.Services.A2A.ClientExecutor
@@ -226,29 +227,20 @@ defmodule Summoner.Adapters.Persistence.Agents do
   Preserves conversation history and audit trail.
   """
   def delete_agent(%{user: _user}, %Agent{} = agent) do
-    agent
-    |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now()})
-    |> Ecto.Changeset.foreign_key_constraint(:conversations,
-      name: :conversations_primary_agent_id_fkey,
-      message: "summon is still used by channels"
-    )
-    |> Ecto.Changeset.foreign_key_constraint(:conversation_participants,
-      name: :conversation_participants_agent_id_fkey,
-      message: "summon is still a participant in channels"
-    )
-    |> Ecto.Changeset.foreign_key_constraint(:pipeline_stages,
-      name: :pipeline_stages_agent_id_fkey,
-      message: "summon is still used by pipeline stages"
-    )
-    |> Ecto.Changeset.foreign_key_constraint(:swarm_members,
-      name: :swarm_members_agent_id_fkey,
-      message: "summon is still a member of a party"
-    )
-    |> Ecto.Changeset.foreign_key_constraint(:agent_skills,
-      name: :agent_skills_agent_id_fkey,
-      message: "summon still has skills equipped"
-    )
-    |> Repo.update()
+    Repo.transact(fn ->
+      # Remove from pipeline stages, swarm members, and conversation participants
+      PipelineStage |> where([s], s.agent_id == ^agent.id) |> Repo.delete_all()
+      SwarmMember |> where([m], m.agent_id == ^agent.id) |> Repo.delete_all()
+
+      ConversationParticipant
+      |> where([p], p.agent_id == ^agent.id)
+      |> Repo.delete_all()
+
+      # Soft-delete the agent
+      agent
+      |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now()})
+      |> Repo.update()
+    end)
   end
 
   @doc """
@@ -277,7 +269,8 @@ defmodule Summoner.Adapters.Persistence.Agents do
   """
   def get_agent_with_provider!(agent_id) do
     Agent
-    |> Repo.get!(agent_id)
+    |> where([a], a.id == ^agent_id and is_nil(a.deleted_at))
+    |> Repo.one!()
     |> Repo.preload(local_agent: [provider: :api_key_secret])
   end
 
