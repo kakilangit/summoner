@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.SwarmController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Swarms
 
   action_fallback SummonerWeb.API.FallbackController
@@ -10,11 +12,11 @@ defmodule SummonerWeb.API.V1.SwarmController do
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
 
-  def index(conn, _params) do
+  def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
-    swarms = Swarms.list_swarms(scope, workspace_id)
-    render(conn, :index, swarms: swarms)
+    page = Swarms.list_swarms_paginated(scope, workspace_id, pagination_opts(params))
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do

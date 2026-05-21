@@ -8,6 +8,10 @@ defmodule Summoner.Ports.Persistence.MediaProviders do
            )
 
   defdelegate list_media_providers(scope, workspace_id, tenant_id), to: @adapter
+
+  defdelegate list_media_providers_paginated(scope, workspace_id, tenant_id, opts \\ []),
+    to: @adapter
+
   defdelegate get_media_provider!(scope, workspace_id, tenant_id, id), to: @adapter
   defdelegate get_media_provider!(id), to: @adapter
   defdelegate create_media_provider(scope, attrs), to: @adapter

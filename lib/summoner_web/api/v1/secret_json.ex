@@ -1,8 +1,10 @@
 defmodule SummonerWeb.API.V1.SecretJSON do
   @moduledoc "JSON rendering for secrets. Values are never exposed."
 
-  def index(%{secrets: secrets}) do
-    %{data: Enum.map(secrets, &secret_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &secret_data/1), meta: page_meta(page)}
   end
 
   def show(%{secret: secret}) do

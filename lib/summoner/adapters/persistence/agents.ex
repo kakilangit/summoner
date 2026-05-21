@@ -176,6 +176,17 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   @doc """
+  Lists remote agents for a workspace with pagination.
+  """
+  def list_remote_agents_paginated(%{user: _user}, workspace_id, opts \\ []) do
+    Agent
+    |> Workspaces.where_workspace(workspace_id)
+    |> where([a], a.type == :remote and is_nil(a.deleted_at))
+    |> preload(:remote_agent)
+    |> Pagination.paginate(opts)
+  end
+
+  @doc """
   Updates an agent.
 
   For local agents, also updates the local_agent detail record.

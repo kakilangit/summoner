@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.AgentController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Agents
 
   action_fallback SummonerWeb.API.FallbackController
@@ -13,14 +15,15 @@ defmodule SummonerWeb.API.V1.AgentController do
   def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
+    opts = pagination_opts(params)
 
-    agents =
+    page =
       case params["type"] do
-        "remote" -> Agents.list_remote_agents(scope, workspace_id)
-        _other -> Agents.list_agents(scope, workspace_id)
+        "remote" -> Agents.list_remote_agents_paginated(scope, workspace_id, opts)
+        _other -> Agents.list_agents_paginated(scope, workspace_id, opts)
       end
 
-    render(conn, :index, agents: agents)
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do

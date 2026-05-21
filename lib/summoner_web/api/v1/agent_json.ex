@@ -1,12 +1,14 @@
 defmodule SummonerWeb.API.V1.AgentJSON do
   @moduledoc "JSON rendering for agents."
 
+  import SummonerWeb.API.PaginationJSON
+
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Schemas.LocalAgent
   alias Summoner.Domain.Schemas.RemoteAgent
 
-  def index(%{agents: agents}) do
-    %{data: Enum.map(agents, &agent_data/1)}
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &agent_data/1), meta: page_meta(page)}
   end
 
   def show(%{agent: agent}) do

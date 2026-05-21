@@ -9,6 +9,7 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
 
   import Ecto.Query, warn: false
 
+  alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Events.{InvocationCompleted, InvocationFailed, InvocationStarted}
   alias Summoner.Domain.Events.InvocationEvent, as: InvocationEventNotification
@@ -170,6 +171,16 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
     |> Repo.all()
   end
 
+  @doc """
+  Lists steps for an invocation with pagination.
+  """
+  def list_steps_paginated(invocation_id, opts \\ []) do
+    InvocationStep
+    |> where([s], s.invocation_id == ^invocation_id)
+    |> order_by([s], asc: s.step_number)
+    |> Pagination.paginate(opts)
+  end
+
   # -------------------------------------------------------------------
   # Events
   # -------------------------------------------------------------------
@@ -211,6 +222,23 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
     |> maybe_filter(:visibility, visibility)
     |> order_by([e], asc: e.inserted_at)
     |> Repo.all()
+  end
+
+  @doc """
+  Lists events for an invocation with pagination.
+
+  Options:
+  - `:visibility` — filter by visibility (`:public` or `:internal`)
+  - Pagination options (`:page`, `:per_page`)
+  """
+  def list_events_paginated(invocation_id, opts \\ []) do
+    visibility = Keyword.get(opts, :visibility)
+
+    InvocationEvent
+    |> where([e], e.invocation_id == ^invocation_id)
+    |> maybe_filter(:visibility, visibility)
+    |> order_by([e], asc: e.inserted_at)
+    |> Pagination.paginate(opts)
   end
 
   # -------------------------------------------------------------------

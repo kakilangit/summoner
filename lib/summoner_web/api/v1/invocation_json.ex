@@ -1,6 +1,8 @@
 defmodule SummonerWeb.API.V1.InvocationJSON do
   @moduledoc "JSON rendering for invocations, steps, and events."
 
+  import SummonerWeb.API.PaginationJSON
+
   def invocation(%{invocation: inv, messages: messages}) do
     %{
       data: %{
@@ -23,12 +25,12 @@ defmodule SummonerWeb.API.V1.InvocationJSON do
     %{data: invocation_data(inv)}
   end
 
-  def steps(%{steps: steps}) do
-    %{data: Enum.map(steps, &step_data/1)}
+  def steps(%{page: page}) do
+    %{data: Enum.map(page.entries, &step_data/1), meta: page_meta(page)}
   end
 
-  def events(%{events: events}) do
-    %{data: Enum.map(events, &event_data/1)}
+  def events(%{page: page}) do
+    %{data: Enum.map(page.entries, &event_data/1), meta: page_meta(page)}
   end
 
   defp invocation_data(inv) do

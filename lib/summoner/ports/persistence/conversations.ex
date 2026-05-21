@@ -31,6 +31,7 @@ defmodule Summoner.Ports.Persistence.Conversations do
   defdelegate delete_messages_after(message), to: @adapter
   defdelegate list_messages(conversation_id), to: @adapter
   defdelegate list_messages(conversation_id, opts), to: @adapter
+  defdelegate list_messages_paginated(conversation_id, opts \\ []), to: @adapter
   defdelegate latest_summary(conversation_id), to: @adapter
   defdelegate count_messages(conversation_id), to: @adapter
   defdelegate mark_compacted(message_ids), to: @adapter

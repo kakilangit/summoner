@@ -21,11 +21,13 @@ defmodule Summoner.Ports.Persistence.Orchestration do
   # Steps
   defdelegate add_step(attrs), to: @adapter
   defdelegate list_steps(invocation_id), to: @adapter
+  defdelegate list_steps_paginated(invocation_id, opts \\ []), to: @adapter
 
   # Events
   defdelegate add_event(attrs), to: @adapter
   defdelegate list_events(invocation_id), to: @adapter
   defdelegate list_events(invocation_id, opts), to: @adapter
+  defdelegate list_events_paginated(invocation_id, opts \\ []), to: @adapter
 
   # Subtasks
   defdelegate create_subtasks(invocation, subtask_attrs_list), to: @adapter

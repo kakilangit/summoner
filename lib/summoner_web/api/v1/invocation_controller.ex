@@ -8,6 +8,8 @@ defmodule SummonerWeb.API.V1.InvocationController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Orchestration
@@ -72,21 +74,21 @@ defmodule SummonerWeb.API.V1.InvocationController do
   end
 
   @doc "GET /api/v1/invocations/:id/steps — detailed step log"
-  def steps(conn, %{"invocation_id" => invocation_id}) do
+  def steps(conn, %{"invocation_id" => invocation_id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     _invocation = Orchestration.get_invocation!(scope, workspace_id, invocation_id)
-    steps = Orchestration.list_steps(invocation_id)
-    render(conn, :steps, steps: steps)
+    page = Orchestration.list_steps_paginated(invocation_id, pagination_opts(params))
+    render(conn, :steps, page: page)
   end
 
   @doc "GET /api/v1/invocations/:id/events — event timeline"
-  def events(conn, %{"invocation_id" => invocation_id}) do
+  def events(conn, %{"invocation_id" => invocation_id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     _invocation = Orchestration.get_invocation!(scope, workspace_id, invocation_id)
-    events = Orchestration.list_events(invocation_id)
-    render(conn, :events, events: events)
+    page = Orchestration.list_events_paginated(invocation_id, pagination_opts(params))
+    render(conn, :events, page: page)
   end
 
   @doc "POST /api/v1/invocations/:id/cancel — cancel a running invocation"

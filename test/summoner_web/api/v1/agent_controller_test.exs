@@ -31,14 +31,17 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
     test "lists agents", %{conn: conn, scope: scope, workspace: ws, provider: provider} do
       agent = agent_fixture(scope, ws.id, provider.id)
       conn = get(conn, ~p"/api/v1/agents")
-      assert %{"data" => [%{"id" => id, "name" => name}]} = json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert %{"data" => [%{"id" => id, "name" => name}], "meta" => meta} = response
       assert id == agent.id
       assert name == agent.name
+      assert meta["page"] == 1
+      assert meta["total_entries"] == 1
     end
 
     test "returns empty list when no agents", %{conn: conn} do
       conn = get(conn, ~p"/api/v1/agents")
-      assert %{"data" => []} = json_response(conn, 200)
+      assert %{"data" => [], "meta" => %{"total_entries" => 0}} = json_response(conn, 200)
     end
 
     test "returns 401 without token" do

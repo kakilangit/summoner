@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.ConversationController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Conversations
 
   action_fallback SummonerWeb.API.FallbackController
@@ -10,11 +12,14 @@ defmodule SummonerWeb.API.V1.ConversationController do
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
 
-  def index(conn, _params) do
+  def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
-    conversations = Conversations.list_conversations(scope, workspace_id)
-    render(conn, :index, conversations: conversations)
+
+    page =
+      Conversations.list_conversations_paginated(scope, workspace_id, pagination_opts(params))
+
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do
@@ -56,13 +61,8 @@ defmodule SummonerWeb.API.V1.ConversationController do
     # Verify conversation belongs to workspace
     _conversation = Conversations.get_conversation!(scope, workspace_id, conversation_id)
 
-    opts = []
-
-    opts =
-      if params["limit"], do: [{:limit, String.to_integer(params["limit"])} | opts], else: opts
-
-    messages = Conversations.list_messages(conversation_id, opts)
-    render(conn, :messages, messages: messages)
+    page = Conversations.list_messages_paginated(conversation_id, pagination_opts(params))
+    render(conn, :messages, page: page)
   end
 
   def export(conn, %{"conversation_id" => conversation_id}) do

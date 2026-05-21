@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.McpServerController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.MCP
 
   action_fallback SummonerWeb.API.FallbackController
@@ -10,12 +12,12 @@ defmodule SummonerWeb.API.V1.McpServerController do
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
 
-  def index(conn, _params) do
+  def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
-    servers = MCP.list_servers(scope, workspace_id, tenant_id)
-    render(conn, :index, servers: servers)
+    page = MCP.list_servers_paginated(scope, workspace_id, tenant_id, pagination_opts(params))
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do

@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.PipelineController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Pipelines
 
   action_fallback SummonerWeb.API.FallbackController
@@ -10,11 +12,11 @@ defmodule SummonerWeb.API.V1.PipelineController do
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
 
-  def index(conn, _params) do
+  def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
-    pipelines = Pipelines.list_pipelines(scope, workspace_id)
-    render(conn, :index, pipelines: pipelines)
+    page = Pipelines.list_pipelines_paginated(scope, workspace_id, pagination_opts(params))
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do
@@ -59,11 +61,11 @@ defmodule SummonerWeb.API.V1.PipelineController do
     end
   end
 
-  def runs(conn, %{"pipeline_id" => pipeline_id}) do
+  def runs(conn, %{"pipeline_id" => pipeline_id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     _pipeline = Pipelines.get_pipeline!(scope, workspace_id, pipeline_id)
-    runs = Pipelines.list_runs(pipeline_id)
-    render(conn, :runs, runs: runs)
+    page = Pipelines.list_runs_paginated(pipeline_id, pagination_opts(params))
+    render(conn, :runs, page: page)
   end
 end

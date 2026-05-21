@@ -255,6 +255,21 @@ defmodule Summoner.Adapters.Persistence.Conversations do
   end
 
   @doc """
+  Lists messages for a conversation with pagination.
+  """
+  def list_messages_paginated(conversation_id, opts \\ []) do
+    visibility = Keyword.get(opts, :visibility)
+
+    Message
+    |> where([m], m.conversation_id == ^conversation_id)
+    |> where([m], is_nil(m.deleted_at))
+    |> where([m], is_nil(m.compacted_at))
+    |> maybe_filter_visibility(visibility)
+    |> order_by([m], desc: m.inserted_at)
+    |> Pagination.paginate(opts)
+  end
+
+  @doc """
   Returns the most recent summary message for a conversation, or nil.
   """
   def latest_summary(conversation_id) do

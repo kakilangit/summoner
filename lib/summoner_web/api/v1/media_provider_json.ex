@@ -1,8 +1,10 @@
 defmodule SummonerWeb.API.V1.MediaProviderJSON do
   @moduledoc "JSON rendering for media providers."
 
-  def index(%{media_providers: providers}) do
-    %{data: Enum.map(providers, &media_provider_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &media_provider_data/1), meta: page_meta(page)}
   end
 
   def show(%{media_provider: provider}) do

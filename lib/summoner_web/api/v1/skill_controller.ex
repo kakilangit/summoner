@@ -3,6 +3,8 @@ defmodule SummonerWeb.API.V1.SkillController do
 
   use SummonerWeb, :controller
 
+  import SummonerWeb.API.PaginationParams
+
   alias Summoner.Ports.Persistence.Skills
 
   action_fallback SummonerWeb.API.FallbackController
@@ -10,12 +12,12 @@ defmodule SummonerWeb.API.V1.SkillController do
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
 
-  def index(conn, _params) do
+  def index(conn, params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
-    skills = Skills.list_skills(scope, workspace_id, tenant_id)
-    render(conn, :index, skills: skills)
+    page = Skills.list_skills_paginated(scope, workspace_id, tenant_id, pagination_opts(params))
+    render(conn, :index, page: page)
   end
 
   def show(conn, %{"id" => id}) do

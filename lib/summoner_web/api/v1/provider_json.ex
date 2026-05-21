@@ -1,8 +1,10 @@
 defmodule SummonerWeb.API.V1.ProviderJSON do
   @moduledoc "JSON rendering for providers."
 
-  def index(%{providers: providers}) do
-    %{data: Enum.map(providers, &provider_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &provider_data/1), meta: page_meta(page)}
   end
 
   def show(%{provider: provider}) do

@@ -1,8 +1,10 @@
 defmodule SummonerWeb.API.V1.SwarmJSON do
   @moduledoc "JSON rendering for swarms."
 
-  def index(%{swarms: swarms}) do
-    %{data: Enum.map(swarms, &swarm_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &swarm_data/1), meta: page_meta(page)}
   end
 
   def show(%{swarm: swarm}) do

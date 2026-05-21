@@ -1,16 +1,18 @@
 defmodule SummonerWeb.API.V1.ConversationJSON do
   @moduledoc "JSON rendering for conversations and messages."
 
-  def index(%{conversations: conversations}) do
-    %{data: Enum.map(conversations, &conversation_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &conversation_data/1), meta: page_meta(page)}
   end
 
   def show(%{conversation: conversation}) do
     %{data: conversation_data(conversation)}
   end
 
-  def messages(%{messages: messages}) do
-    %{data: Enum.map(messages, &message_data/1)}
+  def messages(%{page: page}) do
+    %{data: Enum.map(page.entries, &message_data/1), meta: page_meta(page)}
   end
 
   defp conversation_data(c) do

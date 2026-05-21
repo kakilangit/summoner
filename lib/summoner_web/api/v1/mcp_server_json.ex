@@ -1,8 +1,10 @@
 defmodule SummonerWeb.API.V1.McpServerJSON do
   @moduledoc "JSON rendering for MCP servers."
 
-  def index(%{servers: servers}) do
-    %{data: Enum.map(servers, &server_data/1)}
+  import SummonerWeb.API.PaginationJSON
+
+  def index(%{page: page}) do
+    %{data: Enum.map(page.entries, &server_data/1), meta: page_meta(page)}
   end
 
   def show(%{server: server}) do
