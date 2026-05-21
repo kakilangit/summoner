@@ -171,7 +171,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Agent
     |> Workspaces.where_workspace(workspace_id)
     |> where([a], a.type == :local and is_nil(a.deleted_at))
-    |> preload(local_agent: [:provider, :media_provider])
+    |> preload([:failover_chain, local_agent: [:provider, :media_provider]])
     |> Pagination.paginate(opts)
   end
 

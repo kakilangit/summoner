@@ -109,6 +109,14 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             {@agent.role}
           </span>
+          <span
+            :if={is_list(@agent.failover_chain) and @agent.failover_chain != []}
+            class="badge badge-sm badge-warning badge-outline"
+            title={"#{length(@agent.failover_chain)} backup(s) configured"}
+          >
+            <span class="hero-arrow-path-rounded-square size-3 mr-0.5"></span>
+            {length(@agent.failover_chain)}
+          </span>
           <span :if={@agent.local_agent} class="text-sm text-base-content/60">
             {@agent.local_agent.model}
           </span>
