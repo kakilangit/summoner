@@ -254,6 +254,49 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
     end
   end
 
+  describe "verify_token_global/1" do
+    test "verifies valid plaintext without workspace", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id)
+      assert {:ok, verified} = AccessTokens.verify_token_global(token.token)
+      assert verified.id == token.id
+      assert verified.workspace_id == workspace.id
+    end
+
+    test "returns error for invalid plaintext" do
+      assert {:error, :invalid} = AccessTokens.verify_token_global("shk_bogus")
+    end
+  end
+
+  describe "verify_token_global/2" do
+    test "verifies with matching scope", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id, %{scopes: ["api"]})
+      assert {:ok, verified} = AccessTokens.verify_token_global(token.token, "api")
+      assert verified.id == token.id
+    end
+
+    test "returns :wrong_scope for mismatched scope", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id, %{scopes: ["api"]})
+      assert {:error, :wrong_scope} = AccessTokens.verify_token_global(token.token, "a2a")
+    end
+
+    test "returns :ok when token has all scope", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id, %{scopes: ["all"]})
+      assert {:ok, _} = AccessTokens.verify_token_global(token.token, "webhook")
+    end
+
+    test "returns :expired for expired token", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id)
+      expired_at = DateTime.add(DateTime.utc_now(), -3600, :second)
+
+      Repo.update_all(
+        from(t in AccessToken, where: t.id == ^token.id),
+        set: [expires_at: expired_at]
+      )
+
+      assert {:error, :expired} = AccessTokens.verify_token_global(token.token, "api")
+    end
+  end
+
   describe "AccessToken schema" do
     test "active?/1 returns true for non-revoked, non-expired" do
       token = %AccessToken{revoked_at: nil, expires_at: nil}

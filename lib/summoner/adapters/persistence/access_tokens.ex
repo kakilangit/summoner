@@ -125,9 +125,61 @@ defmodule Summoner.Adapters.Persistence.AccessTokens do
     end
   end
 
+  @doc """
+  Verifies a plaintext token globally (no workspace filter).
+  Used by API endpoints where workspace is derived from the token.
+  """
+  @impl true
+  def verify_token_global(plaintext) do
+    tokens = load_all_active_tokens()
+
+    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
+      nil ->
+        Bcrypt.no_user_verify()
+        {:error, :invalid}
+
+      %AccessToken{} = token ->
+        record_token_usage(token)
+        {:ok, token}
+    end
+  end
+
+  @doc """
+  Verifies a plaintext token globally with scope checking.
+  """
+  @impl true
+  def verify_token_global(plaintext, required_scope) do
+    tokens = load_all_active_tokens()
+
+    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
+      nil ->
+        Bcrypt.no_user_verify()
+        {:error, :invalid}
+
+      %AccessToken{} = token ->
+        cond do
+          not AccessToken.active?(token) ->
+            {:error, :expired}
+
+          not AccessToken.has_scope?(token, required_scope) ->
+            {:error, :wrong_scope}
+
+          true ->
+            record_token_usage(token)
+            {:ok, token}
+        end
+    end
+  end
+
   defp load_active_tokens(workspace_id) do
     AccessToken
     |> where(workspace_id: ^workspace_id)
+    |> where([t], is_nil(t.revoked_at))
+    |> Repo.all()
+  end
+
+  defp load_all_active_tokens do
+    AccessToken
     |> where([t], is_nil(t.revoked_at))
     |> Repo.all()
   end

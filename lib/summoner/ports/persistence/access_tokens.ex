@@ -15,4 +15,6 @@ defmodule Summoner.Ports.Persistence.AccessTokens do
   defdelegate revoke_token(token), to: @adapter
   defdelegate verify_token(workspace_id, plaintext), to: @adapter
   defdelegate verify_token(workspace_id, plaintext, required_scope), to: @adapter
+  defdelegate verify_token_global(plaintext), to: @adapter
+  defdelegate verify_token_global(plaintext, required_scope), to: @adapter
 end

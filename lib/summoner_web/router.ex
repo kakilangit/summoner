@@ -155,8 +155,8 @@ defmodule SummonerWeb.Router do
     end
   end
 
-  # REST API — token-authenticated, workspace-scoped
-  scope "/api/v1/workspaces/:workspace_id", SummonerWeb.API.V1 do
+  # REST API — token-authenticated, workspace implicit (derived from token)
+  scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
 
     # Resource controllers will be added in Plan 01 Phase 2

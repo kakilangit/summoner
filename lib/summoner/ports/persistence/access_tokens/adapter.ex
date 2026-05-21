@@ -10,4 +10,7 @@ defmodule Summoner.Ports.Persistence.AccessTokens.Adapter do
   @callback verify_token(String.t(), String.t()) :: {:ok, struct()} | {:error, :invalid}
   @callback verify_token(String.t(), String.t(), String.t()) ::
               {:ok, struct()} | {:error, :invalid | :wrong_scope | :expired}
+  @callback verify_token_global(String.t()) :: {:ok, struct()} | {:error, :invalid}
+  @callback verify_token_global(String.t(), String.t()) ::
+              {:ok, struct()} | {:error, :invalid | :wrong_scope | :expired}
 end

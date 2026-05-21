@@ -17,10 +17,9 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
     %{workspace: workspace, token: token, plaintext: token.token}
   end
 
-  defp build_conn(workspace_id, bearer_token) do
+  defp build_conn(bearer_token) do
     :get
-    |> Plug.Test.conn("/api/v1/workspaces/#{workspace_id}/test")
-    |> Map.put(:params, %{"workspace_id" => workspace_id})
+    |> Plug.Test.conn("/api/v1/test")
     |> put_req_header("authorization", "Bearer #{bearer_token}")
   end
 
@@ -29,8 +28,8 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
     plaintext: plaintext
   } do
     conn =
-      workspace.id
-      |> build_conn(plaintext)
+      plaintext
+      |> build_conn()
       |> TokenAuth.call(TokenAuth.init(required_scope: "api"))
 
     assert conn.assigns[:current_token].id != nil
@@ -38,34 +37,30 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
     refute conn.halted
   end
 
-  test "returns 401 when no Authorization header", %{workspace: workspace} do
+  test "returns 401 when no Authorization header" do
     conn =
       :get
-      |> Plug.Test.conn("/api/v1/workspaces/#{workspace.id}/test")
-      |> Map.put(:params, %{"workspace_id" => workspace.id})
+      |> Plug.Test.conn("/api/v1/test")
       |> TokenAuth.call(TokenAuth.init(required_scope: "api"))
 
     assert conn.status == 401
     assert conn.halted
   end
 
-  test "returns 401 for invalid token", %{workspace: workspace} do
+  test "returns 401 for invalid token" do
     conn =
-      workspace.id
-      |> build_conn("shk_invalid_token")
+      "shk_invalid_token"
+      |> build_conn()
       |> TokenAuth.call(TokenAuth.init(required_scope: "api"))
 
     assert conn.status == 401
     assert conn.halted
   end
 
-  test "returns 403 when token lacks required scope", %{
-    workspace: workspace,
-    plaintext: plaintext
-  } do
+  test "returns 403 when token lacks required scope", %{plaintext: plaintext} do
     conn =
-      workspace.id
-      |> build_conn(plaintext)
+      plaintext
+      |> build_conn()
       |> TokenAuth.call(TokenAuth.init(required_scope: "a2a"))
 
     assert conn.status == 403
@@ -84,8 +79,8 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
     )
 
     conn =
-      workspace.id
-      |> build_conn(token.token)
+      token.token
+      |> build_conn()
       |> TokenAuth.call(TokenAuth.init(required_scope: "api"))
 
     assert conn.status == 401
