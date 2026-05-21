@@ -13,7 +13,7 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
   setup do
     scope = user_scope_fixture()
     workspace = workspace_fixture(scope)
-    token = access_token_fixture(workspace.id, %{scopes: ["api"]})
+    token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["api"]})
     %{workspace: workspace, token: token, plaintext: token.token}
   end
 
@@ -34,6 +34,8 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
 
     assert conn.assigns[:current_token].id != nil
     assert conn.assigns[:current_workspace_id] == workspace.id
+    assert conn.assigns[:current_tenant_id] == workspace.tenant_id
+    assert conn.assigns[:current_scope] != nil
     refute conn.halted
   end
 
@@ -68,7 +70,7 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
   end
 
   test "returns 401 for expired token", %{workspace: workspace} do
-    token = access_token_fixture(workspace.id, %{scopes: ["api"]})
+    token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["api"]})
 
     # Set expires_at in the past directly via Repo
     expired_at = DateTime.add(DateTime.utc_now(), -3600, :second)

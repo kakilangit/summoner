@@ -5,12 +5,13 @@ defmodule Summoner.Adapters.Persistence.AccessTokensFixtures do
 
   alias Summoner.Adapters.Persistence.AccessTokens
 
-  def access_token_fixture(workspace_id, attrs \\ %{}) do
+  def access_token_fixture(workspace_id, tenant_id, attrs \\ %{}) do
     attrs =
       Map.merge(
         %{
           label: "test-token-#{System.unique_integer([:positive])}",
           workspace_id: workspace_id,
+          tenant_id: tenant_id,
           scopes: ["api"],
           rate_limit_rpm: 100
         },

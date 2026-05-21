@@ -1,6 +1,10 @@
 defmodule SummonerWeb.API.ErrorJSON do
   @moduledoc "JSON error responses for API endpoints."
 
+  def render("403.json", _assigns) do
+    %{error: %{code: "forbidden", message: "Insufficient permissions"}}
+  end
+
   def render("404.json", _assigns) do
     %{error: %{code: "not_found", message: "Resource not found"}}
   end

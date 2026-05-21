@@ -159,7 +159,23 @@ defmodule SummonerWeb.Router do
   scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
 
-    # Resource controllers will be added in Plan 01 Phase 2
+    resources "/agents", AgentController, except: [:new, :edit]
+
+    resources "/conversations", ConversationController, only: [:index, :show, :create, :delete] do
+      get "/messages", ConversationController, :messages
+      get "/export", ConversationController, :export
+    end
+
+    resources "/pipelines", PipelineController, except: [:new, :edit] do
+      get "/runs", PipelineController, :runs
+    end
+
+    resources "/swarms", SwarmController, except: [:new, :edit]
+    resources "/providers", ProviderController, except: [:new, :edit]
+    resources "/secrets", SecretController, except: [:new, :edit]
+    resources "/mcp-servers", McpServerController, except: [:new, :edit]
+    resources "/skills", SkillController, except: [:new, :edit]
+    resources "/media-providers", MediaProviderController, except: [:new, :edit]
   end
 
   # A2A protocol endpoints — per-agent, no browser auth

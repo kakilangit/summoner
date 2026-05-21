@@ -13,8 +13,12 @@ defmodule SummonerWeb.AccessTokenLive.Form do
       {token, title, editing} =
         case params["id"] do
           nil ->
-            {%AccessToken{workspace_id: workspace.id, scopes: [], rate_limit_rpm: 100},
-             "New Ward", false}
+            {%AccessToken{
+               workspace_id: workspace.id,
+               tenant_id: workspace.tenant_id,
+               scopes: [],
+               rate_limit_rpm: 100
+             }, "New Ward", false}
 
           id ->
             {AccessTokens.get_token!(workspace.id, id), "Edit Ward", true}
@@ -75,7 +79,9 @@ defmodule SummonerWeb.AccessTokenLive.Form do
 
   defp create_token(socket, params) do
     workspace = socket.assigns.workspace
-    attrs = Map.put(params, "workspace_id", workspace.id)
+
+    attrs =
+      params |> Map.put("workspace_id", workspace.id) |> Map.put("tenant_id", workspace.tenant_id)
 
     case AccessTokens.create_token(attrs) do
       {:ok, token} ->

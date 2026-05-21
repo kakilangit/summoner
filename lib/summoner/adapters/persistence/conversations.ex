@@ -36,7 +36,7 @@ defmodule Summoner.Adapters.Persistence.Conversations do
        }}
     else
       attrs
-      |> Map.put(:user_id, user.id)
+      |> maybe_put_user_id(user)
       |> maybe_add_inference_snapshot()
       |> insert_conversation()
     end
@@ -359,16 +359,33 @@ defmodule Summoner.Adapters.Persistence.Conversations do
     where(query, [m], m.visibility == ^visibility)
   end
 
+  defp maybe_put_user_id(attrs, nil), do: attrs
+
+  defp maybe_put_user_id(attrs, user) do
+    key = if Enum.any?(Map.keys(attrs), &is_binary/1), do: "user_id", else: :user_id
+    Map.put(attrs, key, user.id)
+  end
+
   defp maybe_add_inference_snapshot(%{provider_name: _, model_name: _} = attrs), do: attrs
+  defp maybe_add_inference_snapshot(%{"provider_name" => _, "model_name" => _} = attrs), do: attrs
 
   defp maybe_add_inference_snapshot(attrs) do
     agent_id = attrs[:primary_agent_id] || attrs["primary_agent_id"]
 
     if agent_id do
       agent = Agents.get_agent_with_provider!(agent_id)
-      Map.merge(attrs, Agent.inference_snapshot(agent))
+      merge_inference_snapshot(attrs, Agent.inference_snapshot(agent))
     else
       attrs
+    end
+  end
+
+  defp merge_inference_snapshot(attrs, snapshot) when is_map(attrs) do
+    if Enum.any?(Map.keys(attrs), &is_binary/1) do
+      stringified = Enum.into(snapshot, %{}, fn {k, v} -> {to_string(k), v} end)
+      Map.merge(stringified, attrs)
+    else
+      Map.merge(snapshot, attrs)
     end
   end
 

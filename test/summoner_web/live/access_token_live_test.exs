@@ -17,7 +17,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
 
   describe "Index" do
     test "lists tokens", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id, %{label: "My API Key"})
+      token = access_token_fixture(ws.id, ws.tenant_id, %{label: "My API Key"})
 
       {:ok, _view, html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens")
@@ -41,7 +41,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
     end
 
     test "revokes a token", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id, %{label: "Revokable"})
+      token = access_token_fixture(ws.id, ws.tenant_id, %{label: "Revokable"})
 
       {:ok, view, _html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens")
@@ -55,7 +55,8 @@ defmodule SummonerWeb.AccessTokenLiveTest do
 
   describe "Show" do
     test "shows token details", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id, %{label: "Detail Token", scopes: ["api", "mcp"]})
+      token =
+        access_token_fixture(ws.id, ws.tenant_id, %{label: "Detail Token", scopes: ["api", "mcp"]})
 
       {:ok, _view, html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens/#{token.id}")
@@ -66,7 +67,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
     end
 
     test "shows active status badge", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id)
+      token = access_token_fixture(ws.id, ws.tenant_id)
 
       {:ok, _view, html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens/#{token.id}")
@@ -75,7 +76,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
     end
 
     test "has edit link", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id)
+      token = access_token_fixture(ws.id, ws.tenant_id)
 
       {:ok, _view, html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens/#{token.id}")
@@ -114,7 +115,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
 
   describe "Form - Edit" do
     test "renders edit form with existing values", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id, %{label: "Editable"})
+      token = access_token_fixture(ws.id, ws.tenant_id, %{label: "Editable"})
 
       {:ok, _view, html} =
         live(
@@ -127,7 +128,7 @@ defmodule SummonerWeb.AccessTokenLiveTest do
     end
 
     test "updates token label", %{conn: conn, workspace: ws} do
-      token = access_token_fixture(ws.id, %{label: "Old Label"})
+      token = access_token_fixture(ws.id, ws.tenant_id, %{label: "Old Label"})
 
       {:ok, view, _html} =
         live(

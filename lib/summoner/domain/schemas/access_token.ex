@@ -23,6 +23,7 @@ defmodule Summoner.Domain.Schemas.AccessToken do
 
   import Ecto.Changeset
 
+  alias Summoner.Domain.Schemas.Tenant
   alias Summoner.Domain.Schemas.User
   alias Summoner.Domain.Schemas.Workspace
 
@@ -42,14 +43,24 @@ defmodule Summoner.Domain.Schemas.AccessToken do
     field :token, :string, virtual: true
 
     belongs_to :workspace, Workspace
+    belongs_to :tenant, Tenant
     belongs_to :user, User
 
     timestamps()
   end
 
-  @cast_fields [:label, :token, :workspace_id, :user_id, :scopes, :expires_at, :rate_limit_rpm]
+  @cast_fields [
+    :label,
+    :token,
+    :workspace_id,
+    :tenant_id,
+    :user_id,
+    :scopes,
+    :expires_at,
+    :rate_limit_rpm
+  ]
   @update_fields [:label, :scopes, :expires_at, :rate_limit_rpm]
-  @required_fields [:label, :workspace_id]
+  @required_fields [:label, :workspace_id, :tenant_id]
 
   @doc """
   Changeset for creating a token. Generates and hashes automatically.
@@ -65,6 +76,7 @@ defmodule Summoner.Domain.Schemas.AccessToken do
     |> validate_number(:rate_limit_rpm, greater_than: 0, less_than_or_equal_to: 10_000)
     |> validate_expires_at()
     |> foreign_key_constraint(:workspace_id)
+    |> foreign_key_constraint(:tenant_id)
     |> foreign_key_constraint(:user_id)
     |> put_change(:token, plaintext)
     |> put_change(:token_hash, Bcrypt.hash_pwd_salt(plaintext))

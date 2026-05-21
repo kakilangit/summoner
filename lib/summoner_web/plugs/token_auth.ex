@@ -18,6 +18,7 @@ defmodule SummonerWeb.Plugs.TokenAuth do
 
   import Plug.Conn
 
+  alias Summoner.Domain.Schemas.Scope
   alias Summoner.Ports.Persistence.AccessTokens
 
   @behaviour Plug
@@ -34,6 +35,8 @@ defmodule SummonerWeb.Plugs.TokenAuth do
       conn
       |> assign(:current_token, token)
       |> assign(:current_workspace_id, token.workspace_id)
+      |> assign(:current_tenant_id, token.tenant_id)
+      |> assign(:current_scope, %Scope{user: nil})
     else
       {:error, :no_token} ->
         conn |> send_json_error(401, "missing_token", "Authorization header required") |> halt()
