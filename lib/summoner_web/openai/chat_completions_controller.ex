@@ -34,6 +34,7 @@ defmodule SummonerWeb.OpenAI.ChatCompletionsController do
   def create(conn, %{"model" => model, "messages" => messages, "stream" => true}) do
     context = %{
       workspace_id: conn.assigns.current_workspace_id,
+      tenant_id: conn.assigns.current_tenant_id,
       scope: conn.assigns.current_scope
     }
 
@@ -49,6 +50,7 @@ defmodule SummonerWeb.OpenAI.ChatCompletionsController do
   def create(conn, %{"model" => model, "messages" => messages}) do
     context = %{
       workspace_id: conn.assigns.current_workspace_id,
+      tenant_id: conn.assigns.current_tenant_id,
       scope: conn.assigns.current_scope
     }
 
