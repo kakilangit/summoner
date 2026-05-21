@@ -24,11 +24,11 @@ defmodule SummonerWeb.AgentLive.Skills do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+          {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
           {agent.name,
-           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"},
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
           {"Spellbook", nil}
         ]
       )
@@ -78,7 +78,7 @@ defmodule SummonerWeb.AgentLive.Skills do
         <p>
           No spells available.
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells/new"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/skills/new"}
             class="link"
           >
             Add one first.

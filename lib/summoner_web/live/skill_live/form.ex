@@ -37,9 +37,9 @@ defmodule SummonerWeb.SkillLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Spellbook", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/spells"},
+            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+            {"Spellbook", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/skills"},
             {title, nil}
           ]
         )
@@ -49,7 +49,7 @@ defmodule SummonerWeb.SkillLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}")}
     end
   end
 
@@ -100,7 +100,9 @@ defmodule SummonerWeb.SkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell created.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/spells")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/skills"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -115,7 +117,9 @@ defmodule SummonerWeb.SkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell updated.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/spells")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/skills"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -165,7 +169,7 @@ defmodule SummonerWeb.SkillLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/skills"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

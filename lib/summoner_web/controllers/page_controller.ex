@@ -3,7 +3,7 @@ defmodule SummonerWeb.PageController do
 
   def home(conn, _params) do
     if conn.assigns[:current_scope] do
-      redirect(conn, to: ~p"/guilds")
+      redirect(conn, to: ~p"/tenants")
     else
       redirect(conn, to: ~p"/users/log-in")
     end

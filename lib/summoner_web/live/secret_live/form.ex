@@ -34,9 +34,9 @@ defmodule SummonerWeb.SecretLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Seals", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/seals"},
+            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+            {"Seals", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/secrets"},
             {title, nil}
           ]
         )
@@ -46,7 +46,7 @@ defmodule SummonerWeb.SecretLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}")}
     end
   end
 
@@ -68,7 +68,9 @@ defmodule SummonerWeb.SecretLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Seal created.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/seals")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/secrets"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -83,7 +85,9 @@ defmodule SummonerWeb.SecretLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Seal updated.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/seals")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/secrets"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -130,7 +134,7 @@ defmodule SummonerWeb.SecretLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/secrets"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

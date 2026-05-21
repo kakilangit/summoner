@@ -1,5 +1,8 @@
 import Config
 
+# Disable OpenAPI spec caching in dev for live reload
+config :open_api_spex, :cache_adapter, OpenApiSpex.Plug.NoneCache
+
 # Configure your database
 config :summoner, Summoner.Repo,
   username: "postgres",

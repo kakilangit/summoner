@@ -14,8 +14,8 @@ defmodule SummonerWeb.A2AClientLive.Index do
       |> assign(
         page_title: "Envoys - #{workspace.name}",
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Envoys", nil}
         ]
       )
@@ -49,7 +49,9 @@ defmodule SummonerWeb.A2AClientLive.Index do
         <h1 class="text-2xl font-bold">Envoys</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys/new"}
+          navigate={
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/new"
+          }
           class="btn btn-primary btn-sm"
         >
           New Envoy
@@ -69,7 +71,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys/#{agent.id}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/#{agent.id}"
                 }
                 class="font-medium hover:underline"
               >
@@ -88,7 +90,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
             <.link
               :if={@can?.(:configure)}
               navigate={
-                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys/#{agent.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/#{agent.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

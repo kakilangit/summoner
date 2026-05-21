@@ -15,8 +15,8 @@ defmodule SummonerWeb.TenantMediaProviderLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
+          {"Guilds", ~p"/tenants"},
+          {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
           {"Forges", nil}
         ]
       )
@@ -59,7 +59,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Index do
         <h1 class="text-2xl font-bold">Forges</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/guilds/#{@tenant.id}/forges/new"}
+          navigate={~p"/tenants/#{@tenant.id}/media-providers/new"}
           class="btn btn-primary btn-sm"
         >
           Add Forge
@@ -89,7 +89,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/guilds/#{@tenant.id}/forges/#{mp.id}/edit"}
+              navigate={~p"/tenants/#{@tenant.id}/media-providers/#{mp.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

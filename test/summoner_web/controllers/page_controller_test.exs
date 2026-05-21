@@ -10,6 +10,6 @@ defmodule SummonerWeb.PageControllerTest do
 
   test "GET / redirects authenticated user to workspaces", %{conn: conn} do
     conn = conn |> log_in_user(user_fixture()) |> get(~p"/")
-    assert redirected_to(conn) == ~p"/guilds"
+    assert redirected_to(conn) == ~p"/tenants"
   end
 end

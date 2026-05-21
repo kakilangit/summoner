@@ -27,8 +27,8 @@ defmodule SummonerWeb.FileBrowserLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Scrolls", nil}
         ]
       )
@@ -279,10 +279,10 @@ defmodule SummonerWeb.FileBrowserLive.Index do
   end
 
   defp scroll_path(workspace, ""),
-    do: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls"
+    do: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/files"
 
   defp scroll_path(workspace, path),
-    do: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/scrolls/#{path}"
+    do: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/files/#{path}"
 
   defp path_breadcrumbs(current_path) do
     parts = current_path |> String.split("/") |> Enum.reject(&(&1 == ""))
@@ -485,7 +485,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
               <.link
                 :if={entry.type == :file}
                 href={
-                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{entry_path(@current_path, entry.name)}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/files/download/#{entry_path(@current_path, entry.name)}"
                 }
                 class="btn btn-ghost btn-xs"
                 title="Download"
@@ -537,7 +537,7 @@ defmodule SummonerWeb.FileBrowserLive.Index do
               <.link
                 :if={@viewing_file}
                 href={
-                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/files/download/#{@viewing_file || ""}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/files/download/#{@viewing_file || ""}"
                 }
                 class="btn btn-ghost btn-sm gap-1"
               >

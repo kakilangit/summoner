@@ -7,7 +7,7 @@ defmodule Summoner.Services.A2A.Auth do
   """
 
   alias Summoner.Domain.Schemas.A2AServer
-  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Ports.Persistence.AccessTokens
 
   @doc """
   Verifies a credential extracted by `A2A.Plug.Auth`.
@@ -21,7 +21,10 @@ defmodule Summoner.Services.A2A.Auth do
     a2a_server = conn.private[:a2a_server]
 
     if a2a_server do
-      case SummonerA2A.verify_token(a2a_server.workspace_id, credential) do
+      case AccessTokens.verify_token(credential,
+             scope: "a2a",
+             workspace_id: a2a_server.workspace_id
+           ) do
         {:ok, token} ->
           {:ok,
            %{
@@ -32,6 +35,12 @@ defmodule Summoner.Services.A2A.Auth do
 
         {:error, :invalid} ->
           {:error, "Invalid token"}
+
+        {:error, :expired} ->
+          {:error, "Token has expired"}
+
+        {:error, :wrong_scope} ->
+          {:error, "Token does not have the required a2a scope"}
       end
     else
       {:error, "No A2A server context"}

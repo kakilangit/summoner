@@ -29,11 +29,11 @@ defmodule SummonerWeb.SwarmLive.Conversations do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Partys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+          {"Partys", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/swarms"},
           {swarm.name,
-           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}"},
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/swarms/#{swarm.id}"},
           {"Channels", nil}
         ]
       )
@@ -54,7 +54,7 @@ defmodule SummonerWeb.SwarmLive.Conversations do
           {:noreply,
            push_navigate(socket,
              to:
-               ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/parties/#{swarm.id}/channels/#{conversation.id}"
+               ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/swarms/#{swarm.id}/conversations/#{conversation.id}"
            )}
 
         {:error, :no_members} ->
@@ -168,7 +168,7 @@ defmodule SummonerWeb.SwarmLive.Conversations do
         >
           <.link
             navigate={
-              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{@swarm.id}/channels/#{conversation.id}"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/#{@swarm.id}/conversations/#{conversation.id}"
             }
             class="flex items-center gap-4 min-w-0 flex-1"
           >

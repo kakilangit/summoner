@@ -2,7 +2,7 @@ defmodule SummonerWeb.A2AEndpoint do
   @moduledoc """
   Plug that routes inbound A2A requests to the correct AgentBridge.
 
-  Mounted at `/summons/:agent_id` in the router. Resolves the
+  Mounted at `/agents/:agent_id` in the router. Resolves the
   A2A server from agent_id, ensures the bridge GenServer is
   running, configures auth and base_url, then delegates to `A2A.Plug`.
   """

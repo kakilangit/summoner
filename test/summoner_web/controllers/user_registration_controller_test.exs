@@ -16,32 +16,32 @@ defmodule SummonerWeb.UserRegistrationControllerTest do
     %{tenant: tenant}
   end
 
-  describe "GET /guilds/:tenant_id/register" do
+  describe "GET /tenants/:tenant_id/register" do
     setup :create_open_tenant
 
     test "renders registration page for open tenant", %{conn: conn, tenant: tenant} do
-      conn = get(conn, ~p"/guilds/#{tenant.id}/register")
+      conn = get(conn, ~p"/tenants/#{tenant.id}/register")
       response = html_response(conn, 200)
       assert response =~ "Register for #{tenant.name}"
       assert response =~ ~p"/users/log-in"
     end
 
     test "redirects if already logged in", %{conn: conn, tenant: tenant} do
-      conn = conn |> log_in_user(user_fixture()) |> get(~p"/guilds/#{tenant.id}/register")
-      assert redirected_to(conn) == ~p"/guilds"
+      conn = conn |> log_in_user(user_fixture()) |> get(~p"/tenants/#{tenant.id}/register")
+      assert redirected_to(conn) == ~p"/tenants"
     end
 
     test "redirects for disabled tenant registration", %{conn: conn} do
       scope = user_scope_fixture()
       disabled_tenant = tenant_fixture(scope)
 
-      conn = get(conn, ~p"/guilds/#{disabled_tenant.id}/register")
+      conn = get(conn, ~p"/tenants/#{disabled_tenant.id}/register")
       assert redirected_to(conn) == ~p"/users/log-in"
       assert conn.assigns.flash["error"] =~ "disabled"
     end
   end
 
-  describe "POST /guilds/:tenant_id/register" do
+  describe "POST /tenants/:tenant_id/register" do
     setup :create_open_tenant
 
     @tag :capture_log
@@ -49,7 +49,7 @@ defmodule SummonerWeb.UserRegistrationControllerTest do
       email = unique_user_email()
 
       conn =
-        post(conn, ~p"/guilds/#{tenant.id}/register", %{
+        post(conn, ~p"/tenants/#{tenant.id}/register", %{
           "user" => valid_user_attributes(email: email)
         })
 
@@ -69,7 +69,7 @@ defmodule SummonerWeb.UserRegistrationControllerTest do
 
     test "render errors for invalid data", %{conn: conn, tenant: tenant} do
       conn =
-        post(conn, ~p"/guilds/#{tenant.id}/register", %{
+        post(conn, ~p"/tenants/#{tenant.id}/register", %{
           "user" => %{"email" => "with spaces"}
         })
 

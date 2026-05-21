@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-05-21
+
+### Added
+
+- **REST API (Gates)**
+  - Token-authenticated API with unified access token system (`shk_` prefix, 4 scopes: `a2a`, `api`, `admin`, `webhook`)
+  - 12 CRUD controllers: Agent, Conversation, Pipeline, Swarm, Provider, Secret, McpServer, Skill, MediaProvider, Invocation, Usage, Admin
+  - Flat API format: single resources returned as plain objects (no `data` wrapper), lists as `{items, meta}`
+  - Pagination on all list endpoints (`page`, `per_page`, default 20, max 100)
+  - `TokenAuth` and `RateLimit` plugs for API authentication and per-token rate limiting
+  - Agent invocation via `POST /api/v1/agents/:id/invoke` (sync) and `POST /api/v1/agents/:id/stream` (SSE)
+  - Invocation management: show, steps, events, cancel
+  - Usage analytics: rolling 30-day stats and breakdowns
+  - Admin endpoints: tenants, users, invitations, stats (requires `admin` scope)
+  - OpenAPI 3.1 spec via `open_api_spex` — auto-generated from controller annotations
+  - Swagger UI at `/dev/swaggerui`, spec at `GET /api/v1/openapi`
+  - 60+ OpenAPI schema definitions in `SummonerWeb.API.Schemas`
+
+- **Webhooks (Beacons)**
+  - Webhook schema with target routing (agent/pipeline/swarm), auth modes (public/token/HMAC-SHA256), response modes (sync/async/stream)
+  - CRUD API: `GET/POST/PUT/DELETE /api/v1/webhooks` (requires `api` scope)
+  - Self-authenticated trigger: `POST /api/v1/webhooks/:id/trigger` (auth per webhook config)
+  - `WebhookAuth` policy — pure HMAC-SHA256 verification (GitHub-compatible `X-Signature-256`)
+  - `WebhookRateLimit` policy — per-webhook RPM limiting
+  - `InputTransform` policy — `#{$.path.to.field}` template interpolation for payload transformation
+  - `Services.Webhooks` orchestration: auth → rate limit → transform → route to target
+  - SSE streaming support for webhook triggers
+  - Domain events: `WebhookTriggered`, `WebhookFailed`
+
+- **Access token delete** — tokens can be permanently deleted after revocation
+
+### Changed
+
+- **Route rename (breaking)**: All browser routes now use code names instead of display names
+  - `/guilds` → `/tenants`, `/realms` → `/workspaces`, `/summons` → `/agents`
+  - `/gateways` → `/providers`, `/channels` → `/conversations`, `/quests` → `/pipelines`
+  - `/parties` → `/swarms`, `/runes` → `/mcp_servers`, `/spells` → `/skills`
+  - `/seals` → `/secrets`, `/forges` → `/media_providers`, `/envoys` → `/remote_agents`
+  - `/wards` → `/access_tokens`, `/scrolls` → `/files`, `/archon` → `/admin`
+- **LiveView rename**: `WardLive.Index` → `AccessTokenLive.Index` (module and directory)
+- **Naming convention**: Code names used in all code/files/routes/DB/API; display (fantasy) names used only in UI labels, titles, and breadcrumbs
+- **Scope cleanup**: Removed `all`, `openai`, `mcp` scopes — final set: `a2a`, `api`, `admin`, `webhook`
+- Updated all documentation to reflect new route paths
+
+### Fixed
+
+- **Access token list UI**: Replaced broken clickable-row pattern (`phx-click={JS.navigate}` on `<div>`) with standard non-clickable row + name-only link (consistent with agent/pipeline/swarm pages)
+- **Revoke/Delete buttons**: Buttons now use standard `show_confirm` + `confirm_modal` pattern (same as all other pages)
+
 ## [0.1.4] - 2026-05-20
 
 ### Added
@@ -144,6 +193,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.5]: https://github.com/kakilangit/summoner/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/kakilangit/summoner/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/kakilangit/summoner/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kakilangit/summoner/compare/v0.1.1...v0.1.2

@@ -18,7 +18,7 @@ defmodule SummonerWeb.TenantLive.New do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds")}
+       |> redirect(to: ~p"/tenants")}
     end
   end
 
@@ -29,7 +29,7 @@ defmodule SummonerWeb.TenantLive.New do
         {:noreply,
          socket
          |> put_flash(:info, "Guild created.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/realms")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/workspaces")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "tenant"))}
@@ -48,7 +48,7 @@ defmodule SummonerWeb.TenantLive.New do
           <.button phx-disable-with="Creating..." class="btn btn-primary btn-sm">
             Create Guild
           </.button>
-          <.link navigate={~p"/guilds"} class="btn btn-ghost btn-sm">
+          <.link navigate={~p"/tenants"} class="btn btn-ghost btn-sm">
             Cancel
           </.link>
         </div>

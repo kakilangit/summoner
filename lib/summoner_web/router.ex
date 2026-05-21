@@ -15,6 +15,7 @@ defmodule SummonerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: SummonerWeb.API.ApiSpec
   end
 
   scope "/", SummonerWeb do
@@ -29,8 +30,8 @@ defmodule SummonerWeb.Router do
     scope "/", SummonerWeb do
       pipe_through [:browser, :require_authenticated_user]
 
-      live "/guilds", TenantLive.Index, :index
-      live "/guilds/new", TenantLive.New, :new
+      live "/tenants", TenantLive.Index, :index
+      live "/tenants/new", TenantLive.New, :new
       live "/themes", ThemeLive.Index, :index
     end
   end
@@ -41,13 +42,13 @@ defmodule SummonerWeb.Router do
       {SummonerWeb.UserAuth, :ensure_authenticated},
       {SummonerWeb.AdminAuth, :ensure_admin}
     ] do
-    scope "/archon", SummonerWeb do
+    scope "/admin", SummonerWeb do
       pipe_through [:browser, :require_authenticated_user]
 
       live "/", AdminLive.Dashboard, :index
       live "/users", AdminLive.UserIndex, :index
       live "/users/:id", AdminLive.UserShow, :show
-      live "/realms", AdminLive.WorkspaceIndex, :index
+      live "/workspaces", AdminLive.WorkspaceIndex, :index
       live "/invites", AdminLive.InvitationIndex, :index
       live "/quotas", AdminLive.QuotaIndex, :index
     end
@@ -59,28 +60,28 @@ defmodule SummonerWeb.Router do
       {SummonerWeb.UserAuth, :ensure_authenticated},
       {SummonerWeb.TenantAuth, :ensure_tenant_member}
     ] do
-    scope "/guilds/:tenant_id", SummonerWeb do
+    scope "/tenants/:tenant_id", SummonerWeb do
       pipe_through [:browser, :require_authenticated_user]
 
-      live "/realms", WorkspaceLive.Index, :tenant_index
-      live "/realms/new", WorkspaceLive.New, :new
+      live "/workspaces", WorkspaceLive.Index, :tenant_index
+      live "/workspaces/new", WorkspaceLive.New, :new
       live "/edit", TenantLive.Edit, :edit
 
-      live "/gateways", TenantProviderLive.Index, :index
-      live "/gateways/new", TenantProviderLive.Form, :new
-      live "/gateways/:id/edit", TenantProviderLive.Form, :edit
-      live "/seals", TenantSecretLive.Index, :index
-      live "/seals/new", TenantSecretLive.Form, :new
-      live "/seals/:id/edit", TenantSecretLive.Form, :edit
-      live "/runes", TenantMcpServerLive.Index, :index
-      live "/runes/new", TenantMcpServerLive.Form, :new
-      live "/runes/:id/edit", TenantMcpServerLive.Form, :edit
-      live "/spells", TenantSkillLive.Index, :index
-      live "/spells/new", TenantSkillLive.Form, :new
-      live "/spells/:id/edit", TenantSkillLive.Form, :edit
-      live "/forges", TenantMediaProviderLive.Index, :index
-      live "/forges/new", TenantMediaProviderLive.Form, :new
-      live "/forges/:id/edit", TenantMediaProviderLive.Form, :edit
+      live "/providers", TenantProviderLive.Index, :index
+      live "/providers/new", TenantProviderLive.Form, :new
+      live "/providers/:id/edit", TenantProviderLive.Form, :edit
+      live "/secrets", TenantSecretLive.Index, :index
+      live "/secrets/new", TenantSecretLive.Form, :new
+      live "/secrets/:id/edit", TenantSecretLive.Form, :edit
+      live "/mcp-servers", TenantMcpServerLive.Index, :index
+      live "/mcp-servers/new", TenantMcpServerLive.Form, :new
+      live "/mcp-servers/:id/edit", TenantMcpServerLive.Form, :edit
+      live "/skills", TenantSkillLive.Index, :index
+      live "/skills/new", TenantSkillLive.Form, :new
+      live "/skills/:id/edit", TenantSkillLive.Form, :edit
+      live "/media-providers", TenantMediaProviderLive.Index, :index
+      live "/media-providers/new", TenantMediaProviderLive.Form, :new
+      live "/media-providers/:id/edit", TenantMediaProviderLive.Form, :edit
       live "/invites", TenantInvitationLive.Index, :index
     end
   end
@@ -92,69 +93,129 @@ defmodule SummonerWeb.Router do
       {SummonerWeb.TenantAuth, :ensure_tenant_member},
       {SummonerWeb.WorkspaceAuth, :ensure_workspace_member}
     ] do
-    scope "/guilds/:tenant_id", SummonerWeb do
+    scope "/tenants/:tenant_id", SummonerWeb do
       pipe_through [:browser, :require_authenticated_user]
 
-      live "/realms/:workspace_id", WorkspaceLive.Show, :show
-      live "/realms/:workspace_id/settings", WorkspaceLive.Settings, :settings
-      live "/realms/:workspace_id/members", WorkspaceLive.Members, :members
-      live "/realms/:workspace_id/gateways", ProviderLive.Index, :index
-      live "/realms/:workspace_id/gateways/new", ProviderLive.Form, :new
-      live "/realms/:workspace_id/gateways/:id", ProviderLive.Show, :show
-      live "/realms/:workspace_id/gateways/:id/edit", ProviderLive.Form, :edit
-      live "/realms/:workspace_id/summons", AgentLive.Index, :index
-      live "/realms/:workspace_id/summons/new", AgentLive.Form, :new
-      live "/realms/:workspace_id/summons/:id", AgentLive.Show, :show
-      live "/realms/:workspace_id/summons/:id/edit", AgentLive.Form, :edit
-      live "/realms/:workspace_id/summons/:id/runes", AgentLive.Tools, :tools
-      live "/realms/:workspace_id/summons/:id/skills", AgentLive.Skills, :skills
-      live "/realms/:workspace_id/channels", ConversationLive.Index, :index
-      live "/realms/:workspace_id/channels/:conversation_id", ConversationLive.Show, :show
-      live "/realms/:workspace_id/runes", McpServerLive.Index, :index
-      live "/realms/:workspace_id/runes/new", McpServerLive.Form, :new
-      live "/realms/:workspace_id/runes/:id/edit", McpServerLive.Form, :edit
-      live "/realms/:workspace_id/quests", PipelineLive.Index, :index
-      live "/realms/:workspace_id/quests/new", PipelineLive.Form, :new
-      live "/realms/:workspace_id/quests/:id/edit", PipelineLive.Form, :edit
-      live "/realms/:workspace_id/quests/:id", PipelineLive.Show, :show
-      live "/realms/:workspace_id/quests/:id/runs/:run_id", PipelineLive.RunShow, :run_show
-      live "/realms/:workspace_id/parties", SwarmLive.Index, :index
-      live "/realms/:workspace_id/parties/new", SwarmLive.Form, :new
-      live "/realms/:workspace_id/parties/:id/edit", SwarmLive.Form, :edit
-      live "/realms/:workspace_id/parties/:id", SwarmLive.Show, :show
-      live "/realms/:workspace_id/parties/:id/channels", SwarmLive.Conversations, :index
+      live "/workspaces/:workspace_id", WorkspaceLive.Show, :show
+      live "/workspaces/:workspace_id/settings", WorkspaceLive.Settings, :settings
+      live "/workspaces/:workspace_id/members", WorkspaceLive.Members, :members
+      live "/workspaces/:workspace_id/providers", ProviderLive.Index, :index
+      live "/workspaces/:workspace_id/providers/new", ProviderLive.Form, :new
+      live "/workspaces/:workspace_id/providers/:id", ProviderLive.Show, :show
+      live "/workspaces/:workspace_id/providers/:id/edit", ProviderLive.Form, :edit
+      live "/workspaces/:workspace_id/agents", AgentLive.Index, :index
+      live "/workspaces/:workspace_id/agents/new", AgentLive.Form, :new
+      live "/workspaces/:workspace_id/agents/:id", AgentLive.Show, :show
+      live "/workspaces/:workspace_id/agents/:id/edit", AgentLive.Form, :edit
+      live "/workspaces/:workspace_id/agents/:id/mcp-servers", AgentLive.Tools, :tools
+      live "/workspaces/:workspace_id/agents/:id/skills", AgentLive.Skills, :skills
+      live "/workspaces/:workspace_id/conversations", ConversationLive.Index, :index
 
-      live "/realms/:workspace_id/parties/:id/channels/:conversation_id",
+      live "/workspaces/:workspace_id/conversations/:conversation_id",
+           ConversationLive.Show,
+           :show
+
+      live "/workspaces/:workspace_id/mcp-servers", McpServerLive.Index, :index
+      live "/workspaces/:workspace_id/mcp-servers/new", McpServerLive.Form, :new
+      live "/workspaces/:workspace_id/mcp-servers/:id/edit", McpServerLive.Form, :edit
+      live "/workspaces/:workspace_id/pipelines", PipelineLive.Index, :index
+      live "/workspaces/:workspace_id/pipelines/new", PipelineLive.Form, :new
+      live "/workspaces/:workspace_id/pipelines/:id/edit", PipelineLive.Form, :edit
+      live "/workspaces/:workspace_id/pipelines/:id", PipelineLive.Show, :show
+      live "/workspaces/:workspace_id/pipelines/:id/runs/:run_id", PipelineLive.RunShow, :run_show
+      live "/workspaces/:workspace_id/swarms", SwarmLive.Index, :index
+      live "/workspaces/:workspace_id/swarms/new", SwarmLive.Form, :new
+      live "/workspaces/:workspace_id/swarms/:id/edit", SwarmLive.Form, :edit
+      live "/workspaces/:workspace_id/swarms/:id", SwarmLive.Show, :show
+      live "/workspaces/:workspace_id/swarms/:id/conversations", SwarmLive.Conversations, :index
+
+      live "/workspaces/:workspace_id/swarms/:id/conversations/:conversation_id",
            SwarmLive.Session,
            :show
 
-      live "/realms/:workspace_id/forges", MediaProviderLive.Index, :index
-      live "/realms/:workspace_id/forges/new", MediaProviderLive.Form, :new
-      live "/realms/:workspace_id/forges/:id/edit", MediaProviderLive.Form, :edit
-      live "/realms/:workspace_id/seals", SecretLive.Index, :index
-      live "/realms/:workspace_id/seals/new", SecretLive.Form, :new
-      live "/realms/:workspace_id/seals/:id/edit", SecretLive.Form, :edit
-      live "/realms/:workspace_id/spells", SkillLive.Index, :index
-      live "/realms/:workspace_id/spells/new", SkillLive.Form, :new
-      live "/realms/:workspace_id/spells/:id/edit", SkillLive.Form, :edit
-      live "/realms/:workspace_id/gallery", GalleryLive.Index, :index
-      live "/realms/:workspace_id/scrolls", FileBrowserLive.Index, :index
-      live "/realms/:workspace_id/scrolls/*path", FileBrowserLive.Index, :show
-      live "/realms/:workspace_id/envoys", A2AClientLive.Index, :index
-      live "/realms/:workspace_id/envoys/new", A2AClientLive.Form, :new
-      live "/realms/:workspace_id/envoys/:id", A2AClientLive.Show, :show
-      live "/realms/:workspace_id/envoys/:id/edit", A2AClientLive.Form, :edit
-      live "/realms/:workspace_id/wards", WardLive.Index, :index
+      live "/workspaces/:workspace_id/media-providers", MediaProviderLive.Index, :index
+      live "/workspaces/:workspace_id/media-providers/new", MediaProviderLive.Form, :new
+      live "/workspaces/:workspace_id/media-providers/:id/edit", MediaProviderLive.Form, :edit
+      live "/workspaces/:workspace_id/secrets", SecretLive.Index, :index
+      live "/workspaces/:workspace_id/secrets/new", SecretLive.Form, :new
+      live "/workspaces/:workspace_id/secrets/:id/edit", SecretLive.Form, :edit
+      live "/workspaces/:workspace_id/skills", SkillLive.Index, :index
+      live "/workspaces/:workspace_id/skills/new", SkillLive.Form, :new
+      live "/workspaces/:workspace_id/skills/:id/edit", SkillLive.Form, :edit
+      live "/workspaces/:workspace_id/gallery", GalleryLive.Index, :index
+      live "/workspaces/:workspace_id/files", FileBrowserLive.Index, :index
+      live "/workspaces/:workspace_id/files/*path", FileBrowserLive.Index, :show
+      live "/workspaces/:workspace_id/remote-agents", A2AClientLive.Index, :index
+      live "/workspaces/:workspace_id/remote-agents/new", A2AClientLive.Form, :new
+      live "/workspaces/:workspace_id/remote-agents/:id", A2AClientLive.Show, :show
+      live "/workspaces/:workspace_id/remote-agents/:id/edit", A2AClientLive.Form, :edit
+      live "/workspaces/:workspace_id/access-tokens", AccessTokenLive.Index, :index
+      live "/workspaces/:workspace_id/access-tokens/new", AccessTokenLive.Form, :new
+      live "/workspaces/:workspace_id/access-tokens/:id", AccessTokenLive.Show, :show
+      live "/workspaces/:workspace_id/access-tokens/:id/edit", AccessTokenLive.Form, :edit
     end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", SummonerWeb do
-  #   pipe_through :api
-  # end
+  # OpenAPI spec endpoint (no scope prefix)
+  scope "/api/v1" do
+    pipe_through [:api]
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+  end
 
-  # A2A protocol endpoints — per-agent, no browser auth
-  scope "/summons" do
+  # Webhook trigger — self-authenticated (public/token/hmac per webhook config)
+  scope "/api/v1", SummonerWeb.API.V1 do
+    pipe_through [:api]
+    post "/webhooks/:id/trigger", WebhookTriggerController, :trigger
+  end
+
+  # REST API — token-authenticated, workspace implicit (derived from token)
+  scope "/api/v1", SummonerWeb.API.V1 do
+    pipe_through [:api]
+
+    resources "/agents", AgentController, except: [:new, :edit] do
+      post "/invoke", InvocationController, :invoke
+      post "/stream", StreamController, :stream
+    end
+
+    resources "/conversations", ConversationController, only: [:index, :show, :create, :delete] do
+      get "/messages", ConversationController, :messages
+      get "/export", ConversationController, :export
+    end
+
+    resources "/pipelines", PipelineController, except: [:new, :edit] do
+      get "/runs", PipelineController, :runs
+    end
+
+    resources "/swarms", SwarmController, except: [:new, :edit]
+    resources "/providers", ProviderController, except: [:new, :edit]
+    resources "/secrets", SecretController, except: [:new, :edit]
+    resources "/mcp-servers", McpServerController, except: [:new, :edit]
+    resources "/skills", SkillController, except: [:new, :edit]
+    resources "/media-providers", MediaProviderController, except: [:new, :edit]
+
+    resources "/webhooks", WebhookController, except: [:new, :edit]
+
+    resources "/invocations", InvocationController, only: [:show] do
+      get "/steps", InvocationController, :steps
+      get "/events", InvocationController, :events
+      post "/cancel", InvocationController, :cancel
+    end
+
+    # Usage analytics
+    get "/usages", UsageController, :index
+    get "/usages/breakdowns", UsageController, :breakdowns
+
+    # Admin (requires admin scope)
+    scope "/admin" do
+      get "/tenants", AdminController, :list_tenants
+      get "/users", AdminController, :list_users
+      patch "/users/:id", AdminController, :update_user
+      get "/invitations", AdminController, :list_invitations
+      get "/stats", AdminController, :stats
+    end
+  end
+
+  scope "/agents" do
     pipe_through :api
 
     forward "/", SummonerWeb.A2AEndpoint
@@ -177,6 +238,8 @@ defmodule SummonerWeb.Router do
         additional_pages: [oban: Oban.LiveDashboard]
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+
+      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
     end
   end
 
@@ -185,8 +248,8 @@ defmodule SummonerWeb.Router do
   scope "/", SummonerWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/guilds/:tenant_id/register", UserRegistrationController, :new
-    post "/guilds/:tenant_id/register", UserRegistrationController, :create
+    get "/tenants/:tenant_id/register", UserRegistrationController, :new
+    post "/tenants/:tenant_id/register", UserRegistrationController, :create
   end
 
   scope "/", SummonerWeb do
@@ -196,11 +259,11 @@ defmodule SummonerWeb.Router do
     put "/users/settings", UserSettingsController, :update
     get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
 
-    get "/guilds/:tenant_id/realms/:workspace_id/files/download/*path",
+    get "/tenants/:tenant_id/workspaces/:workspace_id/files/download/*path",
         FileDownloadController,
         :download
 
-    get "/guilds/:tenant_id/realms/:workspace_id/files/archive",
+    get "/tenants/:tenant_id/workspaces/:workspace_id/files/archive",
         FileDownloadController,
         :archive
   end

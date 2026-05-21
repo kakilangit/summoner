@@ -4,7 +4,7 @@ defmodule Summoner.MixProject do
   def project do
     [
       app: :summoner,
-      version: "0.1.4",
+      version: "0.1.5",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -84,7 +84,8 @@ defmodule Summoner.MixProject do
 
       # Dev/Test
       {:mox, "~> 1.2", only: :test},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:open_api_spex, "~> 3.21"}
     ]
   end
 

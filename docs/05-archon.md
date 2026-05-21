@@ -4,7 +4,7 @@ The **Archon** is the system administration panel, accessible only to users with
 
 ## Dashboard
 
-The Archon dashboard (`/archon`) displays system-wide statistics:
+The Archon dashboard (`/admin`) displays system-wide statistics:
 
 - Total users
 - Total guilds (tenants)
@@ -14,7 +14,7 @@ The Archon dashboard (`/archon`) displays system-wide statistics:
 
 ## User Management
 
-**Path:** `/archon/users`
+**Path:** `/admin/users`
 
 | Action | Description |
 |--------|-------------|
@@ -32,7 +32,7 @@ The root admin (matching `ADMIN_EMAIL`) cannot be demoted or disabled.
 
 ## Realm Management
 
-**Path:** `/archon/realms`
+**Path:** `/admin/workspaces`
 
 | Action | Description |
 |--------|-------------|
@@ -41,13 +41,13 @@ The root admin (matching `ADMIN_EMAIL`) cannot be demoted or disabled.
 
 ## Invitation Management
 
-**Path:** `/archon/invites`
+**Path:** `/admin/invites`
 
 View all invitation codes across all guilds with their status (`available`, `used`, `expired`), creation date, and usage information.
 
 ## Quota Management
 
-**Path:** `/archon/quotas`
+**Path:** `/admin/quotas`
 
 Manage per-user, per-guild invitation quotas. Guild admins have unlimited invitation quota by default. Regular members are subject to configured limits (0-10,000 invitations).
 
@@ -64,6 +64,6 @@ Invitations are guild-scoped. Each invitation code:
 
 1. Guild admin creates an invitation code
 2. Admin shares the code with the new user
-3. New user navigates to `/guilds/:tenant_id/register`
+3. New user navigates to `/tenants/:tenant_id/register`
 4. User enters the invitation code, email, and password
 5. User is registered and added to the guild as a member

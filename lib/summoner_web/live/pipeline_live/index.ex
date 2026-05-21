@@ -32,8 +32,8 @@ defmodule SummonerWeb.PipelineLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Quests", nil}
         ]
       )
@@ -174,7 +174,7 @@ defmodule SummonerWeb.PipelineLive.Index do
         <h1 class="text-2xl font-bold">Quests</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/new"}
+          navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/pipelines/new"}
           class="btn btn-primary btn-sm"
         >
           New Quest
@@ -203,7 +203,7 @@ defmodule SummonerWeb.PipelineLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{pipeline.id}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/pipelines/#{pipeline.id}"
                 }
                 class="font-medium link link-hover"
               >
@@ -268,7 +268,7 @@ defmodule SummonerWeb.PipelineLive.Index do
             <.link
               :if={@can?.(:configure)}
               navigate={
-                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests/#{pipeline.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/pipelines/#{pipeline.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

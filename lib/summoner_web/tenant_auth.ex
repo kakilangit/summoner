@@ -57,7 +57,7 @@ defmodule SummonerWeb.TenantAuth do
       socket =
         socket
         |> put_flash(:error, "You do not have access to this realm.")
-        |> redirect(to: ~p"/guilds")
+        |> redirect(to: ~p"/tenants")
 
       {:halt, socket}
     end

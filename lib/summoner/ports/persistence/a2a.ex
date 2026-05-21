@@ -22,11 +22,13 @@ defmodule Summoner.Ports.Persistence.A2A do
   defdelegate change_server(server), to: @adapter
   defdelegate change_server(server, attrs), to: @adapter
 
-  # A2A Token CRUD
-  defdelegate list_tokens(workspace_id), to: @adapter
-  defdelegate create_token(attrs), to: @adapter
-  defdelegate revoke_token(token), to: @adapter
-  defdelegate verify_token(workspace_id, plaintext), to: @adapter
+  alias Summoner.Ports.Persistence.AccessTokens
+
+  # A2A Token CRUD — delegates to unified AccessTokens port
+  defdelegate list_tokens(workspace_id), to: AccessTokens
+  defdelegate create_token(attrs), to: AccessTokens
+  defdelegate revoke_token(token), to: AccessTokens
+  defdelegate verify_token(workspace_id, plaintext), to: AccessTokens
 
   # A2A Task CRUD
   defdelegate get_task(task_id), to: @adapter

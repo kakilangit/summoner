@@ -11,7 +11,6 @@ defmodule Summoner.Adapters.Persistence.A2A do
 
   alias Summoner.Domain.Schemas.A2AServer
   alias Summoner.Domain.Schemas.A2ATask
-  alias Summoner.Domain.Schemas.A2AToken
   alias Summoner.Repo
 
   # -------------------------------------------------------------------
@@ -128,73 +127,8 @@ defmodule Summoner.Adapters.Persistence.A2A do
   end
 
   # -------------------------------------------------------------------
-  # A2A Token CRUD (workspace-scoped)
+  # A2A Token CRUD — moved to Summoner.Adapters.Persistence.AccessTokens
   # -------------------------------------------------------------------
-
-  @doc """
-  Lists all active tokens for a workspace.
-  """
-  def list_tokens(workspace_id) do
-    A2AToken
-    |> where(workspace_id: ^workspace_id)
-    |> where([t], is_nil(t.revoked_at))
-    |> order_by([t], desc: t.inserted_at)
-    |> Repo.all()
-  end
-
-  @doc """
-  Creates a new token for a workspace.
-
-  Returns `{:ok, token}` where `token.token` contains the plaintext
-  (shown once) or `{:error, changeset}`.
-  """
-  def create_token(attrs) do
-    %A2AToken{}
-    |> A2AToken.create_changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Revokes a token by setting `revoked_at`.
-  """
-  def revoke_token(%A2AToken{} = token) do
-    token
-    |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now()})
-    |> Repo.update()
-  end
-
-  @doc """
-  Verifies a plaintext token against stored hashes for a workspace.
-
-  Returns `{:ok, %A2AToken{}}` if valid, `{:error, :invalid}` otherwise.
-  Also increments request_count and updates last_used_at.
-  """
-  def verify_token(workspace_id, plaintext) do
-    tokens =
-      A2AToken
-      |> where(workspace_id: ^workspace_id)
-      |> where([t], is_nil(t.revoked_at))
-      |> Repo.all()
-
-    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
-      nil ->
-        Bcrypt.no_user_verify()
-        {:error, :invalid}
-
-      %A2AToken{} = token ->
-        record_token_usage(token)
-        {:ok, token}
-    end
-  end
-
-  defp record_token_usage(%A2AToken{} = token) do
-    A2AToken
-    |> where(id: ^token.id)
-    |> Repo.update_all(
-      set: [last_used_at: DateTime.utc_now()],
-      inc: [request_count: 1]
-    )
-  end
 
   # -------------------------------------------------------------------
   # A2A Task CRUD
@@ -279,6 +213,6 @@ defmodule Summoner.Adapters.Persistence.A2A do
   Constructs the public base URL for an A2A server endpoint.
   """
   def base_url(%A2AServer{} = server) do
-    "#{SummonerWeb.Endpoint.url()}/summons/#{server.agent_id}"
+    "#{SummonerWeb.Endpoint.url()}/agents/#{server.agent_id}"
   end
 end

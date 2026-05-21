@@ -24,7 +24,7 @@ defmodule SummonerWeb.AdminAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(:error, "You do not have permission to access this page.")
-        |> Phoenix.LiveView.redirect(to: "/realms")
+        |> Phoenix.LiveView.redirect(to: "/workspaces")
 
       {:halt, socket}
     end

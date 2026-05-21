@@ -10,7 +10,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
       |> assign(page_title: workspace.name)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
           {workspace.name, nil}
         ]
       )
@@ -26,13 +26,13 @@ defmodule SummonerWeb.WorkspaceLive.Show do
         <h1 class="text-2xl font-bold">{@workspace.name}</h1>
         <div class="flex gap-2">
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/settings"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/settings"}
             class="btn btn-ghost btn-sm"
           >
             Settings
           </.link>
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/members"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/members"}
             class="btn btn-ghost btn-sm"
           >
             Members
@@ -46,7 +46,9 @@ defmodule SummonerWeb.WorkspaceLive.Show do
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Quests</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/channels"}
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/conversations"
+              }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -56,7 +58,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/quests"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/pipelines"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -72,7 +74,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Realm Foundations</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/gateways"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/providers"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -82,7 +84,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -92,7 +94,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/runes"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp-servers"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -102,7 +104,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/seals"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/secrets"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -112,7 +114,9 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/forges"}
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers"
+              }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -128,7 +132,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Arcana</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/spells"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/skills"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -138,7 +142,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -148,7 +152,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/scrolls"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/files"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -158,7 +162,9 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys"}
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents"
+              }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -168,12 +174,14 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/wards"}
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens"
+              }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
                 <h2 class="card-title">Wards</h2>
-                <p class="text-sm text-base-content/60">Access tokens for protected Heralds</p>
+                <p class="text-sm text-base-content/60">Manage scoped access tokens</p>
               </div>
             </.link>
           </div>

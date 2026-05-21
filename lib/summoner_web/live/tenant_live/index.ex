@@ -33,7 +33,7 @@ defmodule SummonerWeb.TenantLive.Index do
 
       case tenants do
         [single] ->
-          {:ok, push_navigate(socket, to: ~p"/guilds/#{single.id}/realms")}
+          {:ok, push_navigate(socket, to: ~p"/tenants/#{single.id}/workspaces")}
 
         _ ->
           socket =
@@ -124,7 +124,7 @@ defmodule SummonerWeb.TenantLive.Index do
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <.link
           :for={tenant <- @tenants}
-          navigate={~p"/guilds/#{tenant.id}/realms"}
+          navigate={~p"/tenants/#{tenant.id}/workspaces"}
           class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
         >
           <div class="card-body">
@@ -141,7 +141,7 @@ defmodule SummonerWeb.TenantLive.Index do
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Guilds</h1>
-        <.link navigate={~p"/guilds/new"} class="btn btn-primary btn-sm">
+        <.link navigate={~p"/tenants/new"} class="btn btn-primary btn-sm">
           New Guild
         </.link>
       </div>
@@ -175,7 +175,7 @@ defmodule SummonerWeb.TenantLive.Index do
             <tr :for={tenant <- @page.entries} class="hover">
               <td>
                 <.link
-                  navigate={~p"/guilds/#{tenant.id}/realms"}
+                  navigate={~p"/tenants/#{tenant.id}/workspaces"}
                   class="link link-hover font-medium"
                 >
                   {tenant.name}
@@ -197,7 +197,7 @@ defmodule SummonerWeb.TenantLive.Index do
               </td>
               <td class="flex gap-1">
                 <.link
-                  navigate={~p"/guilds/#{tenant.id}/edit"}
+                  navigate={~p"/tenants/#{tenant.id}/edit"}
                   class="btn btn-ghost btn-xs"
                 >
                   Edit

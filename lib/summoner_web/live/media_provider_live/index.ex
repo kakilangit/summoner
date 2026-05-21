@@ -22,8 +22,8 @@ defmodule SummonerWeb.MediaProviderLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Forges", nil}
         ]
       )
@@ -44,7 +44,9 @@ defmodule SummonerWeb.MediaProviderLive.Index do
         <h1 class="text-2xl font-bold">Forges</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/forges/new"}
+          navigate={
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers/new"
+          }
           class="btn btn-primary btn-sm"
         >
           Add Forge
@@ -76,7 +78,7 @@ defmodule SummonerWeb.MediaProviderLive.Index do
             <.link
               :if={@can?.(:configure) and is_nil(mp.tenant_id)}
               navigate={
-                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/forges/#{mp.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers/#{mp.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

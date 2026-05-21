@@ -16,6 +16,7 @@ defmodule Summoner.Ports.Persistence.Agents do
   defdelegate list_remote_agents(scope, workspace_id), to: @adapter
   defdelegate list_agents_paginated(scope, workspace_id), to: @adapter
   defdelegate list_agents_paginated(scope, workspace_id, opts), to: @adapter
+  defdelegate list_remote_agents_paginated(scope, workspace_id, opts \\ []), to: @adapter
   defdelegate update_agent(scope, agent, attrs), to: @adapter
   defdelegate delete_agent(scope, agent), to: @adapter
   defdelegate change_agent(agent), to: @adapter

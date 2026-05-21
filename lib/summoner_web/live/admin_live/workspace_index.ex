@@ -62,7 +62,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Realms</h1>
-        <.link navigate="/archon" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
+        <.link navigate="/admin" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
       </div>
 
       <.list_controls
@@ -93,7 +93,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
             <tr :for={workspace <- @page.entries} class="hover">
               <td>
                 <.link
-                  navigate={~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"}
+                  navigate={~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"}
                   class="link link-hover font-medium"
                 >
                   {workspace.name}
@@ -101,7 +101,7 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
               </td>
               <td>
                 <.link
-                  navigate={~p"/guilds/#{workspace.tenant_id}/realms"}
+                  navigate={~p"/tenants/#{workspace.tenant_id}/workspaces"}
                   class="link link-hover text-sm"
                 >
                   {workspace.tenant.name}

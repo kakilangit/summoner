@@ -54,9 +54,10 @@ defmodule SummonerWeb.ConversationLive.Show do
       |> assign(processing: Orchestration.conversation_active?(conversation_id))
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Channels", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/channels"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+          {"Channels",
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/conversations"},
           {conversation.title || "Channel", nil}
         ]
       )
@@ -303,7 +304,7 @@ defmodule SummonerWeb.ConversationLive.Show do
           />
           <div class="flex items-center gap-1">
             <.link
-              navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/scrolls"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/files"}
               class="btn btn-ghost btn-xs gap-1"
               title="Browse workspace files"
             >

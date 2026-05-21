@@ -16,8 +16,8 @@ defmodule SummonerWeb.TenantLive.Edit do
         |> assign(settings_form: to_form(TenantSettings.changeset(tenant.settings, %{})))
         |> assign(
           breadcrumbs: [
-            {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
+            {"Guilds", ~p"/tenants"},
+            {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
             {"Edit", nil}
           ]
         )
@@ -27,7 +27,7 @@ defmodule SummonerWeb.TenantLive.Edit do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{socket.assigns.tenant.id}/realms")}
+       |> redirect(to: ~p"/tenants/#{socket.assigns.tenant.id}/workspaces")}
     end
   end
 

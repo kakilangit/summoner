@@ -87,7 +87,7 @@ defmodule SummonerWeb.AdminLive.UserShow do
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">{@user.email}</h1>
-        <.link navigate="/archon/users" class="btn btn-ghost btn-sm">Back to Users</.link>
+        <.link navigate="/admin/users" class="btn btn-ghost btn-sm">Back to Users</.link>
       </div>
 
       <%!-- Reset password banner --%>

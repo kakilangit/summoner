@@ -9,6 +9,7 @@ defmodule Summoner.Adapters.Persistence.MediaProviders do
 
   import Ecto.Query, warn: false
 
+  alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Domain.Schemas.MediaProvider
   alias Summoner.Repo
 
@@ -26,6 +27,16 @@ defmodule Summoner.Adapters.Persistence.MediaProviders do
     |> limit(@max_media_providers_per_workspace)
     |> Repo.all()
     |> Repo.preload(provider: :api_key_secret)
+  end
+
+  @doc """
+  Lists media providers for a workspace with pagination.
+  """
+  def list_media_providers_paginated(%{user: _user}, workspace_id, tenant_id, opts \\ []) do
+    MediaProvider
+    |> where_scope(workspace_id, tenant_id)
+    |> order_by([p], asc: p.name)
+    |> Pagination.paginate(opts)
   end
 
   @doc """
