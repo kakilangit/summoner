@@ -72,6 +72,17 @@ defmodule Summoner.Adapters.Persistence.AccessTokens do
   end
 
   @doc """
+  Permanently deletes a revoked token. Returns `{:error, :not_revoked}` if
+  the token has not been revoked yet.
+  """
+  @impl true
+  def delete_token(%AccessToken{revoked_at: nil}), do: {:error, :not_revoked}
+
+  def delete_token(%AccessToken{} = token) do
+    Repo.delete(token)
+  end
+
+  @doc """
   Verifies a plaintext token.
 
   ## Options

@@ -13,6 +13,8 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Pipelines (sequential/orchestrated multi-agent workflows)
 - Swarms (Circle, Chain, Command multi-agent collaboration)
 - A2A protocol support (Herald server, Envoy remote agents, skill-aware invocation)
+- REST API with OpenAPI 3.1 spec and Swagger UI
+- Webhooks (Beacons) — trigger agents from external systems (GitHub, CI/CD, etc.)
 - Hexagonal architecture with persistence ports, worker ports, and domain event system
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)

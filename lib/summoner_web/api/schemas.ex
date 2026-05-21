@@ -1126,4 +1126,104 @@ defmodule SummonerWeb.API.Schemas do
       required: [:error]
     })
   end
+
+  # ── Webhook ──────────────────────────────────────────────────────────
+
+  defmodule Webhook do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Webhook",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :binary_id},
+        name: %Schema{type: :string},
+        description: %Schema{type: :string, nullable: true},
+        target_type: %Schema{type: :string, enum: ["agent", "pipeline", "swarm"]},
+        target_id: %Schema{type: :string, format: :binary_id},
+        auth_mode: %Schema{type: :string, enum: ["public", "token", "hmac"]},
+        hmac_secret_id: %Schema{type: :string, format: :binary_id, nullable: true},
+        transform: %Schema{type: :string, nullable: true},
+        response_mode: %Schema{type: :string, enum: ["sync", "async", "stream"]},
+        rate_limit_rpm: %Schema{type: :integer},
+        timeout_s: %Schema{type: :integer},
+        enabled: %Schema{type: :boolean},
+        last_triggered_at: %Schema{type: :string, format: :"date-time", nullable: true},
+        trigger_count: %Schema{type: :integer},
+        workspace_id: %Schema{type: :string, format: :binary_id},
+        inserted_at: %Schema{type: :string, format: :"date-time"},
+        updated_at: %Schema{type: :string, format: :"date-time"}
+      },
+      required: [:id, :name, :target_type, :target_id, :auth_mode, :response_mode]
+    })
+  end
+
+  defmodule WebhookListResponse do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "WebhookListResponse",
+      type: :object,
+      properties: %{
+        items: %Schema{type: :array, items: Webhook},
+        meta: PaginationMeta
+      },
+      required: [:items, :meta]
+    })
+  end
+
+  defmodule WebhookParams do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "WebhookParams",
+      type: :object,
+      properties: %{
+        name: %Schema{type: :string},
+        description: %Schema{type: :string},
+        target_type: %Schema{type: :string, enum: ["agent", "pipeline", "swarm"]},
+        target_id: %Schema{type: :string, format: :binary_id},
+        auth_mode: %Schema{type: :string, enum: ["public", "token", "hmac"]},
+        hmac_secret_id: %Schema{type: :string, format: :binary_id},
+        transform: %Schema{type: :string},
+        response_mode: %Schema{type: :string, enum: ["sync", "async", "stream"]},
+        rate_limit_rpm: %Schema{type: :integer},
+        timeout_s: %Schema{type: :integer},
+        enabled: %Schema{type: :boolean}
+      },
+      required: [:name, :target_type, :target_id]
+    })
+  end
+
+  defmodule WebhookTriggerParams do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "WebhookTriggerParams",
+      type: :object,
+      properties: %{
+        message: %Schema{type: :string, description: "Message to send to the target agent"}
+      },
+      additionalProperties: true
+    })
+  end
+
+  defmodule WebhookTriggerResult do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "WebhookTriggerResult",
+      type: :object,
+      properties: %{
+        conversation_id: %Schema{type: :string, format: :binary_id},
+        invocation_id: %Schema{type: :string, format: :binary_id},
+        status: %Schema{type: :string}
+      }
+    })
+  end
 end

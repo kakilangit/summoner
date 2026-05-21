@@ -13,5 +13,6 @@ defmodule Summoner.Ports.Persistence.AccessTokens do
   defdelegate create_token(attrs), to: @adapter
   defdelegate update_token(token, attrs), to: @adapter
   defdelegate revoke_token(token), to: @adapter
+  defdelegate delete_token(token), to: @adapter
   defdelegate verify_token(plaintext, opts), to: @adapter
 end

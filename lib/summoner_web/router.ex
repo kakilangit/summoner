@@ -162,6 +162,12 @@ defmodule SummonerWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
+  # Webhook trigger — self-authenticated (public/token/hmac per webhook config)
+  scope "/api/v1", SummonerWeb.API.V1 do
+    pipe_through [:api]
+    post "/webhooks/:id/trigger", WebhookTriggerController, :trigger
+  end
+
   # REST API — token-authenticated, workspace implicit (derived from token)
   scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
@@ -186,6 +192,8 @@ defmodule SummonerWeb.Router do
     resources "/mcp-servers", McpServerController, except: [:new, :edit]
     resources "/skills", SkillController, except: [:new, :edit]
     resources "/media-providers", MediaProviderController, except: [:new, :edit]
+
+    resources "/webhooks", WebhookController, except: [:new, :edit]
 
     resources "/invocations", InvocationController, only: [:show] do
       get "/steps", InvocationController, :steps

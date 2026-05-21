@@ -7,3 +7,4 @@
 - [Archon (Admin Panel)](05-archon.md)
 - [Themes](06-themes.md)
 - [A2A (Agent-to-Agent)](07-a2a.md)
+- [REST API & Webhooks](08-api.md)

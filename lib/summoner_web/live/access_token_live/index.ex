@@ -44,6 +44,27 @@ defmodule SummonerWeb.AccessTokenLive.Index do
   end
 
   @impl true
+  def handle_event("delete", %{"id" => token_id}, socket) do
+    authorize(socket, :operate, fn ->
+      token = Enum.find(socket.assigns.tokens, &(&1.id == token_id))
+
+      case token && AccessTokens.delete_token(token) do
+        {:ok, _} ->
+          {:noreply,
+           socket
+           |> load_tokens()
+           |> put_flash(:info, "Token deleted.")}
+
+        {:error, :not_revoked} ->
+          {:noreply, put_flash(socket, :error, "Token must be revoked before deleting.")}
+
+        _ ->
+          {:noreply, socket}
+      end
+    end)
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
@@ -70,16 +91,20 @@ defmodule SummonerWeb.AccessTokenLive.Index do
       </div>
 
       <div class="space-y-2">
-        <.link
+        <div
           :for={token <- @tokens}
-          navigate={
-            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens/#{token.id}"
-          }
-          class="flex items-center justify-between p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
+          class="flex items-center justify-between p-4 bg-base-200 rounded-lg"
         >
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <span class="font-medium">{token.label}</span>
+              <.link
+                navigate={
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens/#{token.id}"
+                }
+                class="font-medium hover:underline truncate"
+              >
+                {token.label}
+              </.link>
               <.token_status token={token} />
             </div>
             <div class="flex gap-1 mt-1">
@@ -94,27 +119,40 @@ defmodule SummonerWeb.AccessTokenLive.Index do
               {if token.expires_at, do: " · expires #{format_relative(token.expires_at)}"}
             </div>
           </div>
-          <div :if={@can?.(:operate) and is_nil(token.revoked_at)} class="flex-shrink-0 ml-4">
+          <div :if={@can?.(:operate)} class="flex gap-2 flex-shrink-0">
             <button
+              :if={is_nil(token.revoked_at)}
               phx-click={show_confirm("#revoke-token-#{token.id}")}
-              class="btn btn-error btn-xs btn-outline"
-              onclick="event.preventDefault(); event.stopPropagation();"
+              class="btn btn-error btn-sm btn-outline"
             >
               Revoke
             </button>
+            <button
+              :if={not is_nil(token.revoked_at)}
+              phx-click={show_confirm("#delete-token-#{token.id}")}
+              class="btn btn-error btn-sm btn-outline"
+            >
+              Delete
+            </button>
+            <.confirm_modal
+              :if={is_nil(token.revoked_at)}
+              id={"revoke-token-#{token.id}"}
+              title="Revoke token?"
+              message="External clients using this token will lose access immediately."
+              confirm_text="Revoke"
+              on_confirm={JS.push("revoke", value: %{id: token.id})}
+            />
+            <.confirm_modal
+              :if={not is_nil(token.revoked_at)}
+              id={"delete-token-#{token.id}"}
+              title="Delete token?"
+              message="This will permanently remove the token. This cannot be undone."
+              confirm_text="Delete"
+              on_confirm={JS.push("delete", value: %{id: token.id})}
+            />
           </div>
-        </.link>
+        </div>
       </div>
-
-      <.confirm_modal
-        :for={token <- @tokens}
-        :if={is_nil(token.revoked_at)}
-        id={"revoke-token-#{token.id}"}
-        title="Revoke token?"
-        message="External clients using this token will lose access immediately."
-        confirm_text="Revoke"
-        on_confirm={JS.push("revoke", value: %{id: token.id})}
-      />
     </div>
     """
   end

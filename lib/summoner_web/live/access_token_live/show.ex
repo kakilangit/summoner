@@ -43,6 +43,26 @@ defmodule SummonerWeb.AccessTokenLive.Show do
   end
 
   @impl true
+  def handle_event("delete", _params, socket) do
+    authorize(socket, :operate, fn ->
+      workspace = socket.assigns.workspace
+
+      case AccessTokens.delete_token(socket.assigns.token) do
+        {:ok, _} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Token deleted.")
+           |> push_navigate(
+             to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/access-tokens"
+           )}
+
+        {:error, :not_revoked} ->
+          {:noreply, put_flash(socket, :error, "Token must be revoked before deleting.")}
+      end
+    end)
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="max-w-lg mx-auto space-y-6">
@@ -65,12 +85,26 @@ defmodule SummonerWeb.AccessTokenLive.Show do
           >
             Revoke
           </button>
+          <button
+            :if={not is_nil(@token.revoked_at)}
+            phx-click={show_confirm("#delete-token")}
+            class="btn btn-error btn-sm btn-outline"
+          >
+            Delete
+          </button>
           <.confirm_modal
             id="revoke-token"
             title="Revoke token?"
             message="External clients using this token will lose access immediately. This cannot be undone."
             confirm_text="Revoke"
             on_confirm={JS.push("revoke")}
+          />
+          <.confirm_modal
+            id="delete-token"
+            title="Delete token?"
+            message="This will permanently remove the token. This cannot be undone."
+            confirm_text="Delete"
+            on_confirm={JS.push("delete")}
           />
         </div>
       </div>
