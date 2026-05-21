@@ -21,8 +21,8 @@ defmodule Summoner.Adapters.Persistence.Agents do
   alias Summoner.Adapters.Persistence.Pagination
   alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Events.InvocationStarted
-  alias Summoner.Domain.Schemas.{Agent, AgentLink, LocalAgent, RemoteAgent}
-  alias Summoner.Domain.Schemas.{ConversationParticipant, PipelineStage, SwarmMember}
+  alias Summoner.Domain.Schemas.{Agent, AgentFailoverEntry, AgentLink, LocalAgent, RemoteAgent}
+  alias Summoner.Domain.Schemas.{ConversationParticipant, Invocation, PipelineStage, SwarmMember}
   alias Summoner.Ports.Events
   alias Summoner.Repo
   alias Summoner.Services.A2A.ClientExecutor
@@ -141,6 +141,20 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   @doc """
+  Finds an agent by callname within a workspace. Returns nil if not found.
+  """
+  def get_agent_by_callname(%{user: _user}, workspace_id, callname) do
+    Agent
+    |> Workspaces.where_workspace(workspace_id)
+    |> where([a], a.callname == ^callname and is_nil(a.deleted_at))
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      agent -> preload_detail(agent)
+    end
+  end
+
+  @doc """
   Lists all active agents for a workspace.
   """
   def list_agents(%{user: _user}, workspace_id) do
@@ -171,7 +185,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Agent
     |> Workspaces.where_workspace(workspace_id)
     |> where([a], a.type == :local and is_nil(a.deleted_at))
-    |> preload(local_agent: [:provider, :media_provider])
+    |> preload([:failover_chain, local_agent: [:provider, :media_provider]])
     |> Pagination.paginate(opts)
   end
 
@@ -304,7 +318,151 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Agent
     |> where([a], a.id == ^agent_id and is_nil(a.deleted_at))
     |> Repo.one!()
-    |> Repo.preload(local_agent: [provider: :api_key_secret])
+    |> Repo.preload([:failover_chain, local_agent: [provider: :api_key_secret]])
+  end
+
+  @doc "Returns the display name for an agent, or a fallback if not found."
+  def get_agent_name(agent_id) do
+    case Repo.get(Agent, agent_id) do
+      %Agent{callname: callname} when not is_nil(callname) -> "@#{callname}"
+      %Agent{name: name} -> name
+      nil -> "unknown agent"
+    end
+  end
+
+  @doc """
+  Returns failover metrics for an agent.
+
+  Counts how many times this agent triggered failover (as primary),
+  how many times it served as a backup, and the most common reasons.
+  """
+  def failover_stats(agent_id) do
+    # Times this agent triggered failover (its invocations ended with :failover)
+    triggered =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and i.end_reason == :failover)
+      |> select([i], count(i.id))
+      |> Repo.one() || 0
+
+    # Times this agent served as backup (invocations with failover_from_agent_id set)
+    served_as_backup =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and not is_nil(i.failover_from_agent_id))
+      |> select([i], count(i.id))
+      |> Repo.one() || 0
+
+    # Top failover reasons for this agent (as primary)
+    top_reasons =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and i.end_reason == :failover)
+      |> where([i], not is_nil(i.failover_reason))
+      |> group_by([i], i.failover_reason)
+      |> select([i], {i.failover_reason, count(i.id)})
+      |> order_by([i], desc: count(i.id))
+      |> limit(5)
+      |> Repo.all()
+
+    %{
+      failovers_triggered: triggered,
+      served_as_backup: served_as_backup,
+      top_reasons: top_reasons
+    }
+  end
+
+  # -------------------------------------------------------------------
+  # Failover chain
+  # -------------------------------------------------------------------
+
+  @max_failover_chain_length 10
+
+  @doc "Lists failover chain entries for an agent, ordered by position."
+  def list_failover_chain(agent_id) do
+    AgentFailoverEntry
+    |> where([e], e.agent_id == ^agent_id)
+    |> order_by([e], asc: e.position)
+    |> Repo.all()
+    |> Repo.preload(backup_agent: :local_agent)
+  end
+
+  @doc "Adds a backup agent to an agent's failover chain at the next position."
+  def add_failover_entry(agent_id, backup_agent_id) do
+    next_position =
+      AgentFailoverEntry
+      |> where([e], e.agent_id == ^agent_id)
+      |> select([e], count(e.id))
+      |> Repo.one()
+
+    if next_position >= @max_failover_chain_length do
+      {:error, :chain_limit_reached}
+    else
+      %AgentFailoverEntry{}
+      |> AgentFailoverEntry.changeset(%{
+        agent_id: agent_id,
+        backup_agent_id: backup_agent_id,
+        position: next_position
+      })
+      |> Repo.insert()
+    end
+  end
+
+  @doc "Removes a failover chain entry and recompacts positions."
+  def remove_failover_entry(entry_id) do
+    case Repo.get(AgentFailoverEntry, entry_id) do
+      nil ->
+        {:error, :not_found}
+
+      entry ->
+        Multi.new()
+        |> Multi.delete(:delete, entry)
+        |> Multi.run(:recompact, fn _repo, _changes ->
+          recompact_positions(entry.agent_id)
+          {:ok, :recompacted}
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, _} -> :ok
+          {:error, _step, reason, _} -> {:error, reason}
+        end
+    end
+  end
+
+  @doc "Reorders the failover chain. Accepts a list of entry IDs in desired order."
+  def reorder_failover_chain(agent_id, entry_ids) when is_list(entry_ids) do
+    Multi.new()
+    |> Multi.run(:reorder, fn _repo, _changes ->
+      entry_ids
+      |> Enum.with_index()
+      |> Enum.each(fn {entry_id, position} ->
+        AgentFailoverEntry
+        |> where([e], e.id == ^entry_id and e.agent_id == ^agent_id)
+        |> Repo.update_all(set: [position: position])
+      end)
+
+      {:ok, :reordered}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} -> :ok
+      {:error, _step, reason, _} -> {:error, reason}
+    end
+  end
+
+  defp recompact_positions(agent_id) do
+    entries =
+      AgentFailoverEntry
+      |> where([e], e.agent_id == ^agent_id)
+      |> order_by([e], asc: e.position)
+      |> Repo.all()
+
+    entries
+    |> Enum.with_index()
+    |> Enum.each(fn {entry, idx} ->
+      if entry.position != idx do
+        entry
+        |> Ecto.Changeset.change(position: idx)
+        |> Repo.update!()
+      end
+    end)
   end
 
   # -------------------------------------------------------------------
@@ -592,9 +750,9 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   # Fields that belong to the agent base table
-  @agent_fields ~w(name callname type role workspace_id)a
-  @agent_string_fields ~w(name callname type role workspace_id)
+  @agent_fields ~w(name callname type role workspace_id failover_strategy failover_delay_ms max_failover_depth)a
 
+  @agent_string_fields ~w(name callname type role workspace_id failover_strategy failover_delay_ms max_failover_depth)
   defp split_attrs(attrs) when is_map(attrs) do
     {agent, local} =
       Enum.reduce(attrs, {%{}, %{}}, fn {key, value}, {agent_acc, local_acc} ->
@@ -621,14 +779,19 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   defp preload_detail(%Agent{type: :local} = agent) do
-    Repo.preload(agent, local_agent: [:provider, :media_provider])
+    Repo.preload(agent, [
+      {:failover_chain, [backup_agent: :local_agent]},
+      local_agent: [:provider, :media_provider]
+    ])
   end
 
   defp preload_detail(%Agent{type: :remote} = agent) do
-    Repo.preload(agent, :remote_agent)
+    Repo.preload(agent, [{:failover_chain, [backup_agent: :local_agent]}, :remote_agent])
   end
 
-  defp preload_detail(%Agent{} = agent), do: agent
+  defp preload_detail(%Agent{} = agent) do
+    Repo.preload(agent, failover_chain: [backup_agent: :local_agent])
+  end
 
   defp ensure_local_agent_loaded(%Agent{local_agent: %LocalAgent{}} = agent) do
     agent.local_agent

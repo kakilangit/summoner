@@ -13,30 +13,48 @@ defmodule Summoner.Domain.Schemas.Agent do
 
   import Ecto.Changeset
 
+  alias Summoner.Domain.Schemas.AgentFailoverEntry
   alias Summoner.Domain.Schemas.LocalAgent
   alias Summoner.Domain.Schemas.RemoteAgent
   alias Summoner.Domain.Schemas.Workspace
 
   @types ~w(local remote)a
   @roles ~w(autonomous worker)a
+  @failover_strategies ~w(auto manual notify_then_auto)a
 
   schema "agents" do
     field :name, :string
     field :callname, :string
     field :type, Ecto.Enum, values: @types, default: :local
     field :role, Ecto.Enum, values: @roles, default: :autonomous
+    field :failover_strategy, Ecto.Enum, values: @failover_strategies, default: :auto
+    field :failover_delay_ms, :integer, default: 0
+    field :max_failover_depth, :integer, default: 3
     field :deleted_at, :utc_datetime_usec
 
     belongs_to :workspace, Workspace
 
     has_one :local_agent, LocalAgent
     has_one :remote_agent, RemoteAgent
+    has_many :failover_chain, AgentFailoverEntry, preload_order: [asc: :position]
 
     timestamps()
   end
 
   @doc "All supported types."
   def types, do: @types
+
+  @doc "All supported failover strategies."
+  def failover_strategies, do: @failover_strategies
+
+  @doc "Failover strategy options with descriptive labels for form selects."
+  def failover_strategy_options do
+    [
+      {"Auto — failover immediately when primary fails", :auto},
+      {"Manual — wait for user approval before failover", :manual},
+      {"Notify then Auto — notify, then failover after delay", :notify_then_auto}
+    ]
+  end
 
   @doc "All supported roles."
   def roles, do: @roles
@@ -63,7 +81,16 @@ defmodule Summoner.Domain.Schemas.Agent do
 
   def role_description(_), do: ""
 
-  @cast_fields [:name, :callname, :type, :role, :workspace_id]
+  @cast_fields [
+    :name,
+    :callname,
+    :type,
+    :role,
+    :workspace_id,
+    :failover_strategy,
+    :failover_delay_ms,
+    :max_failover_depth
+  ]
   @required_fields [:name, :role, :workspace_id]
 
   @doc """
@@ -75,6 +102,11 @@ defmodule Summoner.Domain.Schemas.Agent do
     |> validate_required(@required_fields)
     |> validate_length(:name, min: 1, max: 100)
     |> validate_callname_if_present()
+    |> validate_number(:failover_delay_ms, greater_than_or_equal_to: 0)
+    |> validate_number(:max_failover_depth,
+      greater_than_or_equal_to: 1,
+      less_than_or_equal_to: 10
+    )
     |> unique_constraint([:workspace_id, :callname],
       name: :agents_workspace_id_callname_active_index,
       message: "already taken by another summon or envoy in this realm"

@@ -20,9 +20,17 @@ defmodule SummonerWeb.ConversationHelpers do
       end
   """
 
-  alias Summoner.Domain.Events.{ContentToken, Escalation, InvocationEvent, InvocationStarted}
+  alias Summoner.Domain.Events.{
+    ContentToken,
+    Escalation,
+    Failover,
+    InvocationEvent,
+    InvocationStarted
+  }
+
   alias Summoner.Domain.Types.Content
   alias Summoner.Ports.Events
+  alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.Orchestration
@@ -297,6 +305,25 @@ defmodule SummonerWeb.ConversationHelpers do
      )}
   end
 
+  def handle_failover(%Failover{} = event, socket) do
+    from = Agents.get_agent_name(event.from_agent_id)
+    to = Agents.get_agent_name(event.to_agent_id)
+
+    {:noreply,
+     assign(socket,
+       failover_event: %{
+         from: from,
+         to: to,
+         reason: event.reason,
+         depth: event.depth
+       }
+     )}
+  end
+
+  def handle_dismiss_failover(socket) do
+    {:noreply, assign(socket, failover_event: nil)}
+  end
+
   # -------------------------------------------------------------------
   # Download / export
   # -------------------------------------------------------------------
@@ -342,6 +369,7 @@ defmodule SummonerWeb.ConversationHelpers do
       processing: false,
       editing_title: false,
       escalation: nil,
+      failover_event: nil,
       current_invocation_id: nil,
       subtasks: [],
       last_error: nil,

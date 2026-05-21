@@ -20,7 +20,7 @@ defmodule Summoner.Domain.Schemas.Invocation do
     completed failed cancelled stale handed_off
     token_limit_reached step_limit_reached total_timeout
     worker_unavailable escalation_unresolved empty_response
-    doom_loop context_overflow
+    doom_loop context_overflow failover
   )a
 
   schema "invocations" do
@@ -33,11 +33,14 @@ defmodule Summoner.Domain.Schemas.Invocation do
     field :completed_at, :utc_datetime_usec
     field :provider_name, :string
     field :model_name, :string
+    field :failover_reason, :string
+    field :failover_depth, :integer, default: 0
 
     belongs_to :workspace, Workspace
     belongs_to :agent, Agent
     belongs_to :conversation, Conversation
     belongs_to :parent_invocation, {"invocations", __MODULE__}, type: Nulid.Ecto
+    belongs_to :failover_from_agent, Agent
 
     # Forseal references — schemas defined in later phases
     field :pipeline_id, Nulid.Ecto
@@ -51,6 +54,7 @@ defmodule Summoner.Domain.Schemas.Invocation do
     conversation_id parent_invocation_id depth status
     input pipeline_id pipeline_stage_position
     provider_name model_name
+    failover_from_agent_id failover_reason failover_depth
   )a
 
   def changeset(invocation, attrs) do
@@ -64,7 +68,7 @@ defmodule Summoner.Domain.Schemas.Invocation do
     |> foreign_key_constraint(:parent_invocation_id)
   end
 
-  @status_fields ~w(status end_reason output started_at completed_at pipeline_stage_position)a
+  @status_fields ~w(status end_reason output started_at completed_at pipeline_stage_position failover_from_agent_id failover_reason failover_depth)a
 
   def status_changeset(invocation, attrs) do
     invocation

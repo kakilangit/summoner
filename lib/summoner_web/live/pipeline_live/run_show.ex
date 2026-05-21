@@ -1,9 +1,11 @@
 defmodule SummonerWeb.PipelineLive.RunShow do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Events.Failover
   alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Services.TimeZone
+  alias SummonerWeb.ConversationComponents, as: SC
 
   @refresh_debounce_ms 500
 
@@ -16,6 +18,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
 
     if connected?(socket) do
       Events.subscribe({:pipeline, workspace.id, pipeline.id})
+      Events.subscribe({:failover, workspace.id})
     end
 
     socket =
@@ -24,6 +27,7 @@ defmodule SummonerWeb.PipelineLive.RunShow do
       |> assign(pipeline: pipeline, run: run)
       |> assign(stage_instructions: Map.new(pipeline.stages, &{&1.position, &1.instruction}))
       |> assign(stage_events: %{}, subscribed_invocations: MapSet.new())
+      |> assign(failover_event: nil)
       |> assign(
         breadcrumbs: [
           {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
@@ -49,8 +53,13 @@ defmodule SummonerWeb.PipelineLive.RunShow do
         {:noreply, put_flash(socket, :info, "Run already finished.")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not cancel run.")}
+        {:noreply, put_flash(socket, :error, "Failed to cancel run.")}
     end
+  end
+
+  @impl true
+  def handle_event("dismiss_failover", _params, socket) do
+    {:noreply, assign(socket, failover_event: nil)}
   end
 
   # Stage invocation link — subscribe to invocation events for live feed
@@ -107,6 +116,11 @@ defmodule SummonerWeb.PipelineLive.RunShow do
   def handle_info(:refresh_run, socket) do
     run = Pipelines.get_run!(socket.assigns.run.id)
     {:noreply, socket |> assign(run: run, refresh_timer: nil)}
+  end
+
+  @impl true
+  def handle_info(%Failover{} = event, socket) do
+    {:noreply, assign(socket, failover_event: event)}
   end
 
   @impl true
@@ -172,6 +186,8 @@ defmodule SummonerWeb.PipelineLive.RunShow do
           on_confirm={JS.push("cancel_run")}
         />
       </div>
+
+      <SC.failover_alert failover_event={@failover_event} />
 
       <div :if={@run.input && @run.input != ""} class="card bg-base-200">
         <div class="card-body">

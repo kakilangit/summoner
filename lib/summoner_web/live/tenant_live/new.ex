@@ -39,7 +39,7 @@ defmodule SummonerWeb.TenantLive.New do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-lg mx-auto space-y-8">
+    <div class="space-y-8">
       <h1 class="text-2xl font-bold">New Guild</h1>
 
       <.form for={@form} id="tenant-form" phx-submit="save" class="space-y-4">

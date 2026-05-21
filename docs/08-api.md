@@ -1,6 +1,6 @@
-# REST API & Webhooks
+# REST API, OpenAI-Compatible API & Webhooks
 
-Summoner exposes a REST API for programmatic access and webhooks (Beacons) for event-driven agent invocation from external systems.
+Summoner exposes a REST API for programmatic access, an OpenAI-compatible API for drop-in LLM client integration, and webhooks (Beacons) for event-driven agent invocation from external systems.
 
 ## Authentication
 
@@ -16,7 +16,7 @@ Create tokens (Wards) in the UI at **Realm → Wards → New Ward**, or via the 
 
 | Scope | Access |
 |-------|--------|
-| `api` | REST API, OpenAI-compat (future), MCP (future) |
+| `api` | REST API, OpenAI-compat API |
 | `a2a` | Agent-to-Agent protocol (Herald) |
 | `admin` | Elevated operations (tenant/user management) |
 | `webhook` | Webhook trigger authentication (token mode) |
@@ -132,6 +132,15 @@ PUT    /api/v1/webhooks/:id      Update webhook
 DELETE /api/v1/webhooks/:id      Delete webhook
 ```
 
+### Access Tokens (Wards)
+
+```
+GET    /api/v1/access-tokens          List tokens
+POST   /api/v1/access-tokens          Create token
+GET    /api/v1/access-tokens/:id      Get token
+DELETE /api/v1/access-tokens/:id      Revoke token
+```
+
 ### Trigger (self-authenticated)
 
 ```
@@ -193,3 +202,92 @@ curl -X POST /api/v1/webhooks \
 ### Rate Limiting
 
 Each webhook has a configurable `rate_limit_rpm` (default: 30 requests per minute). Exceeding the limit returns `429 Too Many Requests`.
+
+## OpenAI-Compatible API
+
+Summoner exposes an OpenAI-compatible API so any client that speaks the OpenAI protocol (Cursor, Continue, Open Interpreter, LiteLLM, etc.) can use Summoner agents as models.
+
+**Base URL**: `/v1` (requires `api` scope Bearer token)
+
+### Models
+
+```
+GET /v1/models
+```
+
+Returns all workspace agents and cached provider models in OpenAI `Model` format.
+
+### Chat Completions
+
+```
+POST /v1/chat/completions
+```
+
+#### Agent Invocation
+
+Use `summoner:<callname>` as the model to invoke an agent:
+
+```sh
+curl -X POST /v1/chat/completions \
+  -H "Authorization: Bearer shk_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "summoner:my-agent",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+#### Raw Model Access
+
+Use `summoner:raw:<provider>/<model>` to call a provider model directly (no agent orchestration):
+
+```sh
+curl -X POST /v1/chat/completions \
+  -H "Authorization: Bearer shk_..." \
+  -d '{
+    "model": "summoner:raw:openai/gpt-4o",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+#### Streaming
+
+Set `"stream": true` to receive Server-Sent Events in OpenAI chunk format:
+
+```sh
+curl -N -X POST /v1/chat/completions \
+  -H "Authorization: Bearer shk_..." \
+  -d '{
+    "model": "summoner:my-agent",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": true
+  }'
+```
+
+Events follow the OpenAI SSE format: `data: {"id":"...","choices":[{"delta":{"content":"..."}}]}`.
+
+#### Multi-Turn Conversations
+
+Pass the `X-Conversation-Id` header to continue an existing conversation:
+
+```sh
+curl -X POST /v1/chat/completions \
+  -H "Authorization: Bearer shk_..." \
+  -H "X-Conversation-Id: 01HC..." \
+  -d '{
+    "model": "summoner:my-agent",
+    "messages": [{"role": "user", "content": "Follow up question"}]
+  }'
+```
+
+#### Tool Passthrough
+
+Tools in the request body are passed through to the underlying model via Arcanum Intent:
+
+```json
+{
+  "model": "summoner:raw:openai/gpt-4o",
+  "messages": [{"role": "user", "content": "What's the weather?"}],
+  "tools": [{"type": "function", "function": {"name": "get_weather", "parameters": {"type": "object", "properties": {"city": {"type": "string"}}}}}]
+}
+```

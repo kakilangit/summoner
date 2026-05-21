@@ -308,7 +308,7 @@ defmodule SummonerWeb.PipelineLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-2xl mx-auto space-y-6">
+    <div class="space-y-6">
       <h1 class="text-2xl font-bold">{@title}</h1>
 
       <.form

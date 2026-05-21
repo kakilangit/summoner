@@ -1,10 +1,12 @@
 defmodule SummonerWeb.AgentLive.Form do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Policies.Failover, as: FailoverPolicy
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Schemas.LocalAgent
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Providers
@@ -54,29 +56,15 @@ defmodule SummonerWeb.AgentLive.Form do
           context_length: local.context_length,
           step_timeout_s: local.step_timeout_s,
           total_timeout_s: local.total_timeout_s,
-          stream_tokens_to_observability: local.stream_tokens_to_observability
+          stream_tokens_to_observability: local.stream_tokens_to_observability,
+          failover_strategy: agent.failover_strategy || :auto,
+          failover_delay_ms: agent.failover_delay_ms || 0,
+          max_failover_depth: agent.max_failover_depth || 3
         }
 
       changeset = flat_changeset(flat_data, %{})
 
-      breadcrumbs =
-        if agent.id do
-          [
-            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
-            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
-            {agent.name,
-             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
-            {"Edit", nil}
-          ]
-        else
-          [
-            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
-            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
-            {"New Summon", nil}
-          ]
-        end
+      breadcrumbs = build_breadcrumbs(workspace, agent)
 
       provider_options =
         Enum.map(providers, fn p -> {p.name, p.id} end)
@@ -109,6 +97,8 @@ defmodule SummonerWeb.AgentLive.Form do
           advanced_open: false
         )
         |> assign(breadcrumbs: breadcrumbs)
+        |> assign_failover_chain(agent, scope, workspace.id)
+        |> load_herald(agent)
         |> maybe_load_models_async(scope, providers, initial_provider_id)
 
       {:ok, socket}
@@ -165,6 +155,89 @@ defmodule SummonerWeb.AgentLive.Form do
     else
       create_agent(socket, params)
     end
+  end
+
+  @impl true
+  def handle_event("add_failover", %{"backup_agent_id" => ""}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("add_failover", %{"backup_agent_id" => backup_id}, socket) do
+    agent = socket.assigns.agent
+
+    case Agents.add_failover_entry(agent.id, backup_id) do
+      {:ok, _entry} ->
+        {:noreply, reload_failover_chain(socket)}
+
+      {:error, :chain_limit_reached} ->
+        {:noreply, put_flash(socket, :error, "Failover chain limit reached (max 10).")}
+
+      {:error, %Ecto.Changeset{} = cs} ->
+        msg = changeset_error_message(cs)
+        {:noreply, put_flash(socket, :error, "Could not add backup: #{msg}")}
+    end
+  end
+
+  @impl true
+  def handle_event("remove_failover", %{"id" => entry_id}, socket) do
+    case Agents.remove_failover_entry(entry_id) do
+      :ok ->
+        {:noreply,
+         socket |> reload_failover_chain() |> put_flash(:info, "Backup removed from chain.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not remove backup.")}
+    end
+  end
+
+  @impl true
+  def handle_event("reorder_failover", %{"ids" => ids}, socket) when is_list(ids) do
+    agent = socket.assigns.agent
+
+    case Agents.reorder_failover_chain(agent.id, ids) do
+      :ok ->
+        {:noreply, reload_failover_chain(socket)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not reorder chain.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_herald", _params, socket) do
+    agent = socket.assigns.agent
+    workspace = socket.assigns.workspace
+
+    case socket.assigns.herald do
+      nil ->
+        {:ok, server} =
+          SummonerA2A.create_server(%{
+            agent_id: agent.id,
+            workspace_id: workspace.id,
+            access_mode: :public
+          })
+
+        {:noreply,
+         socket
+         |> assign(herald: server)
+         |> put_flash(:info, "Herald enabled.")}
+
+      server ->
+        {:ok, _} = SummonerA2A.delete_server(server)
+
+        {:noreply,
+         socket
+         |> assign(herald: nil)
+         |> put_flash(:info, "Herald disabled.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_access_mode", _params, socket) do
+    herald = socket.assigns.herald
+    new_mode = if herald.access_mode == :public, do: :protected, else: :public
+    {:ok, updated} = SummonerA2A.update_server(herald, %{access_mode: new_mode})
+    {:noreply, assign(socket, herald: updated)}
   end
 
   defp maybe_apply_template(params, template_key, last_template)
@@ -276,6 +349,71 @@ defmodule SummonerWeb.AgentLive.Form do
     Providers.filter_models_by_capability(models, kind, :chat)
   end
 
+  defp build_breadcrumbs(workspace, agent) do
+    base = [
+      {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+      {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+      {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"}
+    ]
+
+    if agent.id do
+      base ++
+        [
+          {agent.name,
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
+          {"Edit", nil}
+        ]
+    else
+      base ++ [{"New Summon", nil}]
+    end
+  end
+
+  defp assign_failover_chain(socket, agent, scope, workspace_id) do
+    if agent.id do
+      chain = Agents.list_failover_chain(agent.id)
+      chain_ids = MapSet.new(chain, & &1.backup_agent_id)
+
+      get_chain_fn = fn id -> Agents.list_failover_chain(id) end
+
+      backup_options =
+        Agents.list_agents(scope, workspace_id)
+        |> Enum.reject(fn a ->
+          a.id == agent.id || a.deleted_at || MapSet.member?(chain_ids, a.id) ||
+            FailoverPolicy.creates_cycle?(agent.id, a.id, get_chain_fn)
+        end)
+        |> Enum.map(fn a -> {"@#{a.callname || a.name}", a.id} end)
+
+      assign(socket, failover_chain: chain, backup_options: backup_options)
+    else
+      assign(socket, failover_chain: [], backup_options: [])
+    end
+  end
+
+  defp reload_failover_chain(socket) do
+    agent = socket.assigns.agent
+    scope = socket.assigns.current_scope
+    workspace_id = socket.assigns.workspace.id
+    assign_failover_chain(socket, agent, scope, workspace_id)
+  end
+
+  defp load_herald(socket, agent) do
+    if agent.id do
+      herald = SummonerA2A.get_server_by_agent_id(agent.id)
+      assign(socket, herald: herald)
+    else
+      assign(socket, herald: nil)
+    end
+  end
+
+  defp changeset_error_message(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+    |> Enum.map_join(", ", fn {field, errors} -> "#{field} #{Enum.join(errors, ", ")}" end)
+  end
+
   # ---------------------------------------------------------------
   # Flat (schemaless) changeset for combined agent + local_agent form
   # ---------------------------------------------------------------
@@ -297,7 +435,10 @@ defmodule SummonerWeb.AgentLive.Form do
     step_timeout_s: :integer,
     total_timeout_s: :integer,
     stream_tokens_to_observability: :boolean,
-    max_tool_concurrency: :integer
+    max_tool_concurrency: :integer,
+    failover_strategy: :string,
+    failover_delay_ms: :integer,
+    max_failover_depth: :integer
   }
 
   defp flat_changeset(data, params) do
@@ -327,14 +468,17 @@ defmodule SummonerWeb.AgentLive.Form do
       step_timeout_s: local.step_timeout_s,
       total_timeout_s: local.total_timeout_s,
       stream_tokens_to_observability: local.stream_tokens_to_observability,
-      max_tool_concurrency: local.max_tool_concurrency
+      max_tool_concurrency: local.max_tool_concurrency,
+      failover_strategy: agent.failover_strategy || :auto,
+      failover_delay_ms: agent.failover_delay_ms || 0,
+      max_failover_depth: agent.max_failover_depth || 3
     }
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-lg mx-auto space-y-6">
+    <div class="space-y-6">
       <h1 class="text-2xl font-bold">{@title}</h1>
 
       <.form for={@form} id="agent-form" phx-change="validate" phx-submit="save" class="space-y-4">
@@ -423,34 +567,35 @@ defmodule SummonerWeb.AgentLive.Form do
               Media generation provider for image generation. Leave as workspace default unless this summon needs a specific provider.
             </p>
             <.input field={@form[:max_steps]} type="number" label="Max Steps" min="1" />
-            <.input
-              field={@form[:max_concurrent_invocations]}
-              type="number"
-              label="Max Concurrent Invocations"
-              min="1"
-            />
-            <.input
-              field={@form[:max_delegation_concurrency]}
-              type="number"
-              label="Max Delegation Concurrency"
-              min="1"
-            />
-            <.input
-              field={@form[:max_tool_concurrency]}
-              type="number"
-              label="Max Tool Concurrency"
-              placeholder="Inherits workspace default"
-              min="1"
-            />
-            <p class="text-xs text-base-content/50 -mt-2">
-              Maximum parallel tool executions per step. Leave blank to use the workspace default.
-            </p>
-            <.input
-              field={@form[:max_tokens_per_invocation]}
-              type="number"
-              label="Max Tokens per Invocation"
-              min="1"
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:max_concurrent_invocations]}
+                type="number"
+                label="Max Concurrent Invocations"
+                min="1"
+              />
+              <.input
+                field={@form[:max_delegation_concurrency]}
+                type="number"
+                label="Max Delegation Concurrency"
+                min="1"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:max_tool_concurrency]}
+                type="number"
+                label="Max Tool Concurrency"
+                placeholder="Inherits workspace default"
+                min="1"
+              />
+              <.input
+                field={@form[:max_tokens_per_invocation]}
+                type="number"
+                label="Max Tokens per Invocation"
+                min="1"
+              />
+            </div>
             <.input
               field={@form[:context_length]}
               type="number"
@@ -461,24 +606,61 @@ defmodule SummonerWeb.AgentLive.Form do
               The model's context window size in tokens.
               For local providers this sets num_ctx / n_ctx. Leave blank for default (131072).
             </p>
-            <.input
-              field={@form[:step_timeout_s]}
-              type="number"
-              label="Step Timeout (seconds)"
-              min="1"
-              max="600"
-            />
-            <.input
-              field={@form[:total_timeout_s]}
-              type="number"
-              label="Total Timeout (seconds)"
-              min="1"
-              max="3600"
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:step_timeout_s]}
+                type="number"
+                label="Step Timeout (seconds)"
+                min="1"
+                max="600"
+              />
+              <.input
+                field={@form[:total_timeout_s]}
+                type="number"
+                label="Total Timeout (seconds)"
+                min="1"
+                max="3600"
+              />
+            </div>
             <.input
               field={@form[:stream_tokens_to_observability]}
               type="checkbox"
               label="Stream tokens to observability"
+            />
+            <div class="divider text-xs text-base-content/40">Failover</div>
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:failover_strategy]}
+                type="select"
+                label="Failover Strategy"
+                options={[
+                  {"Auto", "auto"},
+                  {"Manual", "manual"},
+                  {"Notify then Auto", "notify_then_auto"}
+                ]}
+              />
+              <.input
+                field={@form[:max_failover_depth]}
+                type="number"
+                label="Max Failover Depth"
+                min="1"
+                max="10"
+              />
+            </div>
+            <p class="text-xs text-base-content/50 -mt-2">
+              Auto: immediately switch to backup. Manual: pause and wait for approval.
+              Notify then Auto: notify, wait delay, then switch. Depth: max backups to try (default 3).
+            </p>
+            <.input
+              :if={
+                to_string(Ecto.Changeset.get_field(@form.source, :failover_strategy)) ==
+                  "notify_then_auto"
+              }
+              field={@form[:failover_delay_ms]}
+              type="number"
+              label="Failover Delay (ms)"
+              min="0"
+              max="300000"
             />
           </div>
         </div>
@@ -495,8 +677,124 @@ defmodule SummonerWeb.AgentLive.Form do
           </.button>
         </div>
       </.form>
+
+      <%!-- Failover chain management (only when editing) --%>
+      <div :if={@editing} class="space-y-4">
+        <h2 class="text-lg font-semibold">Failover Chain</h2>
+        <p class="text-sm text-base-content/60">
+          Backup summons are tried in order when the primary fails with a provider error.
+        </p>
+
+        <div :if={@failover_chain == []} class="text-sm text-base-content/60">
+          No backups configured. Add summons to the failover chain.
+        </div>
+
+        <div
+          class="space-y-2"
+          id="failover-chain-list"
+          phx-hook="Sortable"
+          data-sortable-event="reorder_failover"
+        >
+          <div
+            :for={entry <- @failover_chain}
+            data-sortable-id={entry.id}
+            draggable="true"
+            class="flex items-center justify-between p-3 bg-base-200 rounded-lg cursor-grab active:cursor-grabbing"
+          >
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <span class="hero-bars-3 size-5 text-base-content/30 flex-shrink-0"></span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <.link
+                    navigate={
+                      ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{entry.backup_agent_id}"
+                    }
+                    class="font-medium link link-hover truncate"
+                  >
+                    {entry.backup_agent.name}
+                  </.link>
+                </div>
+                <div
+                  :if={entry.backup_agent.local_agent}
+                  class="text-sm text-base-content/60 truncate"
+                >
+                  {entry.backup_agent.local_agent.model}
+                </div>
+              </div>
+            </div>
+            <button
+              phx-click={show_confirm("#remove-failover-#{entry.id}")}
+              class="btn btn-error btn-xs btn-outline"
+            >
+              Remove
+            </button>
+            <.confirm_modal
+              id={"remove-failover-#{entry.id}"}
+              title="Remove backup?"
+              message={"Remove #{entry.backup_agent.name} from the failover chain?"}
+              confirm_text="Remove"
+              on_confirm={JS.push("remove_failover", value: %{id: entry.id})}
+            />
+          </div>
+        </div>
+
+        <form phx-submit="add_failover">
+          <div class="fieldset mb-2">
+            <label for="backup-agent-select">
+              <span class="label mb-1">Add Backup Summon</span>
+            </label>
+            <div class="flex items-center gap-2 w-full">
+              <select id="backup-agent-select" name="backup_agent_id" class="select flex-1">
+                <option value="">Select a summon</option>
+                {Phoenix.HTML.Form.options_for_select(@backup_options, nil)}
+              </select>
+              <button type="submit" class="btn btn-secondary">Add</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <%!-- Herald management (only when editing) --%>
+      <div :if={@editing} class="space-y-4 pb-8">
+        <h2 class="text-lg font-semibold">Herald (A2A)</h2>
+        <p class="text-sm text-base-content/60">
+          Expose this summon as a remote A2A agent.
+        </p>
+
+        <div :if={!@herald} class="flex items-center justify-between">
+          <span class="text-sm text-base-content/60">Herald is not enabled.</span>
+          <button phx-click="toggle_herald" class="btn btn-primary btn-sm">
+            Enable
+          </button>
+        </div>
+
+        <div :if={@herald} class="space-y-3">
+          <div class="text-xs font-mono bg-base-300 p-2 rounded select-all overflow-x-auto">
+            {herald_url(@agent)}
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <button phx-click="toggle_access_mode" class="btn btn-xs btn-ghost">
+              <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+                {@herald.access_mode}
+              </span>
+            </button>
+          </div>
+
+          <div class="flex justify-end">
+            <button phx-click="toggle_herald" class="btn btn-error btn-sm btn-outline">
+              Disable Herald
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     """
+  end
+
+  defp herald_url(agent) do
+    "#{SummonerWeb.Endpoint.url()}/agents/#{agent.id}"
   end
 
   defp maybe_flash_callname_error(socket, changeset) do

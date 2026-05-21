@@ -2,11 +2,13 @@
  * Sortable — drag-and-drop reordering via native HTML5 drag API.
  *
  * Expects child elements with `data-sortable-id` attributes.
- * Pushes "reorder_members" event with sorted IDs on drop.
+ * Pushes the event named in `data-sortable-event` (default "reorder_members")
+ * with sorted IDs on drop.
  */
 const Sortable = {
   mounted() {
     this._dragging = null
+    this._eventName = this.el.dataset.sortableEvent || "reorder_members"
 
     this.el.addEventListener("dragstart", (e) => {
       const item = e.target.closest("[data-sortable-id]")
@@ -43,7 +45,7 @@ const Sortable = {
       e.preventDefault()
       const items = this.el.querySelectorAll("[data-sortable-id]")
       const ids = Array.from(items).map((el) => el.dataset.sortableId)
-      this.pushEvent("reorder_members", { ids })
+      this.pushEvent(this._eventName, { ids })
     })
   }
 }

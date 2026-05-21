@@ -164,6 +164,27 @@ defmodule SummonerWeb.ConversationComponents do
   end
 
   # -------------------------------------------------------------------
+  # Failover alert
+  # -------------------------------------------------------------------
+
+  attr :failover_event, :map, default: nil
+
+  def failover_alert(assigns) do
+    ~H"""
+    <div :if={@failover_event} class="alert alert-info my-2 rounded-xl shadow-sm">
+      <span class="hero-arrow-path size-5"></span>
+      <div class="flex-1">
+        <div class="font-medium text-sm">
+          Failover: {@failover_event.from} → {@failover_event.to}
+        </div>
+        <div class="text-xs text-base-content/70">{@failover_event.reason}</div>
+      </div>
+      <button phx-click="dismiss_failover" class="btn btn-ghost btn-xs">Dismiss</button>
+    </div>
+    """
+  end
+
+  # -------------------------------------------------------------------
   # Inline error
   # -------------------------------------------------------------------
 

@@ -7,4 +7,5 @@
 - [Archon (Admin Panel)](05-archon.md)
 - [Themes](06-themes.md)
 - [A2A (Agent-to-Agent)](07-a2a.md)
-- [REST API & Webhooks](08-api.md)
+- [REST API, OpenAI-Compatible API & Webhooks](08-api.md)
+- [Backup Agents & Failover](09-failover.md)
