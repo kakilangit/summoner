@@ -66,6 +66,28 @@ defmodule SummonerWeb.WorkspaceLive.Show do
                 <p class="text-sm text-base-content/60">Chain summons in sequence</p>
               </div>
             </.link>
+
+            <.link
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/artifacts"}
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Relics</h2>
+                <p class="text-sm text-base-content/60">Persistent agent outputs</p>
+              </div>
+            </.link>
+
+            <.link
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/approval-rules"
+              }
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Rites</h2>
+                <p class="text-sm text-base-content/60">Approval rules for agent actions</p>
+              </div>
+            </.link>
           </div>
         </section>
 

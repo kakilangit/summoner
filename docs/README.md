@@ -9,3 +9,5 @@
 - [A2A (Agent-to-Agent)](07-a2a.md)
 - [REST API, OpenAI-Compatible API & Webhooks](08-api.md)
 - [Backup Agents & Failover](09-failover.md)
+- [Artifacts](10-artifacts.md)
+- [Approval Flows](11-approvals.md)

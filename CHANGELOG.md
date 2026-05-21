@@ -2,11 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2026-05-22
+
+### Added
+
+- **Artifact System**
+  - `artifacts` table with versioning via `parent_id` chain, soft-delete
+  - Three agent tools: `__create_artifact__`, `__update_artifact__`, `__read_artifact__` injected into all agents
+  - Artifacts routed through `CompositeToolExecutor`
+  - Index page with search, sort, and pagination
+  - Show page with content rendering, version history, and side-by-side comparison
+  - Download controller for artifact export
+  - Pinning toggle for important artifacts
+  - Cross-conversation artifact references (lookup by workspace + name)
+  - Relics card on workspace dashboard, Relics button in conversation header
+
+- **Approval Flows**
+  - `approval_rules` and `pending_approvals` tables
+  - Three trigger types: `tool_call`, `cost_threshold`, `output_match`
+  - `ApprovalCheck` pure policy for trigger evaluation
+  - `ApprovalGate` service integrated into ReactLoop — pauses invocations when approval needed
+  - Invocations transition to `awaiting_approval` status with `paused_at` and `paused_tool_call`
+  - Rules CRUD UI (index, new, edit) with enable/disable toggle
+  - Pending approvals list with inline approve/reject and decision notes
+  - Oban `ApprovalTimeout` cron worker — auto-approve, reject, or escalate on timeout
+  - Configurable timeout actions per rule
+  - Rites card on workspace dashboard
+
 ## [0.1.6] - 2026-05-22
 
 ### Added
 
-- **Backup Agents / Failover (Plan 03)**
+- **Backup Agents / Failover**
   - `agent_failover_chain` join table with ordered positions for failover chains
   - `FailoverPolicy` — pure policy: eligible error detection, cycle validation, chain walking
   - `AgentFailover` service — resolves backup agent from chain, skips deleted, respects max depth
@@ -18,7 +45,7 @@ All notable changes to this project will be documented in this file.
   - UI: failover chain indicator badges on agent cards in index page
   - Failover stats (count, last event) on agent show page
 
-- **OpenAI-Compatible API (Plan 04)**
+- **OpenAI-Compatible API**
   - `POST /v1/chat/completions` — non-streaming completions via `summoner:<callname>` model format
   - SSE streaming with `stream: true` — PubSub-driven OpenAI chunk format
   - Raw model access via `summoner:raw:<provider>/<model>` — direct Gateway inference

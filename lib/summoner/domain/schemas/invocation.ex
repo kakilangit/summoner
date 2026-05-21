@@ -15,12 +15,12 @@ defmodule Summoner.Domain.Schemas.Invocation do
   alias Summoner.Domain.Schemas.Conversation
   alias Summoner.Domain.Schemas.Workspace
 
-  @statuses ~w(queued running completed failed handed_off awaiting_user cancelled)a
+  @statuses ~w(queued running completed failed handed_off awaiting_user awaiting_approval cancelled)a
   @end_reasons ~w(
     completed failed cancelled stale handed_off
     token_limit_reached step_limit_reached total_timeout
     worker_unavailable escalation_unresolved empty_response
-    doom_loop context_overflow failover
+    doom_loop context_overflow failover approval_rejected
   )a
 
   schema "invocations" do
@@ -35,6 +35,8 @@ defmodule Summoner.Domain.Schemas.Invocation do
     field :model_name, :string
     field :failover_reason, :string
     field :failover_depth, :integer, default: 0
+    field :paused_at, :utc_datetime_usec
+    field :paused_tool_call, :map
 
     belongs_to :workspace, Workspace
     belongs_to :agent, Agent
@@ -55,6 +57,7 @@ defmodule Summoner.Domain.Schemas.Invocation do
     input pipeline_id pipeline_stage_position
     provider_name model_name
     failover_from_agent_id failover_reason failover_depth
+    paused_at paused_tool_call
   )a
 
   def changeset(invocation, attrs) do
@@ -68,7 +71,7 @@ defmodule Summoner.Domain.Schemas.Invocation do
     |> foreign_key_constraint(:parent_invocation_id)
   end
 
-  @status_fields ~w(status end_reason output started_at completed_at pipeline_stage_position failover_from_agent_id failover_reason failover_depth)a
+  @status_fields ~w(status end_reason output started_at completed_at pipeline_stage_position failover_from_agent_id failover_reason failover_depth paused_at paused_tool_call)a
 
   def status_changeset(invocation, attrs) do
     invocation

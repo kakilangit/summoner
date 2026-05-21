@@ -4,6 +4,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   import SummonerWeb.AuthorizeHelper
 
   alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Artifacts
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
@@ -53,6 +54,7 @@ defmodule SummonerWeb.ConversationLive.Show do
       socket
       |> assign(page_title: (conversation.title || "Channel") <> " - #{workspace.name}")
       |> assign(SH.base_assigns(conversation, messages))
+      |> assign(artifacts: Artifacts.list_conversation_artifacts(conversation_id))
       |> assign(processing: Orchestration.conversation_active?(conversation_id))
       |> assign(
         breadcrumbs: [
@@ -319,6 +321,15 @@ defmodule SummonerWeb.ConversationLive.Show do
             >
               <span class="hero-folder size-4"></span>
               <span class="hidden sm:inline">Browse</span>
+            </.link>
+            <.link
+              :if={@artifacts != []}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/artifacts"}
+              class="btn btn-ghost btn-xs gap-1"
+              title={"#{length(@artifacts)} relic(s) in this channel"}
+            >
+              <span class="hero-document-text size-4"></span>
+              <span class="hidden sm:inline">Relics ({length(@artifacts)})</span>
             </.link>
             <button
               :if={@local_mode}

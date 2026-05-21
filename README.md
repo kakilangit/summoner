@@ -17,6 +17,8 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Webhooks (Beacons) — trigger agents from external systems (GitHub, CI/CD, etc.)
 - Backup agents with ordered failover chains (automatic retry on failure)
 - OpenAI-compatible API (`/v1/chat/completions`, `/v1/models`) with streaming support
+- Artifact system with versioning, cross-conversation sharing, and agent tools
+- Approval flows with configurable triggers, timeout actions, and human-in-the-loop
 - Hexagonal architecture with persistence ports, worker ports, and domain event system
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)
