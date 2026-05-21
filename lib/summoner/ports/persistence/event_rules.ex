@@ -19,4 +19,5 @@ defmodule Summoner.Ports.Persistence.EventRules do
   defdelegate update_execution(execution, attrs), to: @adapter
   defdelegate list_executions(event_rule_id, opts), to: @adapter
   defdelegate list_executions_paginated(event_rule_id, opts), to: @adapter
+  defdelegate change_event_rule(event_rule, attrs \\ %{}), to: @adapter
 end

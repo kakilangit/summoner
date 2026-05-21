@@ -33,6 +33,9 @@ defmodule Summoner.Services.EventRules do
   def list_rules_paginated(scope, workspace_id, opts \\ []),
     do: Persistence.list_event_rules_paginated(scope, workspace_id, opts)
 
+  def change_rule(event_rule, attrs \\ %{}),
+    do: Persistence.change_event_rule(event_rule, attrs)
+
   def list_executions(event_rule_id, opts \\ []),
     do: Persistence.list_executions(event_rule_id, opts)
 

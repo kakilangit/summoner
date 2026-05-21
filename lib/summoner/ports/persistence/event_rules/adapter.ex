@@ -14,4 +14,5 @@ defmodule Summoner.Ports.Persistence.EventRules.Adapter do
   @callback update_execution(struct(), map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback list_executions(String.t(), keyword()) :: [struct()]
   @callback list_executions_paginated(String.t(), keyword()) :: struct()
+  @callback change_event_rule(struct(), map()) :: Ecto.Changeset.t()
 end

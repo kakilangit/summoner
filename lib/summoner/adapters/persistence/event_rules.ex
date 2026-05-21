@@ -105,6 +105,11 @@ defmodule Summoner.Adapters.Persistence.EventRules do
     |> Pagination.paginate(opts)
   end
 
+  @impl true
+  def change_event_rule(%EventRule{} = event_rule, attrs \\ %{}) do
+    EventRule.changeset(event_rule, attrs)
+  end
+
   defp maybe_filter(query, opts) do
     Enum.reduce(opts, query, fn
       {:event_type, type}, q when not is_nil(type) ->

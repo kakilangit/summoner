@@ -144,6 +144,10 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/approval-rules", ApprovalLive.Index, :index
       live "/workspaces/:workspace_id/approval-rules/new", ApprovalLive.Form, :new
       live "/workspaces/:workspace_id/approval-rules/:id/edit", ApprovalLive.Form, :edit
+      live "/workspaces/:workspace_id/event-rules", EventRuleLive.Index, :index
+      live "/workspaces/:workspace_id/event-rules/new", EventRuleLive.Form, :new
+      live "/workspaces/:workspace_id/event-rules/:id", EventRuleLive.Show, :show
+      live "/workspaces/:workspace_id/event-rules/:id/edit", EventRuleLive.Form, :edit
       live "/workspaces/:workspace_id/pending-approvals", ApprovalLive.Pending, :index
       live "/workspaces/:workspace_id/pending-approvals/:id", ApprovalLive.Show, :show
       live "/workspaces/:workspace_id/skills", SkillLive.Index, :index
