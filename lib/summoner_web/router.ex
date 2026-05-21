@@ -220,6 +220,7 @@ defmodule SummonerWeb.Router do
     pipe_through [:api]
 
     post "/chat/completions", ChatCompletionsController, :create
+    get "/models", ModelsController, :index
   end
 
   scope "/agents" do

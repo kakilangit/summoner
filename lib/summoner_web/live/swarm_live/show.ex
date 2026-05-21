@@ -76,7 +76,7 @@ defmodule SummonerWeb.SwarmLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-lg mx-auto space-y-6">
+    <div class="space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">{@swarm.name}</h1>
         <div class="flex gap-2">

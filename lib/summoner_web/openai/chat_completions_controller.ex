@@ -40,21 +40,21 @@ defmodule SummonerWeb.OpenAI.ChatCompletionsController do
 
     with {:ok, input} <- Formatter.extract_input(messages),
          {:ok, agent} <- OpenAICompat.resolve_agent(model, context.scope, context.workspace_id),
-         {:ok, conversation_id} <- ensure_conversation(context, agent) do
+         {:ok, conversation_id} <- ensure_conversation(conn, context, agent) do
       stream_invocation(conn, model, agent, context, conversation_id, input)
     else
       error -> handle_error(conn, error)
     end
   end
 
-  def create(conn, %{"model" => model, "messages" => messages}) do
+  def create(conn, %{"model" => model, "messages" => messages} = params) do
     context = %{
       workspace_id: conn.assigns.current_workspace_id,
       tenant_id: conn.assigns.current_tenant_id,
       scope: conn.assigns.current_scope
     }
 
-    case OpenAICompat.complete(model, messages, %{}, context) do
+    case OpenAICompat.complete(model, messages, params, context) do
       {:ok, result} -> json(conn, result)
       error -> handle_error(conn, error)
     end
@@ -129,14 +129,20 @@ defmodule SummonerWeb.OpenAI.ChatCompletionsController do
 
   # -- Helpers ---------------------------------------------------------------
 
-  defp ensure_conversation(%{workspace_id: workspace_id, scope: scope}, agent) do
-    case Conversations.create_conversation(scope, %{
-           workspace_id: workspace_id,
-           primary_agent_id: agent.id,
-           title: "OpenAI API"
-         }) do
-      {:ok, conv} -> {:ok, conv.id}
-      {:error, _} -> {:error, :internal, "Failed to create conversation"}
+  defp ensure_conversation(conn, %{workspace_id: workspace_id, scope: scope}, agent) do
+    case get_req_header(conn, "x-conversation-id") do
+      [conversation_id] when conversation_id != "" ->
+        {:ok, conversation_id}
+
+      _no_header ->
+        case Conversations.create_conversation(scope, %{
+               workspace_id: workspace_id,
+               primary_agent_id: agent.id,
+               title: "OpenAI API"
+             }) do
+          {:ok, conv} -> {:ok, conv.id}
+          {:error, _} -> {:error, :internal, "Failed to create conversation"}
+        end
     end
   end
 

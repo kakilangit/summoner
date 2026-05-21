@@ -110,6 +110,7 @@ defmodule Summoner.Services.OpenAICompat do
       intent = %Intent{
         model: resolved_model,
         messages: openai_messages,
+        tools: convert_tools(params["tools"]),
         temperature: params["temperature"],
         max_tokens: params["max_tokens"]
       }
@@ -127,6 +128,22 @@ defmodule Summoner.Services.OpenAICompat do
   defp convert_messages(messages) when is_list(messages) do
     Enum.map(messages, fn msg ->
       %{role: msg["role"] || "user", content: Intent.text(msg["content"] || "")}
+    end)
+  end
+
+  defp convert_tools(nil), do: nil
+  defp convert_tools([]), do: nil
+
+  defp convert_tools(tools) when is_list(tools) do
+    Enum.map(tools, fn tool ->
+      %{
+        type: tool["type"] || "function",
+        function: %{
+          name: get_in(tool, ["function", "name"]) || "",
+          description: get_in(tool, ["function", "description"]) || "",
+          parameters: get_in(tool, ["function", "parameters"]) || %{}
+        }
+      }
     end)
   end
 
