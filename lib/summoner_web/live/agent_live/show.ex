@@ -40,42 +40,6 @@ defmodule SummonerWeb.AgentLive.Show do
     end
   end
 
-  @impl true
-  def handle_event("toggle_herald", _params, socket) do
-    agent = socket.assigns.agent
-    workspace = socket.assigns.workspace
-
-    case socket.assigns.herald do
-      nil ->
-        {:ok, server} =
-          SummonerA2A.create_server(%{
-            agent_id: agent.id,
-            workspace_id: workspace.id,
-            access_mode: :public
-          })
-
-        {:noreply,
-         socket
-         |> assign(herald: server)
-         |> put_flash(:info, "Herald enabled.")}
-
-      server ->
-        {:ok, _} = SummonerA2A.delete_server(server)
-
-        {:noreply,
-         socket
-         |> assign(herald: nil)
-         |> put_flash(:info, "Herald disabled.")}
-    end
-  end
-
-  def handle_event("toggle_access_mode", _params, socket) do
-    herald = socket.assigns.herald
-    new_mode = if herald.access_mode == :public, do: :protected, else: :public
-    {:ok, updated} = SummonerA2A.update_server(herald, %{access_mode: new_mode})
-    {:noreply, assign(socket, herald: updated)}
-  end
-
   defp load_herald(socket) do
     herald = SummonerA2A.get_server_by_agent_id(socket.assigns.agent.id)
     assign(socket, herald: herald)
@@ -164,7 +128,7 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
         </div>
 
-        <.herald_section herald={@herald} agent={@agent} can?={@can?} />
+        <.herald_section herald={@herald} agent={@agent} />
 
         <div :if={@agent.local_agent} class="collapse collapse-arrow bg-base-200">
           <input type="checkbox" />
@@ -197,12 +161,11 @@ defmodule SummonerWeb.AgentLive.Show do
   end
 
   # -------------------------------------------------------------------
-  # Herald — toggle + access mode only
+  # Herald — read-only display
   # -------------------------------------------------------------------
 
   attr :herald, :any, required: true
   attr :agent, :any, required: true
-  attr :can?, :any, required: true
 
   defp herald_section(assigns) do
     ~H"""
@@ -212,17 +175,8 @@ defmodule SummonerWeb.AgentLive.Show do
         Herald (A2A) <span :if={@herald} class="badge badge-xs badge-success ml-2">Active</span>
       </div>
       <div class="collapse-content space-y-3">
-        <div class="flex items-center justify-between">
-          <p class="text-sm text-base-content/60">
-            Expose this summon as a remote A2A agent.
-          </p>
-          <button
-            :if={@can?.(:operate)}
-            phx-click="toggle_herald"
-            class={["btn btn-xs", (@herald && "btn-error") || "btn-primary"]}
-          >
-            {if @herald, do: "Disable", else: "Enable"}
-          </button>
+        <div :if={!@herald} class="text-sm text-base-content/60">
+          Herald is not enabled. Enable it in the edit page.
         </div>
 
         <div :if={@herald} class="space-y-2">
@@ -230,16 +184,7 @@ defmodule SummonerWeb.AgentLive.Show do
             {herald_url(@agent)}
           </div>
 
-          <div :if={@can?.(:operate)} class="flex items-center justify-between">
-            <span class="text-sm">Access</span>
-            <button phx-click="toggle_access_mode" class="btn btn-xs btn-ghost">
-              <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
-                {@herald.access_mode}
-              </span>
-            </button>
-          </div>
-
-          <div :if={!@can?.(:operate)} class="flex items-center justify-between">
+          <div class="flex items-center justify-between">
             <span class="text-sm">Access</span>
             <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
               {@herald.access_mode}

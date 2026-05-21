@@ -6,6 +6,7 @@ defmodule SummonerWeb.AgentLive.Form do
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Schemas.LocalAgent
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Providers
@@ -97,6 +98,7 @@ defmodule SummonerWeb.AgentLive.Form do
         )
         |> assign(breadcrumbs: breadcrumbs)
         |> assign_failover_chain(agent, scope, workspace.id)
+        |> load_herald(agent)
         |> maybe_load_models_async(scope, providers, initial_provider_id)
 
       {:ok, socket}
@@ -199,6 +201,43 @@ defmodule SummonerWeb.AgentLive.Form do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not reorder chain.")}
     end
+  end
+
+  @impl true
+  def handle_event("toggle_herald", _params, socket) do
+    agent = socket.assigns.agent
+    workspace = socket.assigns.workspace
+
+    case socket.assigns.herald do
+      nil ->
+        {:ok, server} =
+          SummonerA2A.create_server(%{
+            agent_id: agent.id,
+            workspace_id: workspace.id,
+            access_mode: :public
+          })
+
+        {:noreply,
+         socket
+         |> assign(herald: server)
+         |> put_flash(:info, "Herald enabled.")}
+
+      server ->
+        {:ok, _} = SummonerA2A.delete_server(server)
+
+        {:noreply,
+         socket
+         |> assign(herald: nil)
+         |> put_flash(:info, "Herald disabled.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_access_mode", _params, socket) do
+    herald = socket.assigns.herald
+    new_mode = if herald.access_mode == :public, do: :protected, else: :public
+    {:ok, updated} = SummonerA2A.update_server(herald, %{access_mode: new_mode})
+    {:noreply, assign(socket, herald: updated)}
   end
 
   defp maybe_apply_template(params, template_key, last_template)
@@ -355,6 +394,15 @@ defmodule SummonerWeb.AgentLive.Form do
     scope = socket.assigns.current_scope
     workspace_id = socket.assigns.workspace.id
     assign_failover_chain(socket, agent, scope, workspace_id)
+  end
+
+  defp load_herald(socket, agent) do
+    if agent.id do
+      herald = SummonerA2A.get_server_by_agent_id(agent.id)
+      assign(socket, herald: herald)
+    else
+      assign(socket, herald: nil)
+    end
   end
 
   defp changeset_error_message(changeset) do
@@ -631,7 +679,7 @@ defmodule SummonerWeb.AgentLive.Form do
       </.form>
 
       <%!-- Failover chain management (only when editing) --%>
-      <div :if={@editing} class="space-y-4 pb-8">
+      <div :if={@editing} class="space-y-4">
         <h2 class="text-lg font-semibold">Failover Chain</h2>
         <p class="text-sm text-base-content/60">
           Backup summons are tried in order when the primary fails with a provider error.
@@ -705,8 +753,48 @@ defmodule SummonerWeb.AgentLive.Form do
           </div>
         </form>
       </div>
+
+      <%!-- Herald management (only when editing) --%>
+      <div :if={@editing} class="space-y-4 pb-8">
+        <h2 class="text-lg font-semibold">Herald (A2A)</h2>
+        <p class="text-sm text-base-content/60">
+          Expose this summon as a remote A2A agent.
+        </p>
+
+        <div :if={!@herald} class="flex items-center justify-between">
+          <span class="text-sm text-base-content/60">Herald is not enabled.</span>
+          <button phx-click="toggle_herald" class="btn btn-primary btn-sm">
+            Enable
+          </button>
+        </div>
+
+        <div :if={@herald} class="space-y-3">
+          <div class="text-xs font-mono bg-base-300 p-2 rounded select-all overflow-x-auto">
+            {herald_url(@agent)}
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Access</span>
+            <button phx-click="toggle_access_mode" class="btn btn-xs btn-ghost">
+              <span class={"badge badge-sm #{if @herald.access_mode == :public, do: "badge-warning", else: "badge-success"}"}>
+                {@herald.access_mode}
+              </span>
+            </button>
+          </div>
+
+          <div class="flex justify-end">
+            <button phx-click="toggle_herald" class="btn btn-error btn-sm btn-outline">
+              Disable Herald
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     """
+  end
+
+  defp herald_url(agent) do
+    "#{SummonerWeb.Endpoint.url()}/agents/#{agent.id}"
   end
 
   defp maybe_flash_callname_error(socket, changeset) do
