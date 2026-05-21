@@ -128,6 +128,31 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
         </div>
 
+        <div
+          :if={is_list(@agent.failover_chain) and @agent.failover_chain != []}
+          class="space-y-2"
+        >
+          <h3 class="text-sm font-medium">Failover Chain</h3>
+          <div class="space-y-1">
+            <.link
+              :for={entry <- @agent.failover_chain}
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{entry.backup_agent_id}"
+              }
+              class="flex items-center gap-2 p-2 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
+            >
+              <span class="hero-arrow-path-rounded-square size-4 text-warning flex-shrink-0"></span>
+              <span class="font-medium text-sm">{entry.backup_agent.name}</span>
+              <span
+                :if={entry.backup_agent.local_agent}
+                class="text-xs text-base-content/50"
+              >
+                {entry.backup_agent.local_agent.model}
+              </span>
+            </.link>
+          </div>
+        </div>
+
         <.herald_section herald={@herald} agent={@agent} />
 
         <div :if={@agent.local_agent} class="collapse collapse-arrow bg-base-200">
