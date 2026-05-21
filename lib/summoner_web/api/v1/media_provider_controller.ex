@@ -2,15 +2,53 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
   @moduledoc "REST API controller for media providers."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.MediaProviders
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["media-providers"]
+
+  operation :index,
+    summary: "List media providers",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [
+      ok: {"Media provider list", "application/json", Schemas.MediaProviderListResponse}
+    ]
+
+  operation :show,
+    summary: "Get media provider",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Media provider", "application/json", Schemas.MediaProviderResponse}]
+
+  operation :create,
+    summary: "Create media provider",
+    request_body: {"Media provider params", "application/json", Schemas.MediaProviderParams},
+    responses: [
+      created: {"Media provider", "application/json", Schemas.MediaProviderResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update media provider",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Media provider params", "application/json", Schemas.MediaProviderParams},
+    responses: [ok: {"Media provider", "application/json", Schemas.MediaProviderResponse}]
+
+  operation :delete,
+    summary: "Delete media provider",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

@@ -2,15 +2,51 @@ defmodule SummonerWeb.API.V1.McpServerController do
   @moduledoc "REST API controller for MCP servers."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.MCP
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["mcp-servers"]
+
+  operation :index,
+    summary: "List MCP servers",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"MCP server list", "application/json", Schemas.McpServerListResponse}]
+
+  operation :show,
+    summary: "Get MCP server",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"MCP server", "application/json", Schemas.McpServerResponse}]
+
+  operation :create,
+    summary: "Create MCP server",
+    request_body: {"MCP server params", "application/json", Schemas.McpServerParams},
+    responses: [
+      created: {"MCP server", "application/json", Schemas.McpServerResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update MCP server",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"MCP server params", "application/json", Schemas.McpServerParams},
+    responses: [ok: {"MCP server", "application/json", Schemas.McpServerResponse}]
+
+  operation :delete,
+    summary: "Delete MCP server",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

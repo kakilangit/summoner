@@ -2,15 +2,51 @@ defmodule SummonerWeb.API.V1.SecretController do
   @moduledoc "REST API controller for secrets."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Secrets
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["secrets"]
+
+  operation :index,
+    summary: "List secrets",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Secret list", "application/json", Schemas.SecretListResponse}]
+
+  operation :show,
+    summary: "Get secret",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Secret", "application/json", Schemas.SecretResponse}]
+
+  operation :create,
+    summary: "Create secret",
+    request_body: {"Secret params", "application/json", Schemas.SecretParams},
+    responses: [
+      created: {"Secret", "application/json", Schemas.SecretResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update secret",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Secret params", "application/json", Schemas.SecretParams},
+    responses: [ok: {"Secret", "application/json", Schemas.SecretResponse}]
+
+  operation :delete,
+    summary: "Delete secret",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

@@ -2,15 +2,60 @@ defmodule SummonerWeb.API.V1.PipelineController do
   @moduledoc "REST API controller for pipelines (Quests)."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Pipelines
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["pipelines"]
+
+  operation :index,
+    summary: "List pipelines",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Pipeline list", "application/json", Schemas.PipelineListResponse}]
+
+  operation :show,
+    summary: "Get pipeline",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Pipeline", "application/json", Schemas.PipelineResponse}]
+
+  operation :create,
+    summary: "Create pipeline",
+    request_body: {"Pipeline params", "application/json", Schemas.PipelineParams},
+    responses: [
+      created: {"Pipeline", "application/json", Schemas.PipelineResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update pipeline",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Pipeline params", "application/json", Schemas.PipelineParams},
+    responses: [ok: {"Pipeline", "application/json", Schemas.PipelineResponse}]
+
+  operation :delete,
+    summary: "Delete pipeline",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
+
+  operation :runs,
+    summary: "List pipeline runs",
+    parameters: [
+      pipeline_id: [in: :path, type: :string, required: true],
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Run list", "application/json", Schemas.PipelineRunListResponse}]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

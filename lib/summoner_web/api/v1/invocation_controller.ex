@@ -7,6 +7,7 @@ defmodule SummonerWeb.API.V1.InvocationController do
   """
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
@@ -14,11 +15,53 @@ defmodule SummonerWeb.API.V1.InvocationController do
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Services.Orchestration.Cancellation
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["invocations"]
+
+  operation :invoke,
+    summary: "Invoke agent synchronously",
+    description:
+      "Blocks until completion (up to 5 minutes). Returns invocation result with messages.",
+    parameters: [agent_id: [in: :path, type: :string, required: true]],
+    request_body: {"Invoke params", "application/json", Schemas.InvokeParams},
+    responses: [
+      ok: {"Invocation result", "application/json", Schemas.InvokeResponse},
+      unprocessable_entity: {"Invocation failed", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get invocation details",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Invocation", "application/json", Schemas.InvocationResponse}]
+
+  operation :steps,
+    summary: "List invocation steps",
+    parameters: [
+      invocation_id: [in: :path, type: :string, required: true],
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Step list", "application/json", Schemas.StepListResponse}]
+
+  operation :events,
+    summary: "List invocation events",
+    parameters: [
+      invocation_id: [in: :path, type: :string, required: true],
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Event list", "application/json", Schemas.EventListResponse}]
+
+  operation :cancel,
+    summary: "Cancel running invocation",
+    parameters: [invocation_id: [in: :path, type: :string, required: true]],
+    responses: [accepted: "Cancellation initiated"]
 
   @doc """
   POST /api/v1/agents/:agent_id/invoke

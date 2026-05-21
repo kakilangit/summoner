@@ -15,6 +15,7 @@ defmodule SummonerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: SummonerWeb.API.ApiSpec
   end
 
   scope "/", SummonerWeb do
@@ -155,6 +156,12 @@ defmodule SummonerWeb.Router do
     end
   end
 
+  # OpenAPI spec endpoint (no scope prefix)
+  scope "/api/v1" do
+    pipe_through [:api]
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+  end
+
   # REST API — token-authenticated, workspace implicit (derived from token)
   scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
@@ -223,6 +230,8 @@ defmodule SummonerWeb.Router do
         additional_pages: [oban: Oban.LiveDashboard]
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+
+      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
     end
   end
 

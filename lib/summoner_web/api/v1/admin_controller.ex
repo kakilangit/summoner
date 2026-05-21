@@ -2,16 +2,59 @@ defmodule SummonerWeb.API.V1.AdminController do
   @moduledoc "REST API controller for admin operations (requires admin scope)."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Admin
   alias Summoner.Ports.Persistence.Invitations
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "admin"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["admin"]
+
+  operation :list_tenants,
+    summary: "List tenants",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Tenant list", "application/json", Schemas.TenantListResponse}]
+
+  operation :list_users,
+    summary: "List users",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"User list", "application/json", Schemas.UserListResponse}]
+
+  operation :update_user,
+    summary: "Update user",
+    description: "Enable/disable user or change role. Root admin is protected.",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"User update params", "application/json", Schemas.UserUpdateParams},
+    responses: [
+      ok: {"User", "application/json", Schemas.UserResponse},
+      forbidden: {"Forbidden", "application/json", Schemas.ErrorResponse},
+      bad_request: {"Bad request", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :list_invitations,
+    summary: "List invitations",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Invitation list", "application/json", Schemas.InvitationListResponse}]
+
+  operation :stats,
+    summary: "Get system stats",
+    responses: [ok: {"Stats", "application/json", Schemas.StatsResponse}]
 
   # Tenants
 

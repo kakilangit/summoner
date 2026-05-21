@@ -84,7 +84,8 @@ defmodule Summoner.MixProject do
 
       # Dev/Test
       {:mox, "~> 1.2", only: :test},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:open_api_spex, "~> 3.21"}
     ]
   end
 

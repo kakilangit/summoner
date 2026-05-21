@@ -2,15 +2,59 @@ defmodule SummonerWeb.API.V1.ConversationController do
   @moduledoc "REST API controller for conversations (Channels)."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Conversations
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["conversations"]
+
+  operation :index,
+    summary: "List conversations",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Conversation list", "application/json", Schemas.ConversationListResponse}]
+
+  operation :show,
+    summary: "Get conversation",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Conversation", "application/json", Schemas.ConversationResponse}]
+
+  operation :create,
+    summary: "Create conversation",
+    request_body: {"Conversation params", "application/json", Schemas.ConversationParams},
+    responses: [
+      created: {"Conversation", "application/json", Schemas.ConversationResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete conversation",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
+
+  operation :messages,
+    summary: "List conversation messages",
+    parameters: [
+      conversation_id: [in: :path, type: :string, required: true],
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Message list", "application/json", Schemas.MessageListResponse}]
+
+  operation :export,
+    summary: "Export conversation as markdown",
+    parameters: [conversation_id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Markdown export", "text/markdown", %OpenApiSpex.Schema{type: :string}}]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

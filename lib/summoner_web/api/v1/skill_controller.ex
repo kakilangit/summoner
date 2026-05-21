@@ -2,15 +2,51 @@ defmodule SummonerWeb.API.V1.SkillController do
   @moduledoc "REST API controller for skills."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Skills
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["skills"]
+
+  operation :index,
+    summary: "List skills",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Skill list", "application/json", Schemas.SkillListResponse}]
+
+  operation :show,
+    summary: "Get skill",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Skill", "application/json", Schemas.SkillResponse}]
+
+  operation :create,
+    summary: "Create skill",
+    request_body: {"Skill params", "application/json", Schemas.SkillParams},
+    responses: [
+      created: {"Skill", "application/json", Schemas.SkillResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update skill",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Skill params", "application/json", Schemas.SkillParams},
+    responses: [ok: {"Skill", "application/json", Schemas.SkillResponse}]
+
+  operation :delete,
+    summary: "Delete skill",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

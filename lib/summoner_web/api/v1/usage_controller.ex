@@ -2,13 +2,27 @@ defmodule SummonerWeb.API.V1.UsageController do
   @moduledoc "REST API controller for usage analytics."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Summoner.Ports.Persistence.Ledger
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["usage"]
+
+  operation :index,
+    summary: "Get usage summary",
+    description: "Rolling 30-day token usage and cost.",
+    responses: [ok: {"Usage", "application/json", Schemas.UsageResponse}]
+
+  operation :breakdowns,
+    summary: "Get usage breakdowns",
+    description: "Usage broken down by agent, model, and provider.",
+    responses: [ok: {"Breakdowns", "application/json", Schemas.UsageBreakdownResponse}]
 
   def index(conn, _params) do
     workspace_id = conn.assigns.current_workspace_id

@@ -2,15 +2,51 @@ defmodule SummonerWeb.API.V1.SwarmController do
   @moduledoc "REST API controller for swarms (Parties)."
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import SummonerWeb.API.PaginationParams
 
   alias Summoner.Ports.Persistence.Swarms
+  alias SummonerWeb.API.Schemas
 
   action_fallback SummonerWeb.API.FallbackController
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["swarms"]
+
+  operation :index,
+    summary: "List swarms",
+    parameters: [
+      page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
+      per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
+    ],
+    responses: [ok: {"Swarm list", "application/json", Schemas.SwarmListResponse}]
+
+  operation :show,
+    summary: "Get swarm",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [ok: {"Swarm", "application/json", Schemas.SwarmResponse}]
+
+  operation :create,
+    summary: "Create swarm",
+    request_body: {"Swarm params", "application/json", Schemas.SwarmParams},
+    responses: [
+      created: {"Swarm", "application/json", Schemas.SwarmResponse},
+      unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update swarm",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Swarm params", "application/json", Schemas.SwarmParams},
+    responses: [ok: {"Swarm", "application/json", Schemas.SwarmResponse}]
+
+  operation :delete,
+    summary: "Delete swarm",
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [no_content: "Deleted"]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

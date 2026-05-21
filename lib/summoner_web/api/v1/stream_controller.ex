@@ -14,6 +14,7 @@ defmodule SummonerWeb.API.V1.StreamController do
   """
 
   use SummonerWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Summoner.Domain.Events.ContentToken
   alias Summoner.Domain.Events.InvocationCompleted
@@ -23,9 +24,19 @@ defmodule SummonerWeb.API.V1.StreamController do
   alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Conversations
+  alias SummonerWeb.API.Schemas
 
   plug SummonerWeb.Plugs.TokenAuth, required_scope: "api"
   plug SummonerWeb.Plugs.RateLimit
+
+  tags ["streaming"]
+
+  operation :stream,
+    summary: "Stream agent invocation via SSE",
+    description: "Starts an async invocation and streams events via Server-Sent Events.",
+    parameters: [agent_id: [in: :path, type: :string, required: true]],
+    request_body: {"Invoke params", "application/json", Schemas.InvokeParams},
+    responses: [ok: {"SSE event stream", "text/event-stream", %OpenApiSpex.Schema{type: :string}}]
 
   @stream_timeout 300_000
 
