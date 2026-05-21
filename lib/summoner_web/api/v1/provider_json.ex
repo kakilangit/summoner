@@ -4,11 +4,11 @@ defmodule SummonerWeb.API.V1.ProviderJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &provider_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &provider_data/1), meta: page_meta(page)}
   end
 
   def show(%{provider: provider}) do
-    %{data: provider_data(provider)}
+    provider_data(provider)
   end
 
   defp provider_data(p) do

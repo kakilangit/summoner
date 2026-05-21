@@ -8,11 +8,11 @@ defmodule SummonerWeb.API.V1.AgentJSON do
   alias Summoner.Domain.Schemas.RemoteAgent
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &agent_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &agent_data/1), meta: page_meta(page)}
   end
 
   def show(%{agent: agent}) do
-    %{data: agent_data(agent)}
+    agent_data(agent)
   end
 
   defp agent_data(%Agent{} = agent) do

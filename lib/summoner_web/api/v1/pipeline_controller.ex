@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.PipelineController do
   operation :show,
     summary: "Get pipeline",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Pipeline", "application/json", Schemas.PipelineResponse}]
+    responses: [ok: {"Pipeline", "application/json", Schemas.Pipeline}]
 
   operation :create,
     summary: "Create pipeline",
     request_body: {"Pipeline params", "application/json", Schemas.PipelineParams},
     responses: [
-      created: {"Pipeline", "application/json", Schemas.PipelineResponse},
+      created: {"Pipeline", "application/json", Schemas.Pipeline},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.PipelineController do
     summary: "Update pipeline",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Pipeline params", "application/json", Schemas.PipelineParams},
-    responses: [ok: {"Pipeline", "application/json", Schemas.PipelineResponse}]
+    responses: [ok: {"Pipeline", "application/json", Schemas.Pipeline}]
 
   operation :delete,
     summary: "Delete pipeline",
@@ -71,7 +71,7 @@ defmodule SummonerWeb.API.V1.PipelineController do
     render(conn, :show, pipeline: pipeline)
   end
 
-  def create(conn, %{"pipeline" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
     attrs = Map.put(attrs, "workspace_id", conn.assigns.current_workspace_id)
 
@@ -86,10 +86,11 @@ defmodule SummonerWeb.API.V1.PipelineController do
     end
   end
 
-  def update(conn, %{"id" => id, "pipeline" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     pipeline = Pipelines.get_pipeline!(scope, workspace_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, pipeline} <- Pipelines.update_pipeline(scope, pipeline, attrs) do
       render(conn, :show, pipeline: pipeline)

@@ -4,15 +4,15 @@ defmodule SummonerWeb.API.V1.PipelineJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &pipeline_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &pipeline_data/1), meta: page_meta(page)}
   end
 
   def show(%{pipeline: pipeline}) do
-    %{data: pipeline_data(pipeline)}
+    pipeline_data(pipeline)
   end
 
   def runs(%{page: page}) do
-    %{data: Enum.map(page.entries, &run_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &run_data/1), meta: page_meta(page)}
   end
 
   defp pipeline_data(p) do

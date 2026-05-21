@@ -98,18 +98,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule AgentResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "AgentResponse",
-      type: :object,
-      properties: %{data: Agent},
-      required: [:data]
-    })
-  end
-
   defmodule AgentListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -118,10 +106,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "AgentListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Agent},
+        items: %Schema{type: :array, items: Agent},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -133,40 +121,34 @@ defmodule SummonerWeb.API.Schemas do
       title: "AgentParams",
       type: :object,
       properties: %{
-        agent: %Schema{
+        name: %Schema{type: :string},
+        callname: %Schema{type: :string},
+        type: %Schema{type: :string, enum: ["local", "remote"], default: "local"},
+        role: %Schema{type: :string, enum: ["autonomous", "worker"]},
+        local_agent: %Schema{
           type: :object,
           properties: %{
-            name: %Schema{type: :string},
-            callname: %Schema{type: :string},
-            type: %Schema{type: :string, enum: ["local", "remote"], default: "local"},
-            role: %Schema{type: :string, enum: ["autonomous", "worker"]},
-            local_agent: %Schema{
-              type: :object,
-              properties: %{
-                model: %Schema{type: :string},
-                system_prompt: %Schema{type: :string},
-                personality: %Schema{type: :string},
-                max_steps: %Schema{type: :integer},
-                provider_id: %Schema{type: :string, format: :binary_id}
-              }
+            model: %Schema{type: :string},
+            system_prompt: %Schema{type: :string},
+            personality: %Schema{type: :string},
+            max_steps: %Schema{type: :integer},
+            provider_id: %Schema{type: :string, format: :binary_id}
+          }
+        },
+        remote_agent: %Schema{
+          type: :object,
+          properties: %{
+            agent_card_url: %Schema{type: :string, format: :uri},
+            auth_mode: %Schema{
+              type: :string,
+              enum: ["bearer_token", "api_key", "oauth2", "none"]
             },
-            remote_agent: %Schema{
-              type: :object,
-              properties: %{
-                agent_card_url: %Schema{type: :string, format: :uri},
-                auth_mode: %Schema{
-                  type: :string,
-                  enum: ["bearer_token", "api_key", "oauth2", "none"]
-                },
-                timeout_s: %Schema{type: :integer},
-                api_key_secret_id: %Schema{type: :string, format: :binary_id}
-              }
-            }
-          },
-          required: [:name, :role]
+            timeout_s: %Schema{type: :integer},
+            api_key_secret_id: %Schema{type: :string, format: :binary_id}
+          }
         }
       },
-      required: [:agent]
+      required: [:name, :role]
     })
   end
 
@@ -196,18 +178,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule ConversationResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "ConversationResponse",
-      type: :object,
-      properties: %{data: Conversation},
-      required: [:data]
-    })
-  end
-
   defmodule ConversationListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -216,10 +186,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "ConversationListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Conversation},
+        items: %Schema{type: :array, items: Conversation},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -231,16 +201,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "ConversationParams",
       type: :object,
       properties: %{
-        conversation: %Schema{
-          type: :object,
-          properties: %{
-            title: %Schema{type: :string},
-            primary_agent_id: %Schema{type: :string, format: :binary_id}
-          },
-          required: [:primary_agent_id]
-        }
+        title: %Schema{type: :string},
+        primary_agent_id: %Schema{type: :string, format: :binary_id}
       },
-      required: [:conversation]
+      required: [:primary_agent_id]
     })
   end
 
@@ -289,10 +253,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "MessageListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Message},
+        items: %Schema{type: :array, items: Message},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -326,32 +290,26 @@ defmodule SummonerWeb.API.Schemas do
       title: "InvokeResponse",
       type: :object,
       properties: %{
-        data: %Schema{
-          type: :object,
-          properties: %{
-            invocation_id: %Schema{type: :string, format: :binary_id},
-            status: %Schema{
-              type: :string,
-              enum: ~w(queued running completed failed handed_off awaiting_user cancelled)
-            },
-            end_reason: %Schema{
-              type: :string,
-              enum:
-                ~w(completed failed cancelled stale handed_off token_limit_reached step_limit_reached total_timeout worker_unavailable escalation_unresolved empty_response doom_loop context_overflow),
-              nullable: true
-            },
-            output: %Schema{type: :object, additionalProperties: true, nullable: true},
-            agent_id: %Schema{type: :string, format: :binary_id},
-            conversation_id: %Schema{type: :string, format: :binary_id},
-            started_at: %Schema{type: :string, format: :"date-time"},
-            completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
-            provider_name: %Schema{type: :string, nullable: true},
-            model_name: %Schema{type: :string, nullable: true},
-            messages: %Schema{type: :array, items: Message}
-          }
-        }
-      },
-      required: [:data]
+        invocation_id: %Schema{type: :string, format: :binary_id},
+        status: %Schema{
+          type: :string,
+          enum: ~w(queued running completed failed handed_off awaiting_user cancelled)
+        },
+        end_reason: %Schema{
+          type: :string,
+          enum:
+            ~w(completed failed cancelled stale handed_off token_limit_reached step_limit_reached total_timeout worker_unavailable escalation_unresolved empty_response doom_loop context_overflow),
+          nullable: true
+        },
+        output: %Schema{type: :object, additionalProperties: true, nullable: true},
+        agent_id: %Schema{type: :string, format: :binary_id},
+        conversation_id: %Schema{type: :string, format: :binary_id},
+        started_at: %Schema{type: :string, format: :"date-time"},
+        completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
+        provider_name: %Schema{type: :string, nullable: true},
+        model_name: %Schema{type: :string, nullable: true},
+        messages: %Schema{type: :array, items: Message}
+      }
     })
   end
 
@@ -391,18 +349,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule InvocationResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "InvocationResponse",
-      type: :object,
-      properties: %{data: Invocation},
-      required: [:data]
-    })
-  end
-
   # ── Step ────────────────────────────────────────────────────────────
 
   defmodule Step do
@@ -434,10 +380,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "StepListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Step},
+        items: %Schema{type: :array, items: Step},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -475,10 +421,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "EventListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Event},
+        items: %Schema{type: :array, items: Event},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -510,18 +456,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule ProviderResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "ProviderResponse",
-      type: :object,
-      properties: %{data: Provider},
-      required: [:data]
-    })
-  end
-
   defmodule ProviderListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -530,10 +464,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "ProviderListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Provider},
+        items: %Schema{type: :array, items: Provider},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -545,20 +479,14 @@ defmodule SummonerWeb.API.Schemas do
       title: "ProviderParams",
       type: :object,
       properties: %{
-        provider: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            kind: %Schema{type: :string},
-            api_format: %Schema{type: :string, enum: ["openai", "anthropic", "custom"]},
-            type: %Schema{type: :string, enum: ["local", "cloud"]},
-            base_url: %Schema{type: :string, format: :uri},
-            api_key_secret_id: %Schema{type: :string, format: :binary_id}
-          },
-          required: [:name, :kind, :api_format, :type, :base_url]
-        }
+        name: %Schema{type: :string},
+        kind: %Schema{type: :string},
+        api_format: %Schema{type: :string, enum: ["openai", "anthropic", "custom"]},
+        type: %Schema{type: :string, enum: ["local", "cloud"]},
+        base_url: %Schema{type: :string, format: :uri},
+        api_key_secret_id: %Schema{type: :string, format: :binary_id}
       },
-      required: [:provider]
+      required: [:name, :kind, :api_format, :type, :base_url]
     })
   end
 
@@ -584,18 +512,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule SecretResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "SecretResponse",
-      type: :object,
-      properties: %{data: Secret},
-      required: [:data]
-    })
-  end
-
   defmodule SecretListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -604,10 +520,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "SecretListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Secret},
+        items: %Schema{type: :array, items: Secret},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -619,20 +535,14 @@ defmodule SummonerWeb.API.Schemas do
       title: "SecretParams",
       type: :object,
       properties: %{
-        secret: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string, pattern: "^[A-Z][A-Z0-9_]*$"},
-            description: %Schema{type: :string},
-            encrypted_value: %Schema{
-              type: :string,
-              description: "Plaintext value (encrypted at rest)"
-            }
-          },
-          required: [:name, :encrypted_value]
+        name: %Schema{type: :string, pattern: "^[A-Z][A-Z0-9_]*$"},
+        description: %Schema{type: :string},
+        encrypted_value: %Schema{
+          type: :string,
+          description: "Plaintext value (encrypted at rest)"
         }
       },
-      required: [:secret]
+      required: [:name, :encrypted_value]
     })
   end
 
@@ -658,18 +568,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule SkillResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "SkillResponse",
-      type: :object,
-      properties: %{data: Skill},
-      required: [:data]
-    })
-  end
-
   defmodule SkillListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -678,10 +576,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "SkillListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Skill},
+        items: %Schema{type: :array, items: Skill},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -693,16 +591,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "SkillParams",
       type: :object,
       properties: %{
-        skill: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            content: %Schema{type: :string}
-          },
-          required: [:name, :content]
-        }
+        name: %Schema{type: :string},
+        content: %Schema{type: :string}
       },
-      required: [:skill]
+      required: [:name, :content]
     })
   end
 
@@ -730,18 +622,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule McpServerResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "McpServerResponse",
-      type: :object,
-      properties: %{data: McpServer},
-      required: [:data]
-    })
-  end
-
   defmodule McpServerListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -750,10 +630,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "McpServerListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: McpServer},
+        items: %Schema{type: :array, items: McpServer},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -765,18 +645,12 @@ defmodule SummonerWeb.API.Schemas do
       title: "McpServerParams",
       type: :object,
       properties: %{
-        mcp_server: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            transport: %Schema{type: :string, enum: ["stdio", "http"]},
-            command_or_url: %Schema{type: :string},
-            config: %Schema{type: :object, additionalProperties: true}
-          },
-          required: [:name, :transport, :command_or_url]
-        }
+        name: %Schema{type: :string},
+        transport: %Schema{type: :string, enum: ["stdio", "http"]},
+        command_or_url: %Schema{type: :string},
+        config: %Schema{type: :object, additionalProperties: true}
       },
-      required: [:mcp_server]
+      required: [:name, :transport, :command_or_url]
     })
   end
 
@@ -806,18 +680,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule MediaProviderResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "MediaProviderResponse",
-      type: :object,
-      properties: %{data: MediaProvider},
-      required: [:data]
-    })
-  end
-
   defmodule MediaProviderListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -826,10 +688,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "MediaProviderListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: MediaProvider},
+        items: %Schema{type: :array, items: MediaProvider},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -841,20 +703,14 @@ defmodule SummonerWeb.API.Schemas do
       title: "MediaProviderParams",
       type: :object,
       properties: %{
-        media_provider: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            default_image_model: %Schema{type: :string},
-            default_video_model: %Schema{type: :string},
-            max_concurrent_jobs: %Schema{type: :integer},
-            config: %Schema{type: :object, additionalProperties: true},
-            provider_id: %Schema{type: :string, format: :binary_id}
-          },
-          required: [:name, :provider_id]
-        }
+        name: %Schema{type: :string},
+        default_image_model: %Schema{type: :string},
+        default_video_model: %Schema{type: :string},
+        max_concurrent_jobs: %Schema{type: :integer},
+        config: %Schema{type: :object, additionalProperties: true},
+        provider_id: %Schema{type: :string, format: :binary_id}
       },
-      required: [:media_provider]
+      required: [:name, :provider_id]
     })
   end
 
@@ -905,18 +761,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule PipelineResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "PipelineResponse",
-      type: :object,
-      properties: %{data: Pipeline},
-      required: [:data]
-    })
-  end
-
   defmodule PipelineListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -925,10 +769,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "PipelineListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Pipeline},
+        items: %Schema{type: :array, items: Pipeline},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -963,10 +807,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "PipelineRunListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: PipelineRun},
+        items: %Schema{type: :array, items: PipelineRun},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -978,33 +822,27 @@ defmodule SummonerWeb.API.Schemas do
       title: "PipelineParams",
       type: :object,
       properties: %{
-        pipeline: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            mode: %Schema{type: :string, enum: ["simple", "orchestrated"]},
-            trigger_type: %Schema{type: :string, enum: ["manual", "scheduled"]},
-            cron_expression: %Schema{type: :string},
-            orchestrator_agent_id: %Schema{type: :string, format: :binary_id},
-            stages: %Schema{
-              type: :array,
-              items: %Schema{
-                type: :object,
-                properties: %{
-                  position: %Schema{type: :integer},
-                  instruction: %Schema{type: :string},
-                  depends_on_positions: %Schema{type: :array, items: %Schema{type: :integer}},
-                  skill: %Schema{type: :string},
-                  agent_id: %Schema{type: :string, format: :binary_id}
-                },
-                required: [:position, :agent_id]
-              }
-            }
-          },
-          required: [:name]
+        name: %Schema{type: :string},
+        mode: %Schema{type: :string, enum: ["simple", "orchestrated"]},
+        trigger_type: %Schema{type: :string, enum: ["manual", "scheduled"]},
+        cron_expression: %Schema{type: :string},
+        orchestrator_agent_id: %Schema{type: :string, format: :binary_id},
+        stages: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              position: %Schema{type: :integer},
+              instruction: %Schema{type: :string},
+              depends_on_positions: %Schema{type: :array, items: %Schema{type: :integer}},
+              skill: %Schema{type: :string},
+              agent_id: %Schema{type: :string, format: :binary_id}
+            },
+            required: [:position, :agent_id]
+          }
         }
       },
-      required: [:pipeline]
+      required: [:name]
     })
   end
 
@@ -1051,18 +889,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule SwarmResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "SwarmResponse",
-      type: :object,
-      properties: %{data: Swarm},
-      required: [:data]
-    })
-  end
-
   defmodule SwarmListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -1071,10 +897,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "SwarmListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Swarm},
+        items: %Schema{type: :array, items: Swarm},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -1086,30 +912,24 @@ defmodule SummonerWeb.API.Schemas do
       title: "SwarmParams",
       type: :object,
       properties: %{
-        swarm: %Schema{
-          type: :object,
-          properties: %{
-            name: %Schema{type: :string},
-            description: %Schema{type: :string},
-            mode: %Schema{type: :string, enum: ["round_robin", "relay", "directed"]},
-            max_turns: %Schema{type: :integer},
-            coordinator_agent_id: %Schema{type: :string, format: :binary_id},
-            members: %Schema{
-              type: :array,
-              items: %Schema{
-                type: :object,
-                properties: %{
-                  position: %Schema{type: :integer},
-                  agent_id: %Schema{type: :string, format: :binary_id}
-                },
-                required: [:agent_id]
-              }
-            }
-          },
-          required: [:name]
+        name: %Schema{type: :string},
+        description: %Schema{type: :string},
+        mode: %Schema{type: :string, enum: ["round_robin", "relay", "directed"]},
+        max_turns: %Schema{type: :integer},
+        coordinator_agent_id: %Schema{type: :string, format: :binary_id},
+        members: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              position: %Schema{type: :integer},
+              agent_id: %Schema{type: :string, format: :binary_id}
+            },
+            required: [:agent_id]
+          }
         }
       },
-      required: [:swarm]
+      required: [:name]
     })
   end
 
@@ -1141,10 +961,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "TenantListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Tenant},
+        items: %Schema{type: :array, items: Tenant},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -1167,18 +987,6 @@ defmodule SummonerWeb.API.Schemas do
     })
   end
 
-  defmodule UserResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "UserResponse",
-      type: :object,
-      properties: %{data: User},
-      required: [:data]
-    })
-  end
-
   defmodule UserListResponse do
     @moduledoc false
     require OpenApiSpex
@@ -1187,10 +995,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "UserListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: User},
+        items: %Schema{type: :array, items: User},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
+      required: [:items, :meta]
     })
   end
 
@@ -1239,24 +1047,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "InvitationListResponse",
       type: :object,
       properties: %{
-        data: %Schema{type: :array, items: Invitation},
+        items: %Schema{type: :array, items: Invitation},
         meta: PaginationMeta
       },
-      required: [:data, :meta]
-    })
-  end
-
-  defmodule StatsResponse do
-    @moduledoc false
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "StatsResponse",
-      type: :object,
-      properties: %{
-        data: %Schema{type: :object, additionalProperties: true, description: "System statistics"}
-      },
-      required: [:data]
+      required: [:items, :meta]
     })
   end
 
@@ -1270,15 +1064,9 @@ defmodule SummonerWeb.API.Schemas do
       title: "UsageResponse",
       type: :object,
       properties: %{
-        data: %Schema{
-          type: :object,
-          properties: %{
-            rolling_30_day_tokens: %Schema{type: :integer},
-            rolling_30_day_cost: %Schema{type: :number, format: :float}
-          }
-        }
-      },
-      required: [:data]
+        rolling_30_day_tokens: %Schema{type: :integer},
+        rolling_30_day_cost: %Schema{type: :number, format: :float}
+      }
     })
   end
 
@@ -1309,16 +1097,10 @@ defmodule SummonerWeb.API.Schemas do
       title: "UsageBreakdownResponse",
       type: :object,
       properties: %{
-        data: %Schema{
-          type: :object,
-          properties: %{
-            by_agent: %Schema{type: :array, items: UsageBreakdownEntry},
-            by_model: %Schema{type: :array, items: UsageBreakdownEntry},
-            by_provider: %Schema{type: :array, items: UsageBreakdownEntry}
-          }
-        }
-      },
-      required: [:data]
+        by_agent: %Schema{type: :array, items: UsageBreakdownEntry},
+        by_model: %Schema{type: :array, items: UsageBreakdownEntry},
+        by_provider: %Schema{type: :array, items: UsageBreakdownEntry}
+      }
     })
   end
 

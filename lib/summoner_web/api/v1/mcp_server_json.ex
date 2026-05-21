@@ -4,11 +4,11 @@ defmodule SummonerWeb.API.V1.McpServerJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &server_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &server_data/1), meta: page_meta(page)}
   end
 
   def show(%{server: server}) do
-    %{data: server_data(server)}
+    server_data(server)
   end
 
   defp server_data(s) do

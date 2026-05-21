@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.SkillController do
   operation :show,
     summary: "Get skill",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Skill", "application/json", Schemas.SkillResponse}]
+    responses: [ok: {"Skill", "application/json", Schemas.Skill}]
 
   operation :create,
     summary: "Create skill",
     request_body: {"Skill params", "application/json", Schemas.SkillParams},
     responses: [
-      created: {"Skill", "application/json", Schemas.SkillResponse},
+      created: {"Skill", "application/json", Schemas.Skill},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.SkillController do
     summary: "Update skill",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Skill params", "application/json", Schemas.SkillParams},
-    responses: [ok: {"Skill", "application/json", Schemas.SkillResponse}]
+    responses: [ok: {"Skill", "application/json", Schemas.Skill}]
 
   operation :delete,
     summary: "Delete skill",
@@ -64,7 +64,7 @@ defmodule SummonerWeb.API.V1.SkillController do
     render(conn, :show, skill: skill)
   end
 
-  def create(conn, %{"skill" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
 
     attrs =
@@ -83,11 +83,12 @@ defmodule SummonerWeb.API.V1.SkillController do
     end
   end
 
-  def update(conn, %{"id" => id, "skill" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
     skill = Skills.get_skill!(scope, workspace_id, tenant_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, skill} <- Skills.update_skill(scope, skill, attrs) do
       render(conn, :show, skill: skill)

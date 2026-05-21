@@ -27,7 +27,7 @@ defmodule SummonerWeb.API.V1.SwarmControllerTest do
     test "lists swarms", %{conn: conn, scope: scope, workspace: ws} do
       swarm = swarm_fixture(scope, ws.id)
       conn = get(conn, ~p"/api/v1/swarms")
-      assert %{"data" => [%{"id" => id}]} = json_response(conn, 200)
+      assert %{"items" => [%{"id" => id}]} = json_response(conn, 200)
       assert id == swarm.id
     end
   end
@@ -36,7 +36,7 @@ defmodule SummonerWeb.API.V1.SwarmControllerTest do
     test "returns swarm with members", %{conn: conn, scope: scope, workspace: ws} do
       swarm = swarm_fixture(scope, ws.id)
       conn = get(conn, ~p"/api/v1/swarms/#{swarm.id}")
-      assert %{"data" => %{"id" => id, "members" => members}} = json_response(conn, 200)
+      assert %{"id" => id, "members" => members} = json_response(conn, 200)
       assert id == swarm.id
       assert is_list(members)
     end
@@ -45,8 +45,8 @@ defmodule SummonerWeb.API.V1.SwarmControllerTest do
   describe "create" do
     test "creates swarm", %{conn: conn, agent: agent} do
       attrs = %{"name" => "Test Party", "mode" => "relay", "coordinator_agent_id" => agent.id}
-      conn = post(conn, ~p"/api/v1/swarms", swarm: attrs)
-      assert %{"data" => %{"name" => "Test Party"}} = json_response(conn, 201)
+      conn = post(conn, ~p"/api/v1/swarms", attrs)
+      assert %{"name" => "Test Party"} = json_response(conn, 201)
     end
   end
 

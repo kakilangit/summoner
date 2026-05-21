@@ -23,7 +23,7 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
     test "lists providers", %{conn: conn, scope: scope, workspace: ws} do
       provider = provider_fixture(scope, ws.id)
       conn = get(conn, ~p"/api/v1/providers")
-      assert %{"data" => [%{"id" => id}]} = json_response(conn, 200)
+      assert %{"items" => [%{"id" => id}]} = json_response(conn, 200)
       assert id == provider.id
     end
   end
@@ -32,7 +32,7 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
     test "returns provider", %{conn: conn, scope: scope, workspace: ws} do
       provider = provider_fixture(scope, ws.id)
       conn = get(conn, ~p"/api/v1/providers/#{provider.id}")
-      assert %{"data" => %{"id" => id, "kind" => "ollama"}} = json_response(conn, 200)
+      assert %{"id" => id, "kind" => "ollama"} = json_response(conn, 200)
       assert id == provider.id
     end
   end
@@ -47,8 +47,8 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
         "base_url" => "http://localhost:11434"
       }
 
-      conn = post(conn, ~p"/api/v1/providers", provider: attrs)
-      assert %{"data" => %{"name" => "New Provider"}} = json_response(conn, 201)
+      conn = post(conn, ~p"/api/v1/providers", attrs)
+      assert %{"name" => "New Provider"} = json_response(conn, 201)
     end
   end
 

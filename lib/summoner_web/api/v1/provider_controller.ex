@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.ProviderController do
   operation :show,
     summary: "Get provider",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Provider", "application/json", Schemas.ProviderResponse}]
+    responses: [ok: {"Provider", "application/json", Schemas.Provider}]
 
   operation :create,
     summary: "Create provider",
     request_body: {"Provider params", "application/json", Schemas.ProviderParams},
     responses: [
-      created: {"Provider", "application/json", Schemas.ProviderResponse},
+      created: {"Provider", "application/json", Schemas.Provider},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.ProviderController do
     summary: "Update provider",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Provider params", "application/json", Schemas.ProviderParams},
-    responses: [ok: {"Provider", "application/json", Schemas.ProviderResponse}]
+    responses: [ok: {"Provider", "application/json", Schemas.Provider}]
 
   operation :delete,
     summary: "Delete provider",
@@ -67,7 +67,7 @@ defmodule SummonerWeb.API.V1.ProviderController do
     render(conn, :show, provider: provider)
   end
 
-  def create(conn, %{"provider" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
 
     attrs = Map.put(attrs, "workspace_id", conn.assigns.current_workspace_id)
@@ -83,11 +83,12 @@ defmodule SummonerWeb.API.V1.ProviderController do
     end
   end
 
-  def update(conn, %{"id" => id, "provider" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
     provider = Providers.get_provider!(scope, workspace_id, tenant_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, provider} <- Providers.update_provider(scope, provider, attrs) do
       render(conn, :show, provider: provider)

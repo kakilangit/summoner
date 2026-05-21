@@ -4,11 +4,11 @@ defmodule SummonerWeb.API.V1.SecretJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &secret_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &secret_data/1), meta: page_meta(page)}
   end
 
   def show(%{secret: secret}) do
-    %{data: secret_data(secret)}
+    secret_data(secret)
   end
 
   defp secret_data(s) do

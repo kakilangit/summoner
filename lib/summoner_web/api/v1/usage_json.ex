@@ -2,16 +2,14 @@ defmodule SummonerWeb.API.V1.UsageJSON do
   @moduledoc "JSON rendering for usage analytics."
 
   def index(%{usage: usage}) do
-    %{data: usage}
+    usage
   end
 
   def breakdowns(%{breakdowns: breakdowns}) do
     %{
-      data: %{
-        by_agent: Enum.map(breakdowns.by_agent, &breakdown_entry/1),
-        by_model: Enum.map(breakdowns.by_model, &breakdown_entry/1),
-        by_provider: Enum.map(breakdowns.by_provider, &breakdown_entry/1)
-      }
+      by_agent: Enum.map(breakdowns.by_agent, &breakdown_entry/1),
+      by_model: Enum.map(breakdowns.by_model, &breakdown_entry/1),
+      by_provider: Enum.map(breakdowns.by_provider, &breakdown_entry/1)
     }
   end
 

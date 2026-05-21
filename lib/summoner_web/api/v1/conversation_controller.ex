@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.ConversationController do
   operation :show,
     summary: "Get conversation",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Conversation", "application/json", Schemas.ConversationResponse}]
+    responses: [ok: {"Conversation", "application/json", Schemas.Conversation}]
 
   operation :create,
     summary: "Create conversation",
     request_body: {"Conversation params", "application/json", Schemas.ConversationParams},
     responses: [
-      created: {"Conversation", "application/json", Schemas.ConversationResponse},
+      created: {"Conversation", "application/json", Schemas.Conversation},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -73,7 +73,7 @@ defmodule SummonerWeb.API.V1.ConversationController do
     render(conn, :show, conversation: conversation)
   end
 
-  def create(conn, %{"conversation" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
     attrs = Map.put(attrs, "workspace_id", conn.assigns.current_workspace_id)
 

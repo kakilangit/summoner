@@ -4,15 +4,15 @@ defmodule SummonerWeb.API.V1.ConversationJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &conversation_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &conversation_data/1), meta: page_meta(page)}
   end
 
   def show(%{conversation: conversation}) do
-    %{data: conversation_data(conversation)}
+    conversation_data(conversation)
   end
 
   def messages(%{page: page}) do
-    %{data: Enum.map(page.entries, &message_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &message_data/1), meta: page_meta(page)}
   end
 
   defp conversation_data(c) do

@@ -4,11 +4,11 @@ defmodule SummonerWeb.API.V1.SwarmJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &swarm_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &swarm_data/1), meta: page_meta(page)}
   end
 
   def show(%{swarm: swarm}) do
-    %{data: swarm_data(swarm)}
+    swarm_data(swarm)
   end
 
   defp swarm_data(s) do

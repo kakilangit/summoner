@@ -38,7 +38,7 @@ defmodule SummonerWeb.API.V1.InvocationControllerTest do
   describe "show" do
     test "returns invocation details", %{conn: conn, invocation: inv} do
       conn = get(conn, ~p"/api/v1/invocations/#{inv.id}")
-      assert %{"data" => data} = json_response(conn, 200)
+      data = json_response(conn, 200)
       assert data["id"] == inv.id
       assert data["status"] == "completed"
     end
@@ -47,14 +47,14 @@ defmodule SummonerWeb.API.V1.InvocationControllerTest do
   describe "steps" do
     test "returns empty steps for invocation", %{conn: conn, invocation: inv} do
       conn = get(conn, ~p"/api/v1/invocations/#{inv.id}/steps")
-      assert %{"data" => []} = json_response(conn, 200)
+      assert %{"items" => []} = json_response(conn, 200)
     end
   end
 
   describe "events" do
     test "returns empty events for invocation", %{conn: conn, invocation: inv} do
       conn = get(conn, ~p"/api/v1/invocations/#{inv.id}/events")
-      assert %{"data" => []} = json_response(conn, 200)
+      assert %{"items" => []} = json_response(conn, 200)
     end
   end
 

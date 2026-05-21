@@ -31,7 +31,7 @@ defmodule SummonerWeb.API.V1.AdminControllerTest do
   describe "list_tenants" do
     test "returns tenants with admin scope", %{admin_conn: conn} do
       conn = get(conn, ~p"/api/v1/admin/tenants")
-      assert %{"data" => tenants} = json_response(conn, 200)
+      assert %{"items" => tenants} = json_response(conn, 200)
       assert is_list(tenants)
     end
 
@@ -44,7 +44,7 @@ defmodule SummonerWeb.API.V1.AdminControllerTest do
   describe "list_users" do
     test "returns users with admin scope", %{admin_conn: conn} do
       conn = get(conn, ~p"/api/v1/admin/users")
-      assert %{"data" => users} = json_response(conn, 200)
+      assert %{"items" => users} = json_response(conn, 200)
       assert is_list(users)
       assert users != []
     end
@@ -53,13 +53,13 @@ defmodule SummonerWeb.API.V1.AdminControllerTest do
   describe "update_user" do
     test "disables a user", %{admin_conn: conn, scope: scope} do
       conn = patch(conn, ~p"/api/v1/admin/users/#{scope.user.id}", %{action: "disable"})
-      assert %{"data" => user} = json_response(conn, 200)
+      user = json_response(conn, 200)
       assert user["id"] == scope.user.id
     end
 
     test "enables a user", %{admin_conn: conn, scope: scope} do
       conn = patch(conn, ~p"/api/v1/admin/users/#{scope.user.id}", %{action: "enable"})
-      assert %{"data" => user} = json_response(conn, 200)
+      user = json_response(conn, 200)
       assert user["id"] == scope.user.id
     end
 
@@ -77,7 +77,7 @@ defmodule SummonerWeb.API.V1.AdminControllerTest do
   describe "list_invitations" do
     test "returns invitations with admin scope", %{admin_conn: conn} do
       conn = get(conn, ~p"/api/v1/admin/invitations")
-      assert %{"data" => invitations} = json_response(conn, 200)
+      assert %{"items" => invitations} = json_response(conn, 200)
       assert is_list(invitations)
     end
   end
@@ -85,7 +85,7 @@ defmodule SummonerWeb.API.V1.AdminControllerTest do
   describe "stats" do
     test "returns system stats with admin scope", %{admin_conn: conn} do
       conn = get(conn, ~p"/api/v1/admin/stats")
-      assert %{"data" => stats} = json_response(conn, 200)
+      stats = json_response(conn, 200)
       assert is_integer(stats["user_count"])
       assert is_integer(stats["tenant_count"])
     end

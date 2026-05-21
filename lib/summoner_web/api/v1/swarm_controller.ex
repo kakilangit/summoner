@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.SwarmController do
   operation :show,
     summary: "Get swarm",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Swarm", "application/json", Schemas.SwarmResponse}]
+    responses: [ok: {"Swarm", "application/json", Schemas.Swarm}]
 
   operation :create,
     summary: "Create swarm",
     request_body: {"Swarm params", "application/json", Schemas.SwarmParams},
     responses: [
-      created: {"Swarm", "application/json", Schemas.SwarmResponse},
+      created: {"Swarm", "application/json", Schemas.Swarm},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.SwarmController do
     summary: "Update swarm",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Swarm params", "application/json", Schemas.SwarmParams},
-    responses: [ok: {"Swarm", "application/json", Schemas.SwarmResponse}]
+    responses: [ok: {"Swarm", "application/json", Schemas.Swarm}]
 
   operation :delete,
     summary: "Delete swarm",
@@ -67,7 +67,7 @@ defmodule SummonerWeb.API.V1.SwarmController do
     render(conn, :show, swarm: swarm)
   end
 
-  def create(conn, %{"swarm" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
     attrs = Map.put(attrs, "workspace_id", conn.assigns.current_workspace_id)
 
@@ -82,10 +82,11 @@ defmodule SummonerWeb.API.V1.SwarmController do
     end
   end
 
-  def update(conn, %{"id" => id, "swarm" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     swarm = Swarms.get_swarm!(scope, workspace_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, swarm} <- Swarms.update_swarm(scope, swarm, attrs) do
       render(conn, :show, swarm: swarm)

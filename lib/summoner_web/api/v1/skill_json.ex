@@ -4,11 +4,11 @@ defmodule SummonerWeb.API.V1.SkillJSON do
   import SummonerWeb.API.PaginationJSON
 
   def index(%{page: page}) do
-    %{data: Enum.map(page.entries, &skill_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &skill_data/1), meta: page_meta(page)}
   end
 
   def show(%{skill: skill}) do
-    %{data: skill_data(skill)}
+    skill_data(skill)
   end
 
   defp skill_data(s) do

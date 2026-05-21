@@ -29,13 +29,13 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
   operation :show,
     summary: "Get media provider",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Media provider", "application/json", Schemas.MediaProviderResponse}]
+    responses: [ok: {"Media provider", "application/json", Schemas.MediaProvider}]
 
   operation :create,
     summary: "Create media provider",
     request_body: {"Media provider params", "application/json", Schemas.MediaProviderParams},
     responses: [
-      created: {"Media provider", "application/json", Schemas.MediaProviderResponse},
+      created: {"Media provider", "application/json", Schemas.MediaProvider},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -43,7 +43,7 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
     summary: "Update media provider",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Media provider params", "application/json", Schemas.MediaProviderParams},
-    responses: [ok: {"Media provider", "application/json", Schemas.MediaProviderResponse}]
+    responses: [ok: {"Media provider", "application/json", Schemas.MediaProvider}]
 
   operation :delete,
     summary: "Delete media provider",
@@ -74,7 +74,7 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
     render(conn, :show, media_provider: provider)
   end
 
-  def create(conn, %{"media_provider" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
 
     attrs =
@@ -93,11 +93,12 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
     end
   end
 
-  def update(conn, %{"id" => id, "media_provider" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
     provider = MediaProviders.get_media_provider!(scope, workspace_id, tenant_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, provider} <- MediaProviders.update_media_provider(scope, provider, attrs) do
       render(conn, :show, media_provider: provider)

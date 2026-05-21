@@ -38,7 +38,7 @@ defmodule SummonerWeb.API.V1.InvocationController do
   operation :show,
     summary: "Get invocation details",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Invocation", "application/json", Schemas.InvocationResponse}]
+    responses: [ok: {"Invocation", "application/json", Schemas.Invocation}]
 
   operation :steps,
     summary: "List invocation steps",

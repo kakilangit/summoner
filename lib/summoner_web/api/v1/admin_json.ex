@@ -6,23 +6,23 @@ defmodule SummonerWeb.API.V1.AdminJSON do
   alias Summoner.Domain.Schemas.Invitation
 
   def tenants(%{page: page}) do
-    %{data: Enum.map(page.entries, &tenant_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &tenant_data/1), meta: page_meta(page)}
   end
 
   def users(%{page: page}) do
-    %{data: Enum.map(page.entries, &user_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &user_data/1), meta: page_meta(page)}
   end
 
   def user(%{user: user}) do
-    %{data: user_data(user)}
+    user_data(user)
   end
 
   def invitations(%{page: page}) do
-    %{data: Enum.map(page.entries, &invitation_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &invitation_data/1), meta: page_meta(page)}
   end
 
   def stats(%{stats: stats}) do
-    %{data: stats}
+    stats
   end
 
   defp tenant_data(tenant) do

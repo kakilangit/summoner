@@ -27,13 +27,13 @@ defmodule SummonerWeb.API.V1.SecretController do
   operation :show,
     summary: "Get secret",
     parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [ok: {"Secret", "application/json", Schemas.SecretResponse}]
+    responses: [ok: {"Secret", "application/json", Schemas.Secret}]
 
   operation :create,
     summary: "Create secret",
     request_body: {"Secret params", "application/json", Schemas.SecretParams},
     responses: [
-      created: {"Secret", "application/json", Schemas.SecretResponse},
+      created: {"Secret", "application/json", Schemas.Secret},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.SecretController do
     summary: "Update secret",
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Secret params", "application/json", Schemas.SecretParams},
-    responses: [ok: {"Secret", "application/json", Schemas.SecretResponse}]
+    responses: [ok: {"Secret", "application/json", Schemas.Secret}]
 
   operation :delete,
     summary: "Delete secret",
@@ -64,7 +64,7 @@ defmodule SummonerWeb.API.V1.SecretController do
     render(conn, :show, secret: secret)
   end
 
-  def create(conn, %{"secret" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
 
     attrs =
@@ -83,11 +83,12 @@ defmodule SummonerWeb.API.V1.SecretController do
     end
   end
 
-  def update(conn, %{"id" => id, "secret" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     tenant_id = conn.assigns.current_tenant_id
     secret = Secrets.get_secret!(scope, workspace_id, tenant_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, secret} <- Secrets.update_secret(scope, secret, attrs) do
       render(conn, :show, secret: secret)

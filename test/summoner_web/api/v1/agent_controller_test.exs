@@ -32,7 +32,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
       agent = agent_fixture(scope, ws.id, provider.id)
       conn = get(conn, ~p"/api/v1/agents")
       response = json_response(conn, 200)
-      assert %{"data" => [%{"id" => id, "name" => name}], "meta" => meta} = response
+      assert %{"items" => [%{"id" => id, "name" => name}], "meta" => meta} = response
       assert id == agent.id
       assert name == agent.name
       assert meta["page"] == 1
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
 
     test "returns empty list when no agents", %{conn: conn} do
       conn = get(conn, ~p"/api/v1/agents")
-      assert %{"data" => [], "meta" => %{"total_entries" => 0}} = json_response(conn, 200)
+      assert %{"items" => [], "meta" => %{"total_entries" => 0}} = json_response(conn, 200)
     end
 
     test "returns 401 without token" do
@@ -85,7 +85,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
     } do
       agent = agent_fixture(scope, ws.id, provider.id)
       conn = get(conn, ~p"/api/v1/agents/#{agent.id}")
-      assert %{"data" => data} = json_response(conn, 200)
+      data = json_response(conn, 200)
       assert data["id"] == agent.id
       assert data["type"] == "local"
       assert data["local_agent"]["model"] == "test-model"
@@ -102,15 +102,15 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
         "provider_id" => provider.id
       }
 
-      conn = post(conn, ~p"/api/v1/agents", agent: attrs)
-      assert %{"data" => data} = json_response(conn, 201)
+      conn = post(conn, ~p"/api/v1/agents", attrs)
+      data = json_response(conn, 201)
       assert data["name"] == "New Agent"
       assert data["type"] == "local"
       assert data["local_agent"]["model"] == "test-model"
     end
 
     test "returns 422 with invalid attrs", %{conn: conn} do
-      conn = post(conn, ~p"/api/v1/agents", agent: %{"name" => ""})
+      conn = post(conn, ~p"/api/v1/agents", %{"name" => ""})
       assert json_response(conn, 422)["error"]["code"] == "validation_error"
     end
   end
@@ -118,8 +118,8 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
   describe "update" do
     test "updates agent name", %{conn: conn, scope: scope, workspace: ws, provider: provider} do
       agent = agent_fixture(scope, ws.id, provider.id)
-      conn = patch(conn, ~p"/api/v1/agents/#{agent.id}", agent: %{"name" => "Updated"})
-      assert %{"data" => %{"name" => "Updated"}} = json_response(conn, 200)
+      conn = patch(conn, ~p"/api/v1/agents/#{agent.id}", %{"name" => "Updated"})
+      assert %{"name" => "Updated"} = json_response(conn, 200)
     end
   end
 

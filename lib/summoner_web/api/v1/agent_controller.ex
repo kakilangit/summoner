@@ -33,7 +33,7 @@ defmodule SummonerWeb.API.V1.AgentController do
     summary: "Get agent",
     parameters: [id: [in: :path, type: :string, required: true]],
     responses: [
-      ok: {"Agent", "application/json", Schemas.AgentResponse},
+      ok: {"Agent", "application/json", Schemas.Agent},
       not_found: {"Not found", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -41,7 +41,7 @@ defmodule SummonerWeb.API.V1.AgentController do
     summary: "Create agent",
     request_body: {"Agent params", "application/json", Schemas.AgentParams},
     responses: [
-      created: {"Agent", "application/json", Schemas.AgentResponse},
+      created: {"Agent", "application/json", Schemas.Agent},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -50,7 +50,7 @@ defmodule SummonerWeb.API.V1.AgentController do
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"Agent params", "application/json", Schemas.AgentParams},
     responses: [
-      ok: {"Agent", "application/json", Schemas.AgentResponse},
+      ok: {"Agent", "application/json", Schemas.Agent},
       unprocessable_entity: {"Validation error", "application/json", Schemas.ErrorResponse}
     ]
 
@@ -85,7 +85,7 @@ defmodule SummonerWeb.API.V1.AgentController do
     render(conn, :show, agent: agent)
   end
 
-  def create(conn, %{"agent" => attrs}) do
+  def create(conn, attrs) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     attrs = Map.put(attrs, "workspace_id", workspace_id)
@@ -109,10 +109,11 @@ defmodule SummonerWeb.API.V1.AgentController do
     end
   end
 
-  def update(conn, %{"id" => id, "agent" => attrs}) do
+  def update(conn, %{"id" => id} = params) do
     scope = conn.assigns.current_scope
     workspace_id = conn.assigns.current_workspace_id
     agent = Agents.get_agent!(scope, workspace_id, id)
+    attrs = Map.drop(params, ["id"])
 
     with {:ok, agent} <- Agents.update_agent(scope, agent, attrs) do
       agent = Agents.preload_agent(agent)

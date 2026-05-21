@@ -39,7 +39,7 @@ defmodule SummonerWeb.API.V1.AdminController do
     parameters: [id: [in: :path, type: :string, required: true]],
     request_body: {"User update params", "application/json", Schemas.UserUpdateParams},
     responses: [
-      ok: {"User", "application/json", Schemas.UserResponse},
+      ok: {"User", "application/json", Schemas.User},
       forbidden: {"Forbidden", "application/json", Schemas.ErrorResponse},
       bad_request: {"Bad request", "application/json", Schemas.ErrorResponse}
     ]
@@ -54,7 +54,11 @@ defmodule SummonerWeb.API.V1.AdminController do
 
   operation :stats,
     summary: "Get system stats",
-    responses: [ok: {"Stats", "application/json", Schemas.StatsResponse}]
+    responses: [
+      ok:
+        {"Stats", "application/json",
+         %OpenApiSpex.Schema{type: :object, additionalProperties: true}}
+    ]
 
   # Tenants
 

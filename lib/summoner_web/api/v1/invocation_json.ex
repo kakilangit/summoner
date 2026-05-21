@@ -5,32 +5,30 @@ defmodule SummonerWeb.API.V1.InvocationJSON do
 
   def invocation(%{invocation: inv, messages: messages}) do
     %{
-      data: %{
-        invocation_id: inv.id,
-        status: inv.status,
-        end_reason: inv.end_reason,
-        output: inv.output,
-        agent_id: inv.agent_id,
-        conversation_id: inv.conversation_id,
-        started_at: inv.started_at,
-        completed_at: inv.completed_at,
-        provider_name: inv.provider_name,
-        model_name: inv.model_name,
-        messages: Enum.map(messages, &message_data/1)
-      }
+      invocation_id: inv.id,
+      status: inv.status,
+      end_reason: inv.end_reason,
+      output: inv.output,
+      agent_id: inv.agent_id,
+      conversation_id: inv.conversation_id,
+      started_at: inv.started_at,
+      completed_at: inv.completed_at,
+      provider_name: inv.provider_name,
+      model_name: inv.model_name,
+      messages: Enum.map(messages, &message_data/1)
     }
   end
 
   def show(%{invocation: inv}) do
-    %{data: invocation_data(inv)}
+    invocation_data(inv)
   end
 
   def steps(%{page: page}) do
-    %{data: Enum.map(page.entries, &step_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &step_data/1), meta: page_meta(page)}
   end
 
   def events(%{page: page}) do
-    %{data: Enum.map(page.entries, &event_data/1), meta: page_meta(page)}
+    %{items: Enum.map(page.entries, &event_data/1), meta: page_meta(page)}
   end
 
   defp invocation_data(inv) do

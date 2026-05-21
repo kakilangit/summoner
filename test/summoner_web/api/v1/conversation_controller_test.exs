@@ -27,7 +27,7 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
     test "lists conversations", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       conv = conversation_fixture(scope, ws.id, agent.id)
       conn = get(conn, ~p"/api/v1/conversations")
-      assert %{"data" => [%{"id" => id}]} = json_response(conn, 200)
+      assert %{"items" => [%{"id" => id}]} = json_response(conn, 200)
       assert id == conv.id
     end
   end
@@ -36,7 +36,7 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
     test "returns conversation", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       conv = conversation_fixture(scope, ws.id, agent.id)
       conn = get(conn, ~p"/api/v1/conversations/#{conv.id}")
-      assert %{"data" => %{"id" => id, "kind" => "chat"}} = json_response(conn, 200)
+      assert %{"id" => id, "kind" => "chat"} = json_response(conn, 200)
       assert id == conv.id
     end
   end
@@ -44,8 +44,8 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
   describe "create" do
     test "creates conversation", %{conn: conn, agent: agent} do
       attrs = %{"title" => "Test Chat", "primary_agent_id" => agent.id}
-      conn = post(conn, ~p"/api/v1/conversations", conversation: attrs)
-      assert %{"data" => %{"title" => "Test Chat"}} = json_response(conn, 201)
+      conn = post(conn, ~p"/api/v1/conversations", attrs)
+      assert %{"title" => "Test Chat"} = json_response(conn, 201)
     end
   end
 
@@ -66,7 +66,7 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
     } do
       conv = conversation_fixture(scope, ws.id, agent.id)
       conn = get(conn, ~p"/api/v1/conversations/#{conv.id}/messages")
-      assert %{"data" => messages} = json_response(conn, 200)
+      assert %{"items" => messages} = json_response(conn, 200)
       assert is_list(messages)
     end
   end
