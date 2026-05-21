@@ -17,7 +17,9 @@ defmodule Docs.Generator do
     {"06-themes.md", "Themes"},
     {"07-a2a.md", "A2A"},
     {"08-api.md", "API & Webhooks"},
-    {"09-failover.md", "Failover"}
+    {"09-failover.md", "Failover"},
+    {"10-artifacts.md", "Artifacts"},
+    {"11-approvals.md", "Approvals"}
   ]
 
   def run do
