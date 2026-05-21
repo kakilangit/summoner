@@ -430,7 +430,7 @@ defmodule SummonerWeb.AgentLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-lg mx-auto space-y-6">
+    <div class="max-w-2xl mx-auto space-y-6">
       <h1 class="text-2xl font-bold">{@title}</h1>
 
       <.form for={@form} id="agent-form" phx-change="validate" phx-submit="save" class="space-y-4">
@@ -519,34 +519,35 @@ defmodule SummonerWeb.AgentLive.Form do
               Media generation provider for image generation. Leave as workspace default unless this summon needs a specific provider.
             </p>
             <.input field={@form[:max_steps]} type="number" label="Max Steps" min="1" />
-            <.input
-              field={@form[:max_concurrent_invocations]}
-              type="number"
-              label="Max Concurrent Invocations"
-              min="1"
-            />
-            <.input
-              field={@form[:max_delegation_concurrency]}
-              type="number"
-              label="Max Delegation Concurrency"
-              min="1"
-            />
-            <.input
-              field={@form[:max_tool_concurrency]}
-              type="number"
-              label="Max Tool Concurrency"
-              placeholder="Inherits workspace default"
-              min="1"
-            />
-            <p class="text-xs text-base-content/50 -mt-2">
-              Maximum parallel tool executions per step. Leave blank to use the workspace default.
-            </p>
-            <.input
-              field={@form[:max_tokens_per_invocation]}
-              type="number"
-              label="Max Tokens per Invocation"
-              min="1"
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:max_concurrent_invocations]}
+                type="number"
+                label="Max Concurrent Invocations"
+                min="1"
+              />
+              <.input
+                field={@form[:max_delegation_concurrency]}
+                type="number"
+                label="Max Delegation Concurrency"
+                min="1"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:max_tool_concurrency]}
+                type="number"
+                label="Max Tool Concurrency"
+                placeholder="Inherits workspace default"
+                min="1"
+              />
+              <.input
+                field={@form[:max_tokens_per_invocation]}
+                type="number"
+                label="Max Tokens per Invocation"
+                min="1"
+              />
+            </div>
             <.input
               field={@form[:context_length]}
               type="number"
@@ -557,39 +558,50 @@ defmodule SummonerWeb.AgentLive.Form do
               The model's context window size in tokens.
               For local providers this sets num_ctx / n_ctx. Leave blank for default (131072).
             </p>
-            <.input
-              field={@form[:step_timeout_s]}
-              type="number"
-              label="Step Timeout (seconds)"
-              min="1"
-              max="600"
-            />
-            <.input
-              field={@form[:total_timeout_s]}
-              type="number"
-              label="Total Timeout (seconds)"
-              min="1"
-              max="3600"
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:step_timeout_s]}
+                type="number"
+                label="Step Timeout (seconds)"
+                min="1"
+                max="600"
+              />
+              <.input
+                field={@form[:total_timeout_s]}
+                type="number"
+                label="Total Timeout (seconds)"
+                min="1"
+                max="3600"
+              />
+            </div>
             <.input
               field={@form[:stream_tokens_to_observability]}
               type="checkbox"
               label="Stream tokens to observability"
             />
             <div class="divider text-xs text-base-content/40">Failover</div>
-            <.input
-              field={@form[:failover_strategy]}
-              type="select"
-              label="Failover Strategy"
-              options={[
-                {"Auto", "auto"},
-                {"Manual", "manual"},
-                {"Notify then Auto", "notify_then_auto"}
-              ]}
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:failover_strategy]}
+                type="select"
+                label="Failover Strategy"
+                options={[
+                  {"Auto", "auto"},
+                  {"Manual", "manual"},
+                  {"Notify then Auto", "notify_then_auto"}
+                ]}
+              />
+              <.input
+                field={@form[:max_failover_depth]}
+                type="number"
+                label="Max Failover Depth"
+                min="1"
+                max="10"
+              />
+            </div>
             <p class="text-xs text-base-content/50 -mt-2">
               Auto: immediately switch to backup. Manual: pause and wait for approval.
-              Notify then Auto: notify, wait delay, then switch.
+              Notify then Auto: notify, wait delay, then switch. Depth: max backups to try (default 3).
             </p>
             <.input
               :if={
@@ -602,16 +614,6 @@ defmodule SummonerWeb.AgentLive.Form do
               min="0"
               max="300000"
             />
-            <.input
-              field={@form[:max_failover_depth]}
-              type="number"
-              label="Max Failover Depth"
-              min="1"
-              max="10"
-            />
-            <p class="text-xs text-base-content/50 -mt-2">
-              Maximum number of backup agents to try before giving up (default 3).
-            </p>
           </div>
         </div>
 
