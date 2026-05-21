@@ -1,6 +1,7 @@
 defmodule SummonerWeb.AgentLive.Form do
   use SummonerWeb, :live_view
 
+  alias Summoner.Domain.Policies.Failover, as: FailoverPolicy
   alias Summoner.Domain.Policies.WorkspacePolicy
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Domain.Schemas.LocalAgent
@@ -95,6 +96,7 @@ defmodule SummonerWeb.AgentLive.Form do
           advanced_open: false
         )
         |> assign(breadcrumbs: breadcrumbs)
+        |> assign_failover_chain(agent, scope, workspace.id)
         |> maybe_load_models_async(scope, providers, initial_provider_id)
 
       {:ok, socket}
@@ -150,6 +152,52 @@ defmodule SummonerWeb.AgentLive.Form do
       update_agent(socket, params)
     else
       create_agent(socket, params)
+    end
+  end
+
+  @impl true
+  def handle_event("add_failover", %{"backup_agent_id" => ""}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("add_failover", %{"backup_agent_id" => backup_id}, socket) do
+    agent = socket.assigns.agent
+
+    case Agents.add_failover_entry(agent.id, backup_id) do
+      {:ok, _entry} ->
+        {:noreply, reload_failover_chain(socket)}
+
+      {:error, :chain_limit_reached} ->
+        {:noreply, put_flash(socket, :error, "Failover chain limit reached (max 10).")}
+
+      {:error, %Ecto.Changeset{} = cs} ->
+        msg = changeset_error_message(cs)
+        {:noreply, put_flash(socket, :error, "Could not add backup: #{msg}")}
+    end
+  end
+
+  @impl true
+  def handle_event("remove_failover", %{"id" => entry_id}, socket) do
+    case Agents.remove_failover_entry(entry_id) do
+      :ok ->
+        {:noreply,
+         socket |> reload_failover_chain() |> put_flash(:info, "Backup removed from chain.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not remove backup.")}
+    end
+  end
+
+  @impl true
+  def handle_event("reorder_failover", %{"ids" => ids}, socket) when is_list(ids) do
+    agent = socket.assigns.agent
+
+    case Agents.reorder_failover_chain(agent.id, ids) do
+      :ok ->
+        {:noreply, reload_failover_chain(socket)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not reorder chain.")}
     end
   end
 
@@ -281,6 +329,43 @@ defmodule SummonerWeb.AgentLive.Form do
     end
   end
 
+  defp assign_failover_chain(socket, agent, scope, workspace_id) do
+    if agent.id do
+      chain = Agents.list_failover_chain(agent.id)
+      chain_ids = MapSet.new(chain, & &1.backup_agent_id)
+
+      get_chain_fn = fn id -> Agents.list_failover_chain(id) end
+
+      backup_options =
+        Agents.list_agents(scope, workspace_id)
+        |> Enum.reject(fn a ->
+          a.id == agent.id || a.deleted_at || MapSet.member?(chain_ids, a.id) ||
+            FailoverPolicy.creates_cycle?(agent.id, a.id, get_chain_fn)
+        end)
+        |> Enum.map(fn a -> {"@#{a.callname || a.name}", a.id} end)
+
+      assign(socket, failover_chain: chain, backup_options: backup_options)
+    else
+      assign(socket, failover_chain: [], backup_options: [])
+    end
+  end
+
+  defp reload_failover_chain(socket) do
+    agent = socket.assigns.agent
+    scope = socket.assigns.current_scope
+    workspace_id = socket.assigns.workspace.id
+    assign_failover_chain(socket, agent, scope, workspace_id)
+  end
+
+  defp changeset_error_message(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+    |> Enum.map_join(", ", fn {field, errors} -> "#{field} #{Enum.join(errors, ", ")}" end)
+  end
+
   # ---------------------------------------------------------------
   # Flat (schemaless) changeset for combined agent + local_agent form
   # ---------------------------------------------------------------
@@ -302,7 +387,10 @@ defmodule SummonerWeb.AgentLive.Form do
     step_timeout_s: :integer,
     total_timeout_s: :integer,
     stream_tokens_to_observability: :boolean,
-    max_tool_concurrency: :integer
+    max_tool_concurrency: :integer,
+    failover_strategy: :string,
+    failover_delay_ms: :integer,
+    max_failover_depth: :integer
   }
 
   defp flat_changeset(data, params) do
@@ -488,6 +576,42 @@ defmodule SummonerWeb.AgentLive.Form do
               type="checkbox"
               label="Stream tokens to observability"
             />
+            <div class="divider text-xs text-base-content/40">Failover</div>
+            <.input
+              field={@form[:failover_strategy]}
+              type="select"
+              label="Failover Strategy"
+              options={[
+                {"Auto", "auto"},
+                {"Manual", "manual"},
+                {"Notify then Auto", "notify_then_auto"}
+              ]}
+            />
+            <p class="text-xs text-base-content/50 -mt-2">
+              Auto: immediately switch to backup. Manual: pause and wait for approval.
+              Notify then Auto: notify, wait delay, then switch.
+            </p>
+            <.input
+              :if={
+                to_string(Ecto.Changeset.get_field(@form.source, :failover_strategy)) ==
+                  "notify_then_auto"
+              }
+              field={@form[:failover_delay_ms]}
+              type="number"
+              label="Failover Delay (ms)"
+              min="0"
+              max="300000"
+            />
+            <.input
+              field={@form[:max_failover_depth]}
+              type="number"
+              label="Max Failover Depth"
+              min="1"
+              max="10"
+            />
+            <p class="text-xs text-base-content/50 -mt-2">
+              Maximum number of backup agents to try before giving up (default 3).
+            </p>
           </div>
         </div>
 
@@ -503,6 +627,81 @@ defmodule SummonerWeb.AgentLive.Form do
           </.button>
         </div>
       </.form>
+
+      <%!-- Failover chain management (only when editing) --%>
+      <div :if={@editing} class="space-y-4">
+        <h2 class="text-lg font-semibold">Failover Chain</h2>
+        <p class="text-sm text-base-content/60">
+          Backup summons are tried in order when the primary fails with a provider error.
+        </p>
+
+        <div :if={@failover_chain == []} class="text-sm text-base-content/60">
+          No backups configured. Add summons to the failover chain.
+        </div>
+
+        <div
+          class="space-y-2"
+          id="failover-chain-list"
+          phx-hook="Sortable"
+          data-sortable-event="reorder_failover"
+        >
+          <div
+            :for={entry <- @failover_chain}
+            data-sortable-id={entry.id}
+            draggable="true"
+            class="flex items-center justify-between p-3 bg-base-200 rounded-lg cursor-grab active:cursor-grabbing"
+          >
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <span class="hero-bars-3 size-5 text-base-content/30 flex-shrink-0"></span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-ghost badge-sm font-mono">{entry.position}</span>
+                  <.link
+                    navigate={
+                      ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{entry.backup_agent_id}"
+                    }
+                    class="font-medium link link-hover truncate"
+                  >
+                    {entry.backup_agent.name}
+                  </.link>
+                </div>
+                <div
+                  :if={entry.backup_agent.local_agent}
+                  class="text-sm text-base-content/60 truncate"
+                >
+                  {entry.backup_agent.local_agent.model}
+                </div>
+              </div>
+            </div>
+            <button
+              phx-click={show_confirm("#remove-failover-#{entry.id}")}
+              class="btn btn-error btn-xs btn-outline"
+            >
+              Remove
+            </button>
+            <.confirm_modal
+              id={"remove-failover-#{entry.id}"}
+              title="Remove backup?"
+              message={"Remove #{entry.backup_agent.name} from the failover chain?"}
+              confirm_text="Remove"
+              on_confirm={JS.push("remove_failover", value: %{id: entry.id})}
+            />
+          </div>
+        </div>
+
+        <form phx-submit="add_failover" class="flex items-end gap-2">
+          <div class="form-control flex-1">
+            <label class="label">
+              <span class="label-text">Add Backup Summon</span>
+            </label>
+            <select name="backup_agent_id" class="select select-bordered select-sm w-full">
+              <option value="">Select a summon</option>
+              {Phoenix.HTML.Form.options_for_select(@backup_options, nil)}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Add</button>
+        </form>
+      </div>
     </div>
     """
   end
