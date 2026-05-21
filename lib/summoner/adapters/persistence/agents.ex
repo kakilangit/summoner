@@ -141,6 +141,20 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   @doc """
+  Finds an agent by callname within a workspace. Returns nil if not found.
+  """
+  def get_agent_by_callname(%{user: _user}, workspace_id, callname) do
+    Agent
+    |> Workspaces.where_workspace(workspace_id)
+    |> where([a], a.callname == ^callname and is_nil(a.deleted_at))
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      agent -> preload_detail(agent)
+    end
+  end
+
+  @doc """
   Lists all active agents for a workspace.
   """
   def list_agents(%{user: _user}, workspace_id) do

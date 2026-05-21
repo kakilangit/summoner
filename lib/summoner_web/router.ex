@@ -215,6 +215,13 @@ defmodule SummonerWeb.Router do
     end
   end
 
+  # OpenAI-compatible API — token-authenticated
+  scope "/v1", SummonerWeb.OpenAI do
+    pipe_through [:api]
+
+    post "/chat/completions", ChatCompletionsController, :create
+  end
+
   scope "/agents" do
     pipe_through :api
 
