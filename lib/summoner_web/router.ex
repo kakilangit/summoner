@@ -141,6 +141,11 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/secrets/:id/edit", SecretLive.Form, :edit
       live "/workspaces/:workspace_id/artifacts", ArtifactLive.Index, :index
       live "/workspaces/:workspace_id/artifacts/:id", ArtifactLive.Show, :show
+      live "/workspaces/:workspace_id/approval-rules", ApprovalLive.Index, :index
+      live "/workspaces/:workspace_id/approval-rules/new", ApprovalLive.Form, :new
+      live "/workspaces/:workspace_id/approval-rules/:id/edit", ApprovalLive.Form, :edit
+      live "/workspaces/:workspace_id/pending-approvals", ApprovalLive.Pending, :index
+      live "/workspaces/:workspace_id/pending-approvals/:id", ApprovalLive.Show, :show
       live "/workspaces/:workspace_id/skills", SkillLive.Index, :index
       live "/workspaces/:workspace_id/skills/new", SkillLive.Form, :new
       live "/workspaces/:workspace_id/skills/:id/edit", SkillLive.Form, :edit
