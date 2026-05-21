@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-05-22
+
+### Added
+
+- **Backup Agents / Failover (Plan 03)**
+  - `agent_failover_chain` join table with ordered positions for failover chains
+  - `FailoverPolicy` — pure policy: eligible error detection, cycle validation, chain walking
+  - `AgentFailover` service — resolves backup agent from chain, skips deleted, respects max depth
+  - ReactLoop integration — `maybe_failover_or_finish` transparently retries on eligible errors
+  - Failover metadata on invocations: `failover_from_agent_id`, `failover_reason`, `failover_depth`
+  - UI: drag-and-drop failover chain management on agent edit page
+  - UI: failover chain display on agent show page with clickable links and model info
+  - UI: failover alerts in conversation, swarm session, and pipeline run views
+  - UI: failover chain indicator badges on agent cards in index page
+  - Failover stats (count, last event) on agent show page
+
+- **OpenAI-Compatible API (Plan 04)**
+  - `POST /v1/chat/completions` — non-streaming completions via `summoner:<callname>` model format
+  - SSE streaming with `stream: true` — PubSub-driven OpenAI chunk format
+  - Raw model access via `summoner:raw:<provider>/<model>` — direct Gateway inference
+  - `GET /v1/models` — lists all agents and cached provider models in OpenAI format
+  - Tool passthrough — `tools` from OpenAI request passed to Arcanum Intent
+  - Multi-turn conversations via `X-Conversation-Id` header
+  - `OpenAICompat` policy — pure formatting: `parse_model`, `extract_input`, `format_completion`, `format_chunk`, `format_error`
+  - 19 unit tests for OpenAI formatter
+
+### Changed
+
+- Agent show page refactored to view-only (herald toggle, access_mode moved to edit form)
+- Agent edit form widened to `max-w-2xl` with 2-column grid layouts
+- Removed `max-w-*` constraints from all 23 LiveView pages for consistent full-width layout
+- Sortable hook made configurable via `data-sortable-event` attribute
+
 ## [0.1.5] - 2026-05-21
 
 ### Added
