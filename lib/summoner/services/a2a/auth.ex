@@ -21,7 +21,10 @@ defmodule Summoner.Services.A2A.Auth do
     a2a_server = conn.private[:a2a_server]
 
     if a2a_server do
-      case AccessTokens.verify_token(a2a_server.workspace_id, credential, "a2a") do
+      case AccessTokens.verify_token(credential,
+             scope: "a2a",
+             workspace_id: a2a_server.workspace_id
+           ) do
         {:ok, token} ->
           {:ok,
            %{

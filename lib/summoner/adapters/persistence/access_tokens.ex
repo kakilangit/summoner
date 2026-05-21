@@ -72,37 +72,31 @@ defmodule Summoner.Adapters.Persistence.AccessTokens do
   end
 
   @doc """
-  Verifies a plaintext token against stored hashes for a workspace.
+  Verifies a plaintext token.
 
-  Returns `{:ok, %AccessToken{}}` if valid, `{:error, :invalid}` otherwise.
-  Also increments request_count and updates last_used_at.
-  """
-  @impl true
-  def verify_token(workspace_id, plaintext) do
-    tokens = load_active_tokens(workspace_id)
+  ## Options
 
-    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
-      nil ->
-        Bcrypt.no_user_verify()
-        {:error, :invalid}
+  - `:scope` — required scope the token must have (e.g. `"api"`)
+  - `:workspace_id` — scope lookup to a specific workspace
 
-      %AccessToken{} = token ->
-        record_token_usage(token)
-        {:ok, token}
-    end
-  end
+  ## Examples
 
-  @doc """
-  Verifies a plaintext token with scope checking.
+      verify_token(plaintext, scope: "api")
+      verify_token(plaintext, scope: "a2a", workspace_id: ws_id)
+      verify_token(plaintext, [])
 
-  Returns:
-  - `{:ok, %AccessToken{}}` if valid and has required scope
-  - `{:error, :invalid}` if token doesn't match
-  - `{:error, :wrong_scope}` if token is valid but lacks required scope
+  ## Returns
+
+  - `{:ok, %AccessToken{}}` on success
+  - `{:error, :invalid}` if no matching token
   - `{:error, :expired}` if token is expired
+  - `{:error, :wrong_scope}` if token lacks required scope
   """
   @impl true
-  def verify_token(workspace_id, plaintext, required_scope) do
+  def verify_token(plaintext, opts) do
+    workspace_id = Keyword.get(opts, :workspace_id)
+    required_scope = Keyword.get(opts, :scope)
+
     tokens = load_active_tokens(workspace_id)
 
     case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
@@ -111,75 +105,38 @@ defmodule Summoner.Adapters.Persistence.AccessTokens do
         {:error, :invalid}
 
       %AccessToken{} = token ->
-        cond do
-          not AccessToken.active?(token) ->
-            {:error, :expired}
-
-          not AccessToken.has_scope?(token, required_scope) ->
-            {:error, :wrong_scope}
-
-          true ->
-            record_token_usage(token)
-            {:ok, token}
-        end
+        validate_and_record(token, required_scope)
     end
   end
 
-  @doc """
-  Verifies a plaintext token globally (no workspace filter).
-  Used by API endpoints where workspace is derived from the token.
-  """
-  @impl true
-  def verify_token_global(plaintext) do
-    tokens = load_all_active_tokens()
+  defp validate_and_record(token, nil) do
+    record_token_usage(token)
+    {:ok, token}
+  end
 
-    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
-      nil ->
-        Bcrypt.no_user_verify()
-        {:error, :invalid}
+  defp validate_and_record(token, required_scope) do
+    cond do
+      not AccessToken.active?(token) ->
+        {:error, :expired}
 
-      %AccessToken{} = token ->
+      not AccessToken.has_scope?(token, required_scope) ->
+        {:error, :wrong_scope}
+
+      true ->
         record_token_usage(token)
         {:ok, token}
     end
   end
 
-  @doc """
-  Verifies a plaintext token globally with scope checking.
-  """
-  @impl true
-  def verify_token_global(plaintext, required_scope) do
-    tokens = load_all_active_tokens()
-
-    case Enum.find(tokens, fn t -> Bcrypt.verify_pass(plaintext, t.token_hash) end) do
-      nil ->
-        Bcrypt.no_user_verify()
-        {:error, :invalid}
-
-      %AccessToken{} = token ->
-        cond do
-          not AccessToken.active?(token) ->
-            {:error, :expired}
-
-          not AccessToken.has_scope?(token, required_scope) ->
-            {:error, :wrong_scope}
-
-          true ->
-            record_token_usage(token)
-            {:ok, token}
-        end
-    end
+  defp load_active_tokens(nil) do
+    AccessToken
+    |> where([t], is_nil(t.revoked_at))
+    |> Repo.all()
   end
 
   defp load_active_tokens(workspace_id) do
     AccessToken
     |> where(workspace_id: ^workspace_id)
-    |> where([t], is_nil(t.revoked_at))
-    |> Repo.all()
-  end
-
-  defp load_all_active_tokens do
-    AccessToken
     |> where([t], is_nil(t.revoked_at))
     |> Repo.all()
   end

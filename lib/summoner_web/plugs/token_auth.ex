@@ -30,7 +30,7 @@ defmodule SummonerWeb.Plugs.TokenAuth do
     required_scope = Keyword.get(opts, :required_scope, "api")
 
     with {:ok, token_string} <- extract_bearer_token(conn),
-         {:ok, token} <- AccessTokens.verify_token_global(token_string, required_scope) do
+         {:ok, token} <- AccessTokens.verify_token(token_string, scope: required_scope) do
       conn
       |> assign(:current_token, token)
       |> assign(:current_workspace_id, token.workspace_id)

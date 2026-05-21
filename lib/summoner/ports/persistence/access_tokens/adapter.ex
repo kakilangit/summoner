@@ -1,5 +1,15 @@
 defmodule Summoner.Ports.Persistence.AccessTokens.Adapter do
-  @moduledoc "Behaviour for access token persistence operations."
+  @moduledoc """
+  Behaviour for access token persistence operations.
+
+  ## verify_token/2
+
+  Single polymorphic verification function using keyword opts:
+
+      verify_token(plaintext, scope: "api")                        # global
+      verify_token(plaintext, scope: "api", workspace_id: ws_id)   # workspace-scoped
+      verify_token(plaintext, [])                                  # global, no scope check
+  """
 
   @callback list_tokens(String.t()) :: [struct()]
   @callback list_tokens(String.t(), keyword()) :: [struct()]
@@ -7,10 +17,6 @@ defmodule Summoner.Ports.Persistence.AccessTokens.Adapter do
   @callback create_token(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback update_token(struct(), map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback revoke_token(struct()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
-  @callback verify_token(String.t(), String.t()) :: {:ok, struct()} | {:error, :invalid}
-  @callback verify_token(String.t(), String.t(), String.t()) ::
-              {:ok, struct()} | {:error, :invalid | :wrong_scope | :expired}
-  @callback verify_token_global(String.t()) :: {:ok, struct()} | {:error, :invalid}
-  @callback verify_token_global(String.t(), String.t()) ::
+  @callback verify_token(String.t(), keyword()) ::
               {:ok, struct()} | {:error, :invalid | :wrong_scope | :expired}
 end

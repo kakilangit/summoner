@@ -193,16 +193,16 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
     end
   end
 
-  describe "verify_token/2" do
+  describe "verify_token/2 (workspace-scoped, no scope check)" do
     test "verifies valid plaintext token", %{workspace: workspace} do
       token = access_token_fixture(workspace.id)
-      {:ok, verified} = AccessTokens.verify_token(workspace.id, token.token)
+      {:ok, verified} = AccessTokens.verify_token(token.token, workspace_id: workspace.id)
       assert verified.id == token.id
     end
 
     test "increments request_count on verify", %{workspace: workspace} do
       token = access_token_fixture(workspace.id)
-      {:ok, _} = AccessTokens.verify_token(workspace.id, token.token)
+      {:ok, _} = AccessTokens.verify_token(token.token, workspace_id: workspace.id)
 
       refreshed = AccessTokens.get_token!(workspace.id, token.id)
       assert refreshed.request_count == 1
@@ -210,38 +210,48 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
 
     test "returns error for invalid plaintext", %{workspace: workspace} do
       _token = access_token_fixture(workspace.id)
-      assert {:error, :invalid} = AccessTokens.verify_token(workspace.id, "shk_bogus")
+
+      assert {:error, :invalid} =
+               AccessTokens.verify_token("shk_bogus", workspace_id: workspace.id)
     end
 
     test "returns error for revoked token", %{workspace: workspace} do
       token = access_token_fixture(workspace.id)
       {:ok, _} = AccessTokens.revoke_token(token)
-      assert {:error, :invalid} = AccessTokens.verify_token(workspace.id, token.token)
+
+      assert {:error, :invalid} =
+               AccessTokens.verify_token(token.token, workspace_id: workspace.id)
     end
   end
 
-  describe "verify_token/3" do
+  describe "verify_token/2 (workspace-scoped, with scope)" do
     test "verifies with matching scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["api"]})
-      {:ok, verified} = AccessTokens.verify_token(workspace.id, token.token, "api")
+
+      {:ok, verified} =
+        AccessTokens.verify_token(token.token, scope: "api", workspace_id: workspace.id)
+
       assert verified.id == token.id
     end
 
     test "returns :wrong_scope for mismatched scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["api"]})
-      assert {:error, :wrong_scope} = AccessTokens.verify_token(workspace.id, token.token, "a2a")
+
+      assert {:error, :wrong_scope} =
+               AccessTokens.verify_token(token.token, scope: "a2a", workspace_id: workspace.id)
     end
 
     test "returns :ok when token has all scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["all"]})
-      {:ok, verified} = AccessTokens.verify_token(workspace.id, token.token, "webhook")
+
+      {:ok, verified} =
+        AccessTokens.verify_token(token.token, scope: "webhook", workspace_id: workspace.id)
+
       assert verified.id == token.id
     end
 
     test "returns :expired for expired token", %{workspace: workspace} do
       token = access_token_fixture(workspace.id)
-
-      # Directly set expires_at in the past via Repo
       expired_at = DateTime.add(DateTime.utc_now(), -3600, :second)
 
       Repo.update_all(
@@ -250,38 +260,38 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
       )
 
       assert {:error, :expired} =
-               AccessTokens.verify_token(workspace.id, token.token, "api")
+               AccessTokens.verify_token(token.token, scope: "api", workspace_id: workspace.id)
     end
   end
 
-  describe "verify_token_global/1" do
+  describe "verify_token/2 (global, no scope check)" do
     test "verifies valid plaintext without workspace", %{workspace: workspace} do
       token = access_token_fixture(workspace.id)
-      assert {:ok, verified} = AccessTokens.verify_token_global(token.token)
+      assert {:ok, verified} = AccessTokens.verify_token(token.token, [])
       assert verified.id == token.id
       assert verified.workspace_id == workspace.id
     end
 
     test "returns error for invalid plaintext" do
-      assert {:error, :invalid} = AccessTokens.verify_token_global("shk_bogus")
+      assert {:error, :invalid} = AccessTokens.verify_token("shk_bogus", [])
     end
   end
 
-  describe "verify_token_global/2" do
+  describe "verify_token/2 (global, with scope)" do
     test "verifies with matching scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["api"]})
-      assert {:ok, verified} = AccessTokens.verify_token_global(token.token, "api")
+      assert {:ok, verified} = AccessTokens.verify_token(token.token, scope: "api")
       assert verified.id == token.id
     end
 
     test "returns :wrong_scope for mismatched scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["api"]})
-      assert {:error, :wrong_scope} = AccessTokens.verify_token_global(token.token, "a2a")
+      assert {:error, :wrong_scope} = AccessTokens.verify_token(token.token, scope: "a2a")
     end
 
     test "returns :ok when token has all scope", %{workspace: workspace} do
       token = access_token_fixture(workspace.id, %{scopes: ["all"]})
-      assert {:ok, _} = AccessTokens.verify_token_global(token.token, "webhook")
+      assert {:ok, _} = AccessTokens.verify_token(token.token, scope: "webhook")
     end
 
     test "returns :expired for expired token", %{workspace: workspace} do
@@ -293,7 +303,7 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
         set: [expires_at: expired_at]
       )
 
-      assert {:error, :expired} = AccessTokens.verify_token_global(token.token, "api")
+      assert {:error, :expired} = AccessTokens.verify_token(token.token, scope: "api")
     end
   end
 
