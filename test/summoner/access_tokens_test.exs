@@ -246,13 +246,11 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
                AccessTokens.verify_token(token.token, scope: "a2a", workspace_id: workspace.id)
     end
 
-    test "returns :ok when token has all scope", %{workspace: workspace} do
-      token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["all"]})
+    test "returns :wrong_scope when api token used for admin scope", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["api"]})
 
-      {:ok, verified} =
-        AccessTokens.verify_token(token.token, scope: "webhook", workspace_id: workspace.id)
-
-      assert verified.id == token.id
+      assert {:error, :wrong_scope} =
+               AccessTokens.verify_token(token.token, scope: "admin", workspace_id: workspace.id)
     end
 
     test "returns :expired for expired token", %{workspace: workspace} do
@@ -294,9 +292,9 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
       assert {:error, :wrong_scope} = AccessTokens.verify_token(token.token, scope: "a2a")
     end
 
-    test "returns :ok when token has all scope", %{workspace: workspace} do
-      token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["all"]})
-      assert {:ok, _} = AccessTokens.verify_token(token.token, scope: "webhook")
+    test "returns :ok when token has admin scope", %{workspace: workspace} do
+      token = access_token_fixture(workspace.id, workspace.tenant_id, %{scopes: ["admin"]})
+      assert {:ok, _} = AccessTokens.verify_token(token.token, scope: "admin")
     end
 
     test "returns :expired for expired token", %{workspace: workspace} do
@@ -337,9 +335,14 @@ defmodule Summoner.Adapters.Persistence.AccessTokensTest do
       assert AccessToken.has_scope?(token, "api")
     end
 
-    test "has_scope?/2 returns true when token has all" do
-      token = %AccessToken{scopes: ["all"]}
-      assert AccessToken.has_scope?(token, "webhook")
+    test "has_scope?/2 returns true for admin scope when present" do
+      token = %AccessToken{scopes: ["admin", "api"]}
+      assert AccessToken.has_scope?(token, "admin")
+    end
+
+    test "has_scope?/2 returns false for admin scope when absent" do
+      token = %AccessToken{scopes: ["api", "webhook"]}
+      refute AccessToken.has_scope?(token, "admin")
     end
 
     test "has_scope?/2 returns false for missing scope" do

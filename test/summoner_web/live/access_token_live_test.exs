@@ -56,14 +56,17 @@ defmodule SummonerWeb.AccessTokenLiveTest do
   describe "Show" do
     test "shows token details", %{conn: conn, workspace: ws} do
       token =
-        access_token_fixture(ws.id, ws.tenant_id, %{label: "Detail Token", scopes: ["api", "mcp"]})
+        access_token_fixture(ws.id, ws.tenant_id, %{
+          label: "Detail Token",
+          scopes: ["api", "webhook"]
+        })
 
       {:ok, _view, html} =
         live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/access-tokens/#{token.id}")
 
       assert html =~ "Detail Token"
       assert html =~ "api"
-      assert html =~ "mcp"
+      assert html =~ "webhook"
     end
 
     test "shows active status badge", %{conn: conn, workspace: ws} do

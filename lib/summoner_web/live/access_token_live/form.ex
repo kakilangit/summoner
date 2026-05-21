@@ -53,12 +53,8 @@ defmodule SummonerWeb.AccessTokenLive.Form do
     end
   end
 
-  @individual_scopes ~w(a2a api webhook openai mcp)
-
   @impl true
   def handle_event("validate", %{"token" => params}, socket) do
-    params = reconcile_scopes(params, socket.assigns.form[:scopes].value || [])
-
     changeset =
       token_changeset(socket.assigns.token, params)
       |> Map.put(:action, :validate)
@@ -68,7 +64,7 @@ defmodule SummonerWeb.AccessTokenLive.Form do
 
   @impl true
   def handle_event("save", %{"token" => params}, socket) do
-    params = clean_scopes(params)
+    params = ensure_scopes(params)
 
     if socket.assigns.editing do
       update_token(socket, params)
@@ -113,35 +109,8 @@ defmodule SummonerWeb.AccessTokenLive.Form do
     end
   end
 
-  # When "all" was just toggled on, drop individual scopes.
-  # When an individual scope was just toggled on while "all" was active, drop "all".
-  defp reconcile_scopes(%{"scopes" => new_scopes} = params, prev_scopes)
-       when is_list(new_scopes) do
-    had_all = "all" in prev_scopes
-    has_all = "all" in new_scopes
-
-    scopes =
-      cond do
-        has_all and not had_all -> ["all"]
-        had_all and Enum.any?(new_scopes, &(&1 in @individual_scopes)) -> new_scopes -- ["all"]
-        true -> new_scopes
-      end
-
-    Map.put(params, "scopes", scopes)
-  end
-
-  defp reconcile_scopes(params, _prev), do: Map.put(params, "scopes", [])
-
-  # On save: if "all" is present, store only ["all"].
-  defp clean_scopes(%{"scopes" => scopes} = params) when is_list(scopes) do
-    if "all" in scopes do
-      Map.put(params, "scopes", ["all"])
-    else
-      params
-    end
-  end
-
-  defp clean_scopes(params), do: Map.put(params, "scopes", [])
+  defp ensure_scopes(%{"scopes" => scopes} = params) when is_list(scopes), do: params
+  defp ensure_scopes(params), do: Map.put(params, "scopes", [])
 
   defp token_changeset(token, params) do
     if token.id do
@@ -186,7 +155,7 @@ defmodule SummonerWeb.AccessTokenLive.Form do
           </label>
           <div class="flex flex-wrap gap-3">
             <label
-              :for={scope <- ~w(a2a api webhook openai mcp all)}
+              :for={scope <- ~w(a2a api admin webhook)}
               class="label cursor-pointer gap-2"
             >
               <input

@@ -27,7 +27,7 @@ defmodule Summoner.Domain.Schemas.AccessToken do
   alias Summoner.Domain.Schemas.User
   alias Summoner.Domain.Schemas.Workspace
 
-  @valid_scopes ~w(a2a api webhook openai mcp all)
+  @valid_scopes ~w(a2a api admin webhook)
 
   schema "access_tokens" do
     field :label, :string
@@ -110,7 +110,7 @@ defmodule Summoner.Domain.Schemas.AccessToken do
   Returns true if the token has the given scope (or has "all").
   """
   def has_scope?(%__MODULE__{scopes: scopes}, required_scope) do
-    "all" in scopes or required_scope in scopes
+    required_scope in scopes
   end
 
   @doc """
