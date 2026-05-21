@@ -1226,4 +1226,144 @@ defmodule SummonerWeb.API.Schemas do
       }
     })
   end
+
+  # -------------------------------------------------------------------
+  # Event Rules (Omens)
+  # -------------------------------------------------------------------
+
+  defmodule EventRule do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRule",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :binary_id},
+        name: %Schema{type: :string},
+        description: %Schema{type: :string, nullable: true},
+        event_type: %Schema{type: :string},
+        conditions: %Schema{type: :object, additionalProperties: true},
+        action_type: %Schema{
+          type: :string,
+          enum: ["invoke_agent", "run_pipeline", "call_webhook", "send_notification"]
+        },
+        action_config: %Schema{type: :object, additionalProperties: true},
+        cooldown_s: %Schema{type: :integer},
+        enabled: %Schema{type: :boolean},
+        priority: %Schema{type: :integer},
+        last_fired_at: %Schema{type: :string, format: :"date-time", nullable: true},
+        fire_count: %Schema{type: :integer},
+        workspace_id: %Schema{type: :string, format: :binary_id},
+        inserted_at: %Schema{type: :string, format: :"date-time"},
+        updated_at: %Schema{type: :string, format: :"date-time"}
+      },
+      required: [:id, :name, :event_type, :action_type, :action_config]
+    })
+  end
+
+  defmodule EventRuleListResponse do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleListResponse",
+      type: :object,
+      properties: %{
+        items: %Schema{type: :array, items: EventRule},
+        meta: PaginationMeta
+      },
+      required: [:items, :meta]
+    })
+  end
+
+  defmodule EventRuleParams do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleParams",
+      type: :object,
+      properties: %{
+        name: %Schema{type: :string},
+        description: %Schema{type: :string},
+        event_type: %Schema{type: :string},
+        conditions: %Schema{type: :object, additionalProperties: true},
+        action_type: %Schema{
+          type: :string,
+          enum: ["invoke_agent", "run_pipeline", "call_webhook", "send_notification"]
+        },
+        action_config: %Schema{type: :object, additionalProperties: true},
+        cooldown_s: %Schema{type: :integer},
+        enabled: %Schema{type: :boolean},
+        priority: %Schema{type: :integer}
+      },
+      required: [:name, :event_type, :action_type, :action_config]
+    })
+  end
+
+  defmodule EventRuleTestParams do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleTestParams",
+      type: :object,
+      properties: %{
+        conditions: %Schema{type: :object, additionalProperties: true},
+        event_data: %Schema{type: :object, additionalProperties: true}
+      },
+      required: [:conditions, :event_data]
+    })
+  end
+
+  defmodule EventRuleTestResult do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleTestResult",
+      type: :object,
+      properties: %{
+        matches: %Schema{type: :boolean}
+      },
+      required: [:matches]
+    })
+  end
+
+  defmodule EventRuleExecution do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleExecution",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :binary_id},
+        status: %Schema{type: :string, enum: ["fired", "succeeded", "failed"]},
+        event_snapshot: %Schema{type: :object, additionalProperties: true},
+        action_result: %Schema{type: :object, additionalProperties: true, nullable: true},
+        latency_ms: %Schema{type: :integer, nullable: true},
+        error_reason: %Schema{type: :string, nullable: true},
+        event_rule_id: %Schema{type: :string, format: :binary_id},
+        inserted_at: %Schema{type: :string, format: :"date-time"}
+      },
+      required: [:id, :status, :event_snapshot, :event_rule_id]
+    })
+  end
+
+  defmodule EventRuleExecutionListResponse do
+    @moduledoc false
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "EventRuleExecutionListResponse",
+      type: :object,
+      properties: %{
+        items: %Schema{type: :array, items: EventRuleExecution},
+        meta: PaginationMeta
+      },
+      required: [:items, :meta]
+    })
+  end
 end

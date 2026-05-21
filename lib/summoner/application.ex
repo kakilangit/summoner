@@ -28,6 +28,7 @@ defmodule Summoner.Application do
         {Task.Supervisor, name: Summoner.TaskSupervisor},
         Summoner.Services.EventLog,
         Summoner.Services.Agents.ProcessMonitor,
+        Summoner.Adapters.Workers.EventRuleEvaluator,
         {Oban, Application.fetch_env!(:summoner, Oban)},
         Summoner.Adapters.Crypto.Vault
       ] ++

@@ -16,6 +16,7 @@ defmodule Summoner.Ports.Events.Adapter do
           | {:provider, workspace_id :: String.t(), provider_id :: String.t()}
           | {:swarm, workspace_id :: String.t(), swarm_id :: String.t()}
           | {:agent_config, agent_id :: String.t()}
+          | :global
 
   @callback publish(event :: struct()) :: :ok
   @callback subscribe(scope()) :: :ok

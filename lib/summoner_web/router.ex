@@ -202,6 +202,12 @@ defmodule SummonerWeb.Router do
 
     resources "/webhooks", WebhookController, except: [:new, :edit]
 
+    resources "/event-rules", EventRuleController, except: [:new, :edit] do
+      get "/executions", EventRuleController, :executions
+    end
+
+    post "/event-rules/test", EventRuleController, :test
+
     resources "/invocations", InvocationController, only: [:show] do
       get "/steps", InvocationController, :steps
       get "/events", InvocationController, :events
