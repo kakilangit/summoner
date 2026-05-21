@@ -22,7 +22,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
   alias Summoner.Adapters.Persistence.Workspaces
   alias Summoner.Domain.Events.InvocationStarted
   alias Summoner.Domain.Schemas.{Agent, AgentFailoverEntry, AgentLink, LocalAgent, RemoteAgent}
-  alias Summoner.Domain.Schemas.{ConversationParticipant, PipelineStage, SwarmMember}
+  alias Summoner.Domain.Schemas.{ConversationParticipant, Invocation, PipelineStage, SwarmMember}
   alias Summoner.Ports.Events
   alias Summoner.Repo
   alias Summoner.Services.A2A.ClientExecutor
@@ -314,6 +314,45 @@ defmodule Summoner.Adapters.Persistence.Agents do
       %Agent{name: name} -> name
       nil -> "unknown agent"
     end
+  end
+
+  @doc """
+  Returns failover metrics for an agent.
+
+  Counts how many times this agent triggered failover (as primary),
+  how many times it served as a backup, and the most common reasons.
+  """
+  def failover_stats(agent_id) do
+    # Times this agent triggered failover (its invocations ended with :failover)
+    triggered =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and i.end_reason == :failover)
+      |> select([i], count(i.id))
+      |> Repo.one() || 0
+
+    # Times this agent served as backup (invocations with failover_from_agent_id set)
+    served_as_backup =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and not is_nil(i.failover_from_agent_id))
+      |> select([i], count(i.id))
+      |> Repo.one() || 0
+
+    # Top failover reasons for this agent (as primary)
+    top_reasons =
+      Invocation
+      |> where([i], i.agent_id == ^agent_id and i.end_reason == :failover)
+      |> where([i], not is_nil(i.failover_reason))
+      |> group_by([i], i.failover_reason)
+      |> select([i], {i.failover_reason, count(i.id)})
+      |> order_by([i], desc: count(i.id))
+      |> limit(5)
+      |> Repo.all()
+
+    %{
+      failovers_triggered: triggered,
+      served_as_backup: served_as_backup,
+      top_reasons: top_reasons
+    }
   end
 
   # -------------------------------------------------------------------

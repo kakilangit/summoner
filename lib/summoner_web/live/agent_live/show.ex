@@ -20,11 +20,12 @@ defmodule SummonerWeb.AgentLive.Show do
        )}
     else
       usage = Ledger.usage_for_agent(agent.id)
+      failover_stats = Agents.failover_stats(agent.id)
 
       socket =
         socket
         |> assign(page_title: "#{agent.name} - #{workspace.name}")
-        |> assign(agent: agent, usage: usage)
+        |> assign(agent: agent, usage: usage, failover_stats: failover_stats)
         |> assign(
           breadcrumbs: [
             {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
@@ -189,6 +190,7 @@ defmodule SummonerWeb.AgentLive.Show do
         </div>
 
         <.usage_stats usage={@usage} />
+        <.failover_stats stats={@failover_stats} />
       </div>
     </div>
     """
@@ -286,6 +288,40 @@ defmodule SummonerWeb.AgentLive.Show do
           <div class="stat-title text-xs">Invocations</div>
           <div class="stat-value text-lg">{format_number(@usage.invocation_count)}</div>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  # -------------------------------------------------------------------
+  # Failover Stats
+  # -------------------------------------------------------------------
+
+  attr :stats, :map, required: true
+
+  defp failover_stats(%{stats: %{failovers_triggered: 0, served_as_backup: 0}} = assigns) do
+    ~H""
+  end
+
+  defp failover_stats(assigns) do
+    ~H"""
+    <div class="space-y-2">
+      <h3 class="text-sm font-medium">Failover</h3>
+      <div class="stats stats-vertical sm:stats-horizontal bg-base-200 w-full">
+        <div class="stat py-3 px-4">
+          <div class="stat-title text-xs">Triggered</div>
+          <div class="stat-value text-lg">{format_number(@stats.failovers_triggered)}</div>
+        </div>
+        <div class="stat py-3 px-4">
+          <div class="stat-title text-xs">Served as Backup</div>
+          <div class="stat-value text-lg">{format_number(@stats.served_as_backup)}</div>
+        </div>
+      </div>
+      <div :if={@stats.top_reasons != []} class="text-xs text-base-content/60">
+        <span class="font-medium">Top reasons:</span>
+        <span :for={{reason, count} <- @stats.top_reasons} class="ml-2">
+          {reason} ({count})
+        </span>
       </div>
     </div>
     """

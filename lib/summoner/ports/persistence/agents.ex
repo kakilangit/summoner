@@ -30,6 +30,7 @@ defmodule Summoner.Ports.Persistence.Agents do
   # Internal API
   defdelegate get_agent_with_provider!(agent_id), to: @adapter
   defdelegate get_agent_name(agent_id), to: @adapter
+  defdelegate failover_stats(agent_id), to: @adapter
 
   # Internal API (unscoped)
   defdelegate update_remote_agent_card(remote_agent, attrs), to: @adapter
