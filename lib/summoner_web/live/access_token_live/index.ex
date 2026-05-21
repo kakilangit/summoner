@@ -1,4 +1,4 @@
-defmodule SummonerWeb.WardLive.Index do
+defmodule SummonerWeb.AccessTokenLive.Index do
   use SummonerWeb, :live_view
 
   import SummonerWeb.AuthorizeHelper

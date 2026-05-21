@@ -144,7 +144,7 @@ defmodule SummonerWeb.Router do
       live "/realms/:workspace_id/envoys/new", A2AClientLive.Form, :new
       live "/realms/:workspace_id/envoys/:id", A2AClientLive.Show, :show
       live "/realms/:workspace_id/envoys/:id/edit", A2AClientLive.Form, :edit
-      live "/realms/:workspace_id/wards", WardLive.Index, :index
+      live "/realms/:workspace_id/wards", AccessTokenLive.Index, :index
     end
   end
 
