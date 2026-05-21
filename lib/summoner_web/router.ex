@@ -159,7 +159,10 @@ defmodule SummonerWeb.Router do
   scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
 
-    resources "/agents", AgentController, except: [:new, :edit]
+    resources "/agents", AgentController, except: [:new, :edit] do
+      post "/invoke", InvocationController, :invoke
+      post "/stream", StreamController, :stream
+    end
 
     resources "/conversations", ConversationController, only: [:index, :show, :create, :delete] do
       get "/messages", ConversationController, :messages
@@ -176,6 +179,12 @@ defmodule SummonerWeb.Router do
     resources "/mcp-servers", McpServerController, except: [:new, :edit]
     resources "/skills", SkillController, except: [:new, :edit]
     resources "/media-providers", MediaProviderController, except: [:new, :edit]
+
+    resources "/invocations", InvocationController, only: [:show] do
+      get "/steps", InvocationController, :steps
+      get "/events", InvocationController, :events
+      post "/cancel", InvocationController, :cancel
+    end
   end
 
   # A2A protocol endpoints — per-agent, no browser auth
