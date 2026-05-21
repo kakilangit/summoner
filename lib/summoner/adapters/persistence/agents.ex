@@ -304,7 +304,7 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Agent
     |> where([a], a.id == ^agent_id and is_nil(a.deleted_at))
     |> Repo.one!()
-    |> Repo.preload(local_agent: [provider: :api_key_secret])
+    |> Repo.preload([:failover_chain, local_agent: [provider: :api_key_secret]])
   end
 
   # -------------------------------------------------------------------
@@ -592,9 +592,9 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   # Fields that belong to the agent base table
-  @agent_fields ~w(name callname type role workspace_id)a
-  @agent_string_fields ~w(name callname type role workspace_id)
+  @agent_fields ~w(name callname type role workspace_id failover_strategy failover_delay_ms max_failover_depth)a
 
+  @agent_string_fields ~w(name callname type role workspace_id failover_strategy failover_delay_ms max_failover_depth)
   defp split_attrs(attrs) when is_map(attrs) do
     {agent, local} =
       Enum.reduce(attrs, {%{}, %{}}, fn {key, value}, {agent_acc, local_acc} ->
@@ -621,14 +621,14 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   defp preload_detail(%Agent{type: :local} = agent) do
-    Repo.preload(agent, local_agent: [:provider, :media_provider])
+    Repo.preload(agent, [:failover_chain, local_agent: [:provider, :media_provider]])
   end
 
   defp preload_detail(%Agent{type: :remote} = agent) do
-    Repo.preload(agent, :remote_agent)
+    Repo.preload(agent, [:failover_chain, :remote_agent])
   end
 
-  defp preload_detail(%Agent{} = agent), do: agent
+  defp preload_detail(%Agent{} = agent), do: Repo.preload(agent, :failover_chain)
 
   defp ensure_local_agent_loaded(%Agent{local_agent: %LocalAgent{}} = agent) do
     agent.local_agent

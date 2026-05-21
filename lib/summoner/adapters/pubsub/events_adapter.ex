@@ -15,6 +15,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
     CopilotConnected,
     CopilotConnectionFailed,
     Escalation,
+    Failover,
     InvocationCompleted,
     InvocationEvent,
     InvocationFailed,
@@ -83,6 +84,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp topics(%CopilotConnected{} = e), do: [provider_topic(e)]
   defp topics(%CopilotConnectionFailed{} = e), do: [provider_topic(e)]
   defp topics(%AgentConfigChanged{} = e), do: [agent_config_topic(e)]
+  defp topics(%Failover{} = e), do: [failover_topic(e)]
 
   # -------------------------------------------------------------------
   # Topic builders
@@ -100,6 +102,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp provider_topic(%{workspace_id: w, provider_id: p}), do: "provider:#{w}:#{p}"
   defp swarm_topic(%{workspace_id: w, swarm_id: s}), do: "swarm:#{w}:#{s}"
   defp agent_config_topic(%{agent_id: a}), do: "agent_config:#{a}"
+  defp failover_topic(%{workspace_id: w}), do: "failover:#{w}"
 
   # -------------------------------------------------------------------
   # Scope → topic string
@@ -114,4 +117,5 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp topic_for_scope({:provider, w, p}), do: "provider:#{w}:#{p}"
   defp topic_for_scope({:swarm, w, s}), do: "swarm:#{w}:#{s}"
   defp topic_for_scope({:agent_config, a}), do: "agent_config:#{a}"
+  defp topic_for_scope({:failover, w}), do: "failover:#{w}"
 end
