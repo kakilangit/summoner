@@ -13,6 +13,7 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
   @behaviour Summoner.Services.Orchestration.ToolExecutor
 
   alias Summoner.Ports.Persistence.Agents
+  alias Summoner.Ports.Persistence.Artifacts
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Workspaces
@@ -29,6 +30,9 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
       tool_name == "__generate_video__" ->
         execute_generate_video(tool_call, context)
+
+      tool_name in ~w(__create_artifact__ __update_artifact__ __read_artifact__) ->
+        execute_artifact_tool(tool_name, tool_call, context)
 
       BuiltinTools.builtin?(tool_name) ->
         execute_builtin(tool_call, workspace_id)
@@ -120,6 +124,73 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
           {:ok,
            "Video generation started (ID: #{attachment.id}). " <>
              "It will appear in the conversation when ready (may take several minutes)."}
+      end
+    end
+  end
+
+  defp execute_artifact_tool("__create_artifact__", tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
+      attrs = %{
+        name: args["name"],
+        type: args["type"],
+        content: args["content"],
+        content_type: args["content_type"] || "text/markdown",
+        workspace_id: context.workspace_id,
+        agent_id: context.agent_id,
+        conversation_id: context[:conversation_id]
+      }
+
+      scope = %{user: nil}
+
+      case Artifacts.create_artifact(scope, attrs) do
+        {:ok, artifact} ->
+          {:ok, "Artifact '#{artifact.name}' created (v#{artifact.version}, ID: #{artifact.id})."}
+
+        {:error, changeset} ->
+          {:error, "Failed to create artifact: #{inspect(changeset.errors)}"}
+      end
+    end
+  end
+
+  defp execute_artifact_tool("__update_artifact__", tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments),
+         existing when not is_nil(existing) <-
+           Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
+      attrs = %{
+        name: existing.name,
+        type: existing.type,
+        content: args["content"],
+        content_type: existing.content_type,
+        version: existing.version + 1,
+        parent_id: existing.id,
+        workspace_id: context.workspace_id,
+        agent_id: context.agent_id,
+        conversation_id: context[:conversation_id]
+      }
+
+      case Artifacts.create_artifact(%{user: nil}, attrs) do
+        {:ok, artifact} ->
+          {:ok,
+           "Artifact '#{artifact.name}' updated to v#{artifact.version} (ID: #{artifact.id})."}
+
+        {:error, changeset} ->
+          {:error, "Failed to update artifact: #{inspect(changeset.errors)}"}
+      end
+    else
+      nil -> {:error, "Artifact not found."}
+      error -> error
+    end
+  end
+
+  defp execute_artifact_tool("__read_artifact__", tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
+      case Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
+        nil ->
+          {:error, "Artifact '#{args["name"]}' not found."}
+
+        artifact ->
+          {:ok,
+           "# #{artifact.name} (v#{artifact.version}, #{artifact.type})\n\n#{artifact.content || ""}"}
       end
     end
   end

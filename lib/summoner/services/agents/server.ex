@@ -608,8 +608,9 @@ defmodule Summoner.Services.Agents.Server do
     mcp_tools = MCP.list_tools_for_agent(workspace_id, agent_id)
     mcp_intent_tools = McpToolExecutor.to_intent_tools(mcp_tools)
     builtin_defs = BuiltinTools.tool_definitions()
+    artifact_defs = BuiltinTools.artifact_tool_definitions()
     media_tool_defs = load_media_tools(agent_id)
-    {CompositeToolExecutor, builtin_defs ++ media_tool_defs ++ mcp_intent_tools}
+    {CompositeToolExecutor, builtin_defs ++ artifact_defs ++ media_tool_defs ++ mcp_intent_tools}
   end
 
   defp load_media_tools(agent_id) do

@@ -1053,6 +1053,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
     cond do
       MapSet.member?(@terminal_tools, name) -> {:terminal, name}
       name in ~w(__generate_image__ __generate_video__) -> {:media, name}
+      name in ~w(__create_artifact__ __update_artifact__ __read_artifact__) -> {:artifact, name}
       BuiltinTools.builtin?(name) -> {:builtin, name}
       true -> {:mcp, mcp_server_prefix(name)}
     end

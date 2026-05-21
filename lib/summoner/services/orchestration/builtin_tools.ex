@@ -247,7 +247,10 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
                    "glob",
                    "webfetch",
                    "__generate_image__",
-                   "__generate_video__"
+                   "__generate_video__",
+                   "__create_artifact__",
+                   "__update_artifact__",
+                   "__read_artifact__"
                  ])
 
   @generate_image_def %{
@@ -331,6 +334,78 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
 
   @doc "Returns the generate video tool definition (injected conditionally)."
   def generate_video_tool_definition, do: [@generate_video_def]
+
+  @doc "Returns the artifact tool definitions (always injected)."
+  def artifact_tool_definitions do
+    [
+      %{
+        type: "function",
+        function: %{
+          name: "__create_artifact__",
+          description:
+            "Create a persistent artifact (document, code, report) that outlives this conversation. " <>
+              "Use this when the user asks you to produce a document, write code to a file, or generate a report.",
+          parameters: %{
+            "type" => "object",
+            "properties" => %{
+              "name" => %{
+                "type" => "string",
+                "description" => "Artifact name (e.g. 'meeting-notes', 'api-spec')"
+              },
+              "type" => %{
+                "type" => "string",
+                "enum" => ["document", "code", "dataset", "image", "report"],
+                "description" => "Artifact type"
+              },
+              "content" => %{"type" => "string", "description" => "Full content of the artifact"},
+              "content_type" => %{
+                "type" => "string",
+                "description" => "MIME type (default text/markdown)",
+                "default" => "text/markdown"
+              }
+            },
+            "required" => ["name", "type", "content"],
+            "additionalProperties" => false
+          }
+        }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "__update_artifact__",
+          description:
+            "Update an existing artifact by creating a new version. The old version is preserved. " <>
+              "Use this when the user asks to revise or update a previously created artifact.",
+          parameters: %{
+            "type" => "object",
+            "properties" => %{
+              "name" => %{"type" => "string", "description" => "Name of the artifact to update"},
+              "content" => %{"type" => "string", "description" => "New content for the artifact"}
+            },
+            "required" => ["name", "content"],
+            "additionalProperties" => false
+          }
+        }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "__read_artifact__",
+          description:
+            "Read an existing artifact by name. Returns the latest version's content. " <>
+              "Use this when you need to reference a previously created artifact.",
+          parameters: %{
+            "type" => "object",
+            "properties" => %{
+              "name" => %{"type" => "string", "description" => "Name of the artifact to read"}
+            },
+            "required" => ["name"],
+            "additionalProperties" => false
+          }
+        }
+      }
+    ]
+  end
 
   @doc "Returns the set of built-in tool names."
   @spec builtin_names() :: MapSet.t()
