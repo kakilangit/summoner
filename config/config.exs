@@ -89,6 +89,7 @@ config :summoner, Oban,
        {"* * * * *", Summoner.Adapters.Workers.InvocationReaper},
        {"* * * * *", Summoner.Adapters.Workers.SubtaskReaper},
        {"* * * * *", Summoner.Adapters.Workers.PipelineScheduler},
+       {"* * * * *", Summoner.Adapters.Workers.ApprovalTimeout},
        {"0 3 * * *", Summoner.Adapters.Workers.MediaCleanup}
      ]}
   ]
