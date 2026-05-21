@@ -171,6 +171,7 @@ defmodule Summoner.Services.Agents.Server do
     message = Map.fetch!(params, :message)
     scope = Map.fetch!(params, :scope)
     react_opts = Map.get(params, :react_opts, %{})
+    failover_meta = Map.take(params, [:failover_depth, :failover_from_agent_id, :failover_reason])
 
     if active_count(state) >= state.agent.local_agent.max_concurrent_invocations do
       # Queue the invocation in DB, defer reply until it completes
@@ -183,7 +184,7 @@ defmodule Summoner.Services.Agents.Server do
           {:reply, {:error, reason}, state}
       end
     else
-      case start_invocation(scope, state, conversation_id, message, react_opts) do
+      case start_invocation(scope, state, conversation_id, message, react_opts, failover_meta) do
         {:ok, invocation, state} ->
           # Defer reply until ReactLoop task completes so synchronous
           # callers (SwarmRunner) receive the finished invocation with output.
@@ -266,7 +267,7 @@ defmodule Summoner.Services.Agents.Server do
 
       {:noreply, state}
     else
-      case start_invocation(scope, state, conversation_id, message, react_opts) do
+      case start_invocation(scope, state, conversation_id, message, react_opts, %{}) do
         {:ok, _invocation, state} -> {:noreply, state}
         {:error, _reason, state} -> {:noreply, state}
       end
@@ -345,7 +346,7 @@ defmodule Summoner.Services.Agents.Server do
   # Internal
   # -------------------------------------------------------------------
 
-  defp start_invocation(scope, state, conversation_id, message, react_opts) do
+  defp start_invocation(scope, state, conversation_id, message, react_opts, failover_meta) do
     # Reload agent from DB to pick up any changes (model, provider, etc.)
     agent = Agents.get_agent_with_provider!(state.agent.id)
     state = %{state | agent: agent}
@@ -358,8 +359,8 @@ defmodule Summoner.Services.Agents.Server do
       input =
         if message, do: %{"message" => message}, else: %{"continuation" => true}
 
-      {:ok, invocation} =
-        Orchestration.create_invocation(scope, %{
+      invocation_attrs =
+        %{
           workspace_id: workspace_id,
           agent_id: state.agent.id,
           conversation_id: conversation_id,
@@ -367,7 +368,10 @@ defmodule Summoner.Services.Agents.Server do
           input: input,
           provider_name: state.agent.local_agent.provider.name,
           model_name: state.agent.local_agent.model
-        })
+        }
+        |> maybe_add_failover_meta(failover_meta)
+
+      {:ok, invocation} = Orchestration.create_invocation(scope, invocation_attrs)
 
       # Assemble context first (before writing user message, so history
       # doesn't include it — assemble_context appends it as the final message)
@@ -656,4 +660,16 @@ defmodule Summoner.Services.Agents.Server do
 
   defp maybe_adapter_opt(%{adapter_override: nil}), do: []
   defp maybe_adapter_opt(%{adapter_override: adapter}), do: [adapter: adapter]
+
+  defp maybe_add_failover_meta(attrs, meta) when map_size(meta) == 0, do: attrs
+
+  defp maybe_add_failover_meta(attrs, meta) do
+    attrs
+    |> maybe_put(:failover_depth, meta[:failover_depth])
+    |> maybe_put(:failover_from_agent_id, meta[:failover_from_agent_id])
+    |> maybe_put(:failover_reason, meta[:failover_reason])
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end

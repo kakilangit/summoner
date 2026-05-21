@@ -24,6 +24,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   alias Arcanum.{Intent, ModelProfile, Response}
   alias Arcanum.Response.Normalizer
   alias Summoner.Domain.Events.ContentToken
+  alias Summoner.Domain.Policies.Failover, as: FailoverPolicy
   alias Summoner.Domain.Schemas.Agent
   alias Summoner.Ports.Events
   alias Summoner.Ports.Harness
@@ -31,8 +32,10 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   alias Summoner.Ports.Persistence.Ledger
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Ports.Workers
+  alias Summoner.Services.Agents.Server, as: AgentServer
   alias Summoner.Services.EventLog
   alias Summoner.Services.Inference
+  alias Summoner.Services.Orchestration.AgentFailover
   alias Summoner.Services.Orchestration.BuiltinTools
   alias Summoner.Services.Orchestration.ToolCallRecovery
 
@@ -181,15 +184,74 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
         Logger.warning("Context overflow detected, terminating invocation")
         finish(state, :failed, :context_overflow, %{"error" => "context_overflow"})
 
-      {:error, {:api_error, status, body}} ->
-        message = format_api_error(status, body)
-        Logger.error("Inference call failed: HTTP #{status} — #{message}")
-        finish(state, :failed, :failed, %{"error" => message})
+      {:error, {:api_error, _status, _body} = error} ->
+        maybe_failover_or_finish(state, error)
 
       {:error, reason} ->
-        Logger.error("Inference call failed: #{inspect(reason)}")
-        finish(state, :failed, :failed, %{"error" => format_error(reason)})
+        maybe_failover_or_finish(state, reason)
     end
+  end
+
+  defp maybe_failover_or_finish(state, error) do
+    chain = state.agent.failover_chain
+    has_chain = is_list(chain) and chain != []
+
+    if has_chain && FailoverPolicy.failover_eligible?(error) do
+      Logger.warning("Inference failed with failover-eligible error: #{inspect(error)}")
+      execute_failover(state, error)
+    else
+      message = format_inference_error(error)
+      Logger.error("Inference call failed: #{message}")
+      finish(state, :failed, :failed, %{"error" => message})
+    end
+  end
+
+  defp execute_failover(state, error) do
+    case AgentFailover.handle(state.agent, state.invocation, error) do
+      {:failover, backup_agent, depth} ->
+        invoke_backup(state, backup_agent, error, depth)
+
+      {:failover_delayed, backup_agent, delay_ms, depth} ->
+        Process.sleep(delay_ms)
+        invoke_backup(state, backup_agent, error, depth)
+
+      _ ->
+        # No failover possible — finish as normal failure
+        message = format_inference_error(error)
+        Logger.error("Inference call failed (no failover): #{message}")
+        finish(state, :failed, :failed, %{"error" => message})
+    end
+  end
+
+  defp invoke_backup(state, backup_agent, _error, depth) do
+    params = %{
+      conversation_id: state.invocation.conversation_id,
+      message: get_in(state.invocation.input, ["message"]),
+      scope: %{user: nil},
+      react_opts: %{},
+      failover_depth: depth,
+      failover_from_agent_id: state.agent.id,
+      failover_reason: "failover from @#{state.agent.callname}"
+    }
+
+    case AgentServer.invoke(backup_agent.workspace_id, backup_agent.id, params) do
+      {:ok, backup_invocation} ->
+        # Return success — caller sees backup's result as the final outcome
+        {:ok, backup_invocation}
+
+      {:error, reason} ->
+        # Backup also failed — finish as failure
+        Logger.error("Backup agent @#{backup_agent.callname} also failed: #{inspect(reason)}")
+        finish(state, :failed, :failed, %{"error" => "failover failed: #{inspect(reason)}"})
+    end
+  end
+
+  defp format_inference_error({:api_error, status, body}) do
+    "HTTP #{status} — #{format_api_error(status, body)}"
+  end
+
+  defp format_inference_error(reason) do
+    format_error(reason)
   end
 
   defp call_inference_with_retries(state, intent, _attempt \\ 1) do
