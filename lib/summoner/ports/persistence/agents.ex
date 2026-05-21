@@ -42,4 +42,10 @@ defmodule Summoner.Ports.Persistence.Agents do
   defdelegate link_agents(scope, attrs), to: @adapter
   defdelegate unlink_agents(scope, manager_id, worker_id), to: @adapter
   defdelegate list_linked_workers(scope, manager_id), to: @adapter
+
+  # Failover chain
+  defdelegate list_failover_chain(agent_id), to: @adapter
+  defdelegate add_failover_entry(agent_id, backup_agent_id), to: @adapter
+  defdelegate remove_failover_entry(entry_id), to: @adapter
+  defdelegate reorder_failover_chain(agent_id, entry_ids), to: @adapter
 end
