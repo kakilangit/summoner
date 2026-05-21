@@ -657,7 +657,6 @@ defmodule SummonerWeb.AgentLive.Form do
               <span class="hero-bars-3 size-5 text-base-content/30 flex-shrink-0"></span>
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-ghost badge-sm font-mono">{entry.position + 1}</span>
                   <.link
                     navigate={
                       ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{entry.backup_agent_id}"
