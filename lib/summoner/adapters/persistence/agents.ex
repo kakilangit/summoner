@@ -765,14 +765,19 @@ defmodule Summoner.Adapters.Persistence.Agents do
   end
 
   defp preload_detail(%Agent{type: :local} = agent) do
-    Repo.preload(agent, [:failover_chain, local_agent: [:provider, :media_provider]])
+    Repo.preload(agent, [
+      {:failover_chain, [backup_agent: :local_agent]},
+      local_agent: [:provider, :media_provider]
+    ])
   end
 
   defp preload_detail(%Agent{type: :remote} = agent) do
-    Repo.preload(agent, [:failover_chain, :remote_agent])
+    Repo.preload(agent, [{:failover_chain, [backup_agent: :local_agent]}, :remote_agent])
   end
 
-  defp preload_detail(%Agent{} = agent), do: Repo.preload(agent, :failover_chain)
+  defp preload_detail(%Agent{} = agent) do
+    Repo.preload(agent, failover_chain: [backup_agent: :local_agent])
+  end
 
   defp ensure_local_agent_loaded(%Agent{local_agent: %LocalAgent{}} = agent) do
     agent.local_agent
