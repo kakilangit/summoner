@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-05-21
+
+### Changed
+
+- **Route rename (breaking)**: All browser routes now use code names instead of display names
+  - `/guilds` → `/tenants`, `/realms` → `/workspaces`, `/summons` → `/agents`
+  - `/gateways` → `/providers`, `/channels` → `/conversations`, `/quests` → `/pipelines`
+  - `/parties` → `/swarms`, `/runes` → `/mcp_servers`, `/spells` → `/skills`
+  - `/seals` → `/secrets`, `/forges` → `/media_providers`, `/envoys` → `/remote_agents`
+  - `/wards` → `/access_tokens`, `/scrolls` → `/files`, `/archon` → `/admin`
+- **LiveView rename**: `WardLive.Index` → `AccessTokenLive.Index` (module and directory)
+- **Naming convention**: Code names used in all code/files/routes/DB/API; display (fantasy) names used only in UI labels, titles, and breadcrumbs
+- Updated all documentation to reflect new route paths
+
 ## [0.1.4] - 2026-05-20
 
 ### Added
@@ -144,6 +158,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.5]: https://github.com/kakilangit/summoner/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/kakilangit/summoner/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/kakilangit/summoner/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/kakilangit/summoner/compare/v0.1.1...v0.1.2

@@ -23,7 +23,7 @@ Summoner uses fantasy-themed naming throughout the interface. Here is the mappin
 | **Archon** | Admin Panel | System administration for users, tenants, and quotas |
 | **Herald** | A2A Server | Inbound Agent-to-Agent protocol endpoint exposing local agents to external clients |
 | **Envoy** | A2A Client / Remote Agent | Outbound connection to an external agent via A2A protocol |
-| **Ward** | A2A Token | Authentication token for Herald access |
+| **Ward** | Access Token | Authentication token for API, webhooks, and Herald access |
 
 ## Architecture
 
