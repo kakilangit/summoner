@@ -54,29 +54,15 @@ defmodule SummonerWeb.AgentLive.Form do
           context_length: local.context_length,
           step_timeout_s: local.step_timeout_s,
           total_timeout_s: local.total_timeout_s,
-          stream_tokens_to_observability: local.stream_tokens_to_observability
+          stream_tokens_to_observability: local.stream_tokens_to_observability,
+          failover_strategy: agent.failover_strategy || :auto,
+          failover_delay_ms: agent.failover_delay_ms || 0,
+          max_failover_depth: agent.max_failover_depth || 3
         }
 
       changeset = flat_changeset(flat_data, %{})
 
-      breadcrumbs =
-        if agent.id do
-          [
-            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
-            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
-            {agent.name,
-             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
-            {"Edit", nil}
-          ]
-        else
-          [
-            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
-            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
-            {"New Summon", nil}
-          ]
-        end
+      breadcrumbs = build_breadcrumbs(workspace, agent)
 
       provider_options =
         Enum.map(providers, fn p -> {p.name, p.id} end)
@@ -276,6 +262,25 @@ defmodule SummonerWeb.AgentLive.Form do
     Providers.filter_models_by_capability(models, kind, :chat)
   end
 
+  defp build_breadcrumbs(workspace, agent) do
+    base = [
+      {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+      {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+      {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"}
+    ]
+
+    if agent.id do
+      base ++
+        [
+          {agent.name,
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
+          {"Edit", nil}
+        ]
+    else
+      base ++ [{"New Summon", nil}]
+    end
+  end
+
   # ---------------------------------------------------------------
   # Flat (schemaless) changeset for combined agent + local_agent form
   # ---------------------------------------------------------------
@@ -327,7 +332,10 @@ defmodule SummonerWeb.AgentLive.Form do
       step_timeout_s: local.step_timeout_s,
       total_timeout_s: local.total_timeout_s,
       stream_tokens_to_observability: local.stream_tokens_to_observability,
-      max_tool_concurrency: local.max_tool_concurrency
+      max_tool_concurrency: local.max_tool_concurrency,
+      failover_strategy: agent.failover_strategy || :auto,
+      failover_delay_ms: agent.failover_delay_ms || 0,
+      max_failover_depth: agent.max_failover_depth || 3
     }
   end
 
