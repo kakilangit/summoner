@@ -185,9 +185,21 @@ defmodule SummonerWeb.Router do
       get "/events", InvocationController, :events
       post "/cancel", InvocationController, :cancel
     end
+
+    # Usage analytics
+    get "/usages", UsageController, :index
+    get "/usages/breakdowns", UsageController, :breakdowns
+
+    # Admin (requires admin scope)
+    scope "/admin" do
+      get "/tenants", AdminController, :list_tenants
+      get "/users", AdminController, :list_users
+      patch "/users/:id", AdminController, :update_user
+      get "/invitations", AdminController, :list_invitations
+      get "/stats", AdminController, :stats
+    end
   end
 
-  # A2A protocol endpoints — per-agent, no browser auth
   scope "/agents" do
     pipe_through :api
 
