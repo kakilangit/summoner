@@ -657,7 +657,7 @@ defmodule SummonerWeb.AgentLive.Form do
               <span class="hero-bars-3 size-5 text-base-content/30 flex-shrink-0"></span>
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-ghost badge-sm font-mono">{entry.position}</span>
+                  <span class="badge badge-ghost badge-sm font-mono">{entry.position + 1}</span>
                   <.link
                     navigate={
                       ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{entry.backup_agent_id}"
@@ -696,12 +696,12 @@ defmodule SummonerWeb.AgentLive.Form do
             <label for="backup-agent-select">
               <span class="label mb-1">Add Backup Summon</span>
             </label>
-            <div class="join w-full">
-              <select id="backup-agent-select" name="backup_agent_id" class="select join-item flex-1">
+            <div class="flex items-center gap-2 w-full">
+              <select id="backup-agent-select" name="backup_agent_id" class="select flex-1">
                 <option value="">Select a summon</option>
                 {Phoenix.HTML.Form.options_for_select(@backup_options, nil)}
               </select>
-              <button type="submit" class="btn btn-secondary join-item">Add</button>
+              <button type="submit" class="btn btn-secondary">Add</button>
             </div>
           </div>
         </form>
