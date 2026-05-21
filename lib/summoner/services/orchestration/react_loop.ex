@@ -36,6 +36,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   alias Summoner.Services.EventLog
   alias Summoner.Services.Inference
   alias Summoner.Services.Orchestration.AgentFailover
+  alias Summoner.Services.Orchestration.ApprovalGate
   alias Summoner.Services.Orchestration.BuiltinTools
   alias Summoner.Services.Orchestration.ToolCallRecovery
 
@@ -669,6 +670,29 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   end
 
   defp do_execute_tool_calls(state, valid_calls, invalid_calls, invalid_results, response) do
+    case ApprovalGate.check_calls(state, valid_calls) do
+      :proceed ->
+        do_execute_approved_tool_calls(
+          state,
+          valid_calls,
+          invalid_calls,
+          invalid_results,
+          response
+        )
+
+      {:paused, approval} ->
+        Logger.info("Invocation paused for approval: #{approval.action_summary}")
+        finish(state, :failed, :approval_rejected, %{"approval_id" => approval.id})
+    end
+  end
+
+  defp do_execute_approved_tool_calls(
+         state,
+         valid_calls,
+         invalid_calls,
+         invalid_results,
+         response
+       ) do
     {state, valid_results} = execute_tool_batch(state, valid_calls)
 
     # Record step with first tool call info
