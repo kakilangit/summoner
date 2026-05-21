@@ -94,7 +94,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             </.link>
 
             <.link
-              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp_servers"}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp-servers"}
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
@@ -115,7 +115,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
 
             <.link
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media_providers"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers"
               }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
@@ -163,7 +163,7 @@ defmodule SummonerWeb.WorkspaceLive.Show do
 
             <.link
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents"
               }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
@@ -175,13 +175,13 @@ defmodule SummonerWeb.WorkspaceLive.Show do
 
             <.link
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access_tokens"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens"
               }
               class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
             >
               <div class="card-body">
                 <h2 class="card-title">Wards</h2>
-                <p class="text-sm text-base-content/60">Access tokens for protected Heralds</p>
+                <p class="text-sm text-base-content/60">Manage scoped access tokens</p>
               </div>
             </.link>
           </div>

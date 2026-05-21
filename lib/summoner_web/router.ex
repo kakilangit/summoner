@@ -72,15 +72,15 @@ defmodule SummonerWeb.Router do
       live "/secrets", TenantSecretLive.Index, :index
       live "/secrets/new", TenantSecretLive.Form, :new
       live "/secrets/:id/edit", TenantSecretLive.Form, :edit
-      live "/mcp_servers", TenantMcpServerLive.Index, :index
-      live "/mcp_servers/new", TenantMcpServerLive.Form, :new
-      live "/mcp_servers/:id/edit", TenantMcpServerLive.Form, :edit
+      live "/mcp-servers", TenantMcpServerLive.Index, :index
+      live "/mcp-servers/new", TenantMcpServerLive.Form, :new
+      live "/mcp-servers/:id/edit", TenantMcpServerLive.Form, :edit
       live "/skills", TenantSkillLive.Index, :index
       live "/skills/new", TenantSkillLive.Form, :new
       live "/skills/:id/edit", TenantSkillLive.Form, :edit
-      live "/media_providers", TenantMediaProviderLive.Index, :index
-      live "/media_providers/new", TenantMediaProviderLive.Form, :new
-      live "/media_providers/:id/edit", TenantMediaProviderLive.Form, :edit
+      live "/media-providers", TenantMediaProviderLive.Index, :index
+      live "/media-providers/new", TenantMediaProviderLive.Form, :new
+      live "/media-providers/:id/edit", TenantMediaProviderLive.Form, :edit
       live "/invites", TenantInvitationLive.Index, :index
     end
   end
@@ -106,7 +106,7 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/agents/new", AgentLive.Form, :new
       live "/workspaces/:workspace_id/agents/:id", AgentLive.Show, :show
       live "/workspaces/:workspace_id/agents/:id/edit", AgentLive.Form, :edit
-      live "/workspaces/:workspace_id/agents/:id/mcp_servers", AgentLive.Tools, :tools
+      live "/workspaces/:workspace_id/agents/:id/mcp-servers", AgentLive.Tools, :tools
       live "/workspaces/:workspace_id/agents/:id/skills", AgentLive.Skills, :skills
       live "/workspaces/:workspace_id/conversations", ConversationLive.Index, :index
 
@@ -114,9 +114,9 @@ defmodule SummonerWeb.Router do
            ConversationLive.Show,
            :show
 
-      live "/workspaces/:workspace_id/mcp_servers", McpServerLive.Index, :index
-      live "/workspaces/:workspace_id/mcp_servers/new", McpServerLive.Form, :new
-      live "/workspaces/:workspace_id/mcp_servers/:id/edit", McpServerLive.Form, :edit
+      live "/workspaces/:workspace_id/mcp-servers", McpServerLive.Index, :index
+      live "/workspaces/:workspace_id/mcp-servers/new", McpServerLive.Form, :new
+      live "/workspaces/:workspace_id/mcp-servers/:id/edit", McpServerLive.Form, :edit
       live "/workspaces/:workspace_id/pipelines", PipelineLive.Index, :index
       live "/workspaces/:workspace_id/pipelines/new", PipelineLive.Form, :new
       live "/workspaces/:workspace_id/pipelines/:id/edit", PipelineLive.Form, :edit
@@ -132,9 +132,9 @@ defmodule SummonerWeb.Router do
            SwarmLive.Session,
            :show
 
-      live "/workspaces/:workspace_id/media_providers", MediaProviderLive.Index, :index
-      live "/workspaces/:workspace_id/media_providers/new", MediaProviderLive.Form, :new
-      live "/workspaces/:workspace_id/media_providers/:id/edit", MediaProviderLive.Form, :edit
+      live "/workspaces/:workspace_id/media-providers", MediaProviderLive.Index, :index
+      live "/workspaces/:workspace_id/media-providers/new", MediaProviderLive.Form, :new
+      live "/workspaces/:workspace_id/media-providers/:id/edit", MediaProviderLive.Form, :edit
       live "/workspaces/:workspace_id/secrets", SecretLive.Index, :index
       live "/workspaces/:workspace_id/secrets/new", SecretLive.Form, :new
       live "/workspaces/:workspace_id/secrets/:id/edit", SecretLive.Form, :edit
@@ -144,18 +144,23 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/gallery", GalleryLive.Index, :index
       live "/workspaces/:workspace_id/files", FileBrowserLive.Index, :index
       live "/workspaces/:workspace_id/files/*path", FileBrowserLive.Index, :show
-      live "/workspaces/:workspace_id/remote_agents", A2AClientLive.Index, :index
-      live "/workspaces/:workspace_id/remote_agents/new", A2AClientLive.Form, :new
-      live "/workspaces/:workspace_id/remote_agents/:id", A2AClientLive.Show, :show
-      live "/workspaces/:workspace_id/remote_agents/:id/edit", A2AClientLive.Form, :edit
-      live "/workspaces/:workspace_id/access_tokens", AccessTokenLive.Index, :index
+      live "/workspaces/:workspace_id/remote-agents", A2AClientLive.Index, :index
+      live "/workspaces/:workspace_id/remote-agents/new", A2AClientLive.Form, :new
+      live "/workspaces/:workspace_id/remote-agents/:id", A2AClientLive.Show, :show
+      live "/workspaces/:workspace_id/remote-agents/:id/edit", A2AClientLive.Form, :edit
+      live "/workspaces/:workspace_id/access-tokens", AccessTokenLive.Index, :index
+      live "/workspaces/:workspace_id/access-tokens/new", AccessTokenLive.Form, :new
+      live "/workspaces/:workspace_id/access-tokens/:id", AccessTokenLive.Show, :show
+      live "/workspaces/:workspace_id/access-tokens/:id/edit", AccessTokenLive.Form, :edit
     end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", SummonerWeb do
-  #   pipe_through :api
-  # end
+  # REST API — token-authenticated, workspace-scoped
+  scope "/api/v1/workspaces/:workspace_id", SummonerWeb.API.V1 do
+    pipe_through [:api]
+
+    # Resource controllers will be added in Plan 01 Phase 2
+  end
 
   # A2A protocol endpoints — per-agent, no browser auth
   scope "/agents" do

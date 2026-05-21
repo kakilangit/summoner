@@ -181,7 +181,7 @@ defmodule SummonerWeb.AgentLive.Tools do
           No runes available.
           <.link
             navigate={
-              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp_servers/new"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp-servers/new"
             }
             class="link"
           >

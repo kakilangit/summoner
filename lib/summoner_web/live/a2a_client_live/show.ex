@@ -23,7 +23,7 @@ defmodule SummonerWeb.A2AClientLive.Show do
           {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
           {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Envoys",
-           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"},
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote-agents"},
           {agent.name, nil}
         ]
       )
@@ -40,7 +40,7 @@ defmodule SummonerWeb.A2AClientLive.Show do
         <.link
           :if={@can?.(:configure)}
           navigate={
-            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents/#{@agent.id}/edit"
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/#{@agent.id}/edit"
           }
           class="btn btn-primary btn-sm"
         >

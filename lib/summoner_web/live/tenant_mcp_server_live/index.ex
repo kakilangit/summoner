@@ -91,7 +91,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
         <h1 class="text-2xl font-bold">Runes</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/tenants/#{@tenant.id}/mcp_servers/new"}
+          navigate={~p"/tenants/#{@tenant.id}/mcp-servers/new"}
           class="btn btn-primary btn-sm"
         >
           New Rune
@@ -136,7 +136,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/tenants/#{@tenant.id}/mcp_servers/#{server.id}/edit"}
+              navigate={~p"/tenants/#{@tenant.id}/mcp-servers/#{server.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

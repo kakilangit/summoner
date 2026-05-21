@@ -40,7 +40,7 @@ defmodule SummonerWeb.McpServerLiveTest do
         })
 
       {:ok, _view, html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp_servers")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp-servers")
 
       assert html =~ "Runes"
       assert html =~ "Everything Server"
@@ -49,7 +49,7 @@ defmodule SummonerWeb.McpServerLiveTest do
 
     test "shows empty state", %{conn: conn, workspace: ws} do
       {:ok, _view, html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp_servers")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp-servers")
 
       assert html =~ "No runes configured"
     end
@@ -64,7 +64,7 @@ defmodule SummonerWeb.McpServerLiveTest do
         })
 
       {:ok, view, _html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp_servers")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp-servers")
 
       render_click(view, "delete", %{"id" => mcp_server.id})
 
@@ -76,7 +76,7 @@ defmodule SummonerWeb.McpServerLiveTest do
   describe "Form - New" do
     test "creates an MCP server", %{conn: conn, workspace: ws} do
       {:ok, view, _html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp_servers/new")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp-servers/new")
 
       view
       |> form("#mcp-server-form",
@@ -103,7 +103,7 @@ defmodule SummonerWeb.McpServerLiveTest do
         })
 
       {:ok, view, html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp_servers/#{server.id}/edit")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/mcp-servers/#{server.id}/edit")
 
       assert html =~ "Edit Rune"
 
@@ -144,7 +144,7 @@ defmodule SummonerWeb.McpServerLiveTest do
       server: server
     } do
       {:ok, _view, html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{fam.id}/mcp_servers")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{fam.id}/mcp-servers")
 
       assert html =~ "Runes for #{fam.name}"
       assert html =~ server.name
@@ -157,7 +157,7 @@ defmodule SummonerWeb.McpServerLiveTest do
       agent: fam
     } do
       {:ok, view, _html} =
-        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{fam.id}/mcp_servers")
+        live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{fam.id}/mcp-servers")
 
       # Equip
       view |> element("button", "Equip") |> render_click()

@@ -59,7 +59,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Index do
         <h1 class="text-2xl font-bold">Forges</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/tenants/#{@tenant.id}/media_providers/new"}
+          navigate={~p"/tenants/#{@tenant.id}/media-providers/new"}
           class="btn btn-primary btn-sm"
         >
           Add Forge
@@ -89,7 +89,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/tenants/#{@tenant.id}/media_providers/#{mp.id}/edit"}
+              navigate={~p"/tenants/#{@tenant.id}/media-providers/#{mp.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

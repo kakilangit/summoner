@@ -38,7 +38,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
           breadcrumbs: [
             {"Guilds", ~p"/tenants"},
             {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
-            {"Runes", ~p"/tenants/#{tenant.id}/mcp_servers"},
+            {"Runes", ~p"/tenants/#{tenant.id}/mcp-servers"},
             {title, nil}
           ]
         )
@@ -163,7 +163,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune created.")
-         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp_servers")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp-servers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -178,7 +178,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune updated.")
-         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp_servers")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp-servers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -240,7 +240,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/tenants/#{@tenant.id}/mcp_servers"}
+            navigate={~p"/tenants/#{@tenant.id}/mcp-servers"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

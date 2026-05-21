@@ -16,7 +16,7 @@ defmodule SummonerWeb.AgentLive.Show do
       {:ok,
        push_navigate(socket,
          to:
-           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents/#{agent.id}"
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote-agents/#{agent.id}"
        )}
     else
       usage = Ledger.usage_for_agent(agent.id)
@@ -139,7 +139,7 @@ defmodule SummonerWeb.AgentLive.Show do
         <div class="flex gap-2 pt-2">
           <.link
             navigate={
-              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/mcp_servers"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/mcp-servers"
             }
             class="btn btn-ghost btn-sm"
           >

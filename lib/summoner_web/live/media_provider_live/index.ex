@@ -45,7 +45,7 @@ defmodule SummonerWeb.MediaProviderLive.Index do
         <.link
           :if={@can?.(:configure)}
           navigate={
-            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media_providers/new"
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers/new"
           }
           class="btn btn-primary btn-sm"
         >
@@ -78,7 +78,7 @@ defmodule SummonerWeb.MediaProviderLive.Index do
             <.link
               :if={@can?.(:configure) and is_nil(mp.tenant_id)}
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media_providers/#{mp.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers/#{mp.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

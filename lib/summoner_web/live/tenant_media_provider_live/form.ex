@@ -47,7 +47,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
           breadcrumbs: [
             {"Guilds", ~p"/tenants"},
             {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
-            {"Forges", ~p"/tenants/#{tenant.id}/media_providers"},
+            {"Forges", ~p"/tenants/#{tenant.id}/media-providers"},
             {title, nil}
           ]
         )
@@ -156,7 +156,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge created successfully.")
-         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media_providers")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media-providers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -175,7 +175,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge updated successfully.")
-         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media_providers")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media-providers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -224,7 +224,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/tenants/#{@tenant.id}/media_providers"}
+            navigate={~p"/tenants/#{@tenant.id}/media-providers"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

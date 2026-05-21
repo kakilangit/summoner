@@ -167,7 +167,7 @@ defmodule SummonerWeb.AgentLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{agent.id}/mcp_servers"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{agent.id}/mcp-servers"
               }
               class="btn btn-ghost btn-sm"
             >

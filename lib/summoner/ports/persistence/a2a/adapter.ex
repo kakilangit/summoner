@@ -17,11 +17,7 @@ defmodule Summoner.Ports.Persistence.A2A.Adapter do
   @callback change_server(struct()) :: Ecto.Changeset.t()
   @callback change_server(struct(), map()) :: Ecto.Changeset.t()
 
-  # A2A Token CRUD
-  @callback list_tokens(String.t()) :: [struct()]
-  @callback create_token(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
-  @callback revoke_token(struct()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
-  @callback verify_token(String.t(), String.t()) :: {:ok, struct()} | {:error, :invalid}
+  # A2A Token CRUD — moved to Summoner.Ports.Persistence.AccessTokens.Adapter
 
   # A2A Task CRUD
   @callback get_task(String.t()) :: {:ok, struct()} | {:error, :not_found}

@@ -42,7 +42,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
             {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
             {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
             {"Envoys",
-             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"},
+             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote-agents"},
             {title, nil}
           ]
         )
@@ -84,7 +84,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
          socket
          |> put_flash(:info, "Envoy created.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote-agents"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -108,7 +108,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
          socket
          |> put_flash(:info, "Envoy updated.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote-agents"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -207,7 +207,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

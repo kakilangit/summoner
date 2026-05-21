@@ -41,7 +41,7 @@ defmodule SummonerWeb.McpServerLive.Form do
           breadcrumbs: [
             {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
             {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Runes", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp_servers"},
+            {"Runes", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp-servers"},
             {title, nil}
           ]
         )
@@ -168,7 +168,7 @@ defmodule SummonerWeb.McpServerLive.Form do
          socket
          |> put_flash(:info, "Rune created.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp_servers"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp-servers"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -185,7 +185,7 @@ defmodule SummonerWeb.McpServerLive.Form do
          socket
          |> put_flash(:info, "Rune updated.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp_servers"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/mcp-servers"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -248,7 +248,7 @@ defmodule SummonerWeb.McpServerLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp_servers"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp-servers"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

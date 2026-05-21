@@ -51,7 +51,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
             {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
             {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
             {"Forges",
-             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media_providers"},
+             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media-providers"},
             {title, nil}
           ]
         )
@@ -161,7 +161,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
          socket
          |> put_flash(:info, "Forge created successfully.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media_providers"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media-providers"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -182,7 +182,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
          socket
          |> put_flash(:info, "Forge updated successfully.")
          |> push_navigate(
-           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media_providers"
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/media-providers"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -233,7 +233,7 @@ defmodule SummonerWeb.MediaProviderLive.Form do
         <div class="flex items-center gap-4">
           <.link
             navigate={
-              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media_providers"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers"
             }
             class="btn btn-ghost btn-sm"
           >

@@ -50,7 +50,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
         <.link
           :if={@can?.(:configure)}
           navigate={
-            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents/new"
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/new"
           }
           class="btn btn-primary btn-sm"
         >
@@ -71,7 +71,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents/#{agent.id}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/#{agent.id}"
                 }
                 class="font-medium hover:underline"
               >
@@ -90,7 +90,7 @@ defmodule SummonerWeb.A2AClientLive.Index do
             <.link
               :if={@can?.(:configure)}
               navigate={
-                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents/#{agent.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents/#{agent.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

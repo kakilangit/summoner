@@ -3,7 +3,8 @@ defmodule SummonerWeb.AccessTokenLive.Index do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Ports.Persistence.A2A, as: SummonerA2A
+  alias Summoner.Domain.Schemas.AccessToken
+  alias Summoner.Ports.Persistence.AccessTokens
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,7 +14,6 @@ defmodule SummonerWeb.AccessTokenLive.Index do
       socket
       |> assign(
         page_title: "Wards - #{workspace.name}",
-        new_token: nil,
         breadcrumbs: [
           {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
           {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
@@ -26,35 +26,12 @@ defmodule SummonerWeb.AccessTokenLive.Index do
   end
 
   @impl true
-  def handle_event("create_token", %{"label" => label}, socket) do
-    authorize(socket, :operate, fn ->
-      case SummonerA2A.create_token(%{
-             workspace_id: socket.assigns.workspace.id,
-             label: label
-           }) do
-        {:ok, token} ->
-          {:noreply,
-           socket
-           |> assign(new_token: token.token)
-           |> load_tokens()
-           |> put_flash(:info, "Token created. Copy it now — it won't be shown again.")}
-
-        {:error, _changeset} ->
-          {:noreply, put_flash(socket, :error, "Failed to create token.")}
-      end
-    end)
-  end
-
-  def handle_event("dismiss_token", _params, socket) do
-    {:noreply, assign(socket, new_token: nil)}
-  end
-
   def handle_event("revoke", %{"id" => token_id}, socket) do
     authorize(socket, :operate, fn ->
       token = Enum.find(socket.assigns.tokens, &(&1.id == token_id))
 
       if token do
-        {:ok, _} = SummonerA2A.revoke_token(token)
+        {:ok, _} = AccessTokens.revoke_token(token)
 
         {:noreply,
          socket
@@ -74,69 +51,96 @@ defmodule SummonerWeb.AccessTokenLive.Index do
         <div>
           <h1 class="text-2xl font-bold">Wards</h1>
           <p class="text-sm text-base-content/60">
-            Access tokens for protected Heralds in this realm.
+            Manage scoped access tokens for A2A, API, webhooks, OpenAI-compat, and MCP.
           </p>
         </div>
-        <form :if={@can?.(:operate)} phx-submit="create_token" class="flex items-end gap-2">
-          <input
-            type="text"
-            name="label"
-            placeholder="Token label"
-            required
-            class="input input-sm w-40"
-          />
-          <button type="submit" class="btn btn-primary btn-sm">Create</button>
-        </form>
-      </div>
-
-      <div :if={@new_token} class="alert alert-success text-sm" role="alert">
-        <div class="flex-1">
-          <p class="font-medium">Copy now — shown once:</p>
-          <code class="font-mono select-all break-all">{@new_token}</code>
-        </div>
-        <button phx-click="dismiss_token" class="btn btn-xs btn-ghost">OK</button>
+        <.link
+          :if={@can?.(:operate)}
+          navigate={
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens/new"
+          }
+          class="btn btn-primary btn-sm"
+        >
+          New Ward
+        </.link>
       </div>
 
       <div :if={@tokens == []} class="text-center py-12 text-base-content/60">
-        <p>No tokens yet. Create one to authenticate external A2A clients.</p>
+        <p>No tokens yet. Create one to authenticate external clients.</p>
       </div>
 
       <div class="space-y-2">
-        <div
+        <.link
           :for={token <- @tokens}
-          class="flex items-center justify-between p-4 bg-base-200 rounded-lg"
+          navigate={
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens/#{token.id}"
+          }
+          class="flex items-center justify-between p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
         >
           <div class="min-w-0 flex-1">
-            <span class="font-medium">{token.label}</span>
+            <div class="flex items-center gap-2">
+              <span class="font-medium">{token.label}</span>
+              <.token_status token={token} />
+            </div>
+            <div class="flex gap-1 mt-1">
+              <span :for={scope <- token.scopes} class="badge badge-xs badge-outline uppercase">
+                {scope}
+              </span>
+            </div>
             <div class="text-sm text-base-content/60">
               {token.request_count} requests {if token.last_used_at,
                 do: " · #{format_relative(token.last_used_at)}",
                 else: " · never used"}
+              {if token.expires_at, do: " · expires #{format_relative(token.expires_at)}"}
             </div>
           </div>
-          <div :if={@can?.(:operate)} class="flex-shrink-0">
+          <div :if={@can?.(:operate) and is_nil(token.revoked_at)} class="flex-shrink-0 ml-4">
             <button
               phx-click={show_confirm("#revoke-token-#{token.id}")}
-              class="btn btn-error btn-sm btn-outline"
+              class="btn btn-error btn-xs btn-outline"
+              onclick="event.preventDefault(); event.stopPropagation();"
             >
               Revoke
             </button>
-            <.confirm_modal
-              id={"revoke-token-#{token.id}"}
-              title="Revoke token?"
-              message="External clients using this token will lose access immediately."
-              confirm_text="Revoke"
-              on_confirm={JS.push("revoke", value: %{id: token.id})}
-            />
           </div>
-        </div>
+        </.link>
       </div>
+
+      <.confirm_modal
+        :for={token <- @tokens}
+        :if={is_nil(token.revoked_at)}
+        id={"revoke-token-#{token.id}"}
+        title="Revoke token?"
+        message="External clients using this token will lose access immediately."
+        confirm_text="Revoke"
+        on_confirm={JS.push("revoke", value: %{id: token.id})}
+      />
     </div>
     """
   end
 
+  attr :token, AccessToken, required: true
+
+  defp token_status(assigns) do
+    ~H"""
+    <span :if={@token.revoked_at} class="badge badge-error badge-xs">revoked</span>
+    <span
+      :if={is_nil(@token.revoked_at) and AccessToken.active?(@token)}
+      class="badge badge-success badge-xs"
+    >
+      active
+    </span>
+    <span
+      :if={is_nil(@token.revoked_at) and not AccessToken.active?(@token)}
+      class="badge badge-warning badge-xs"
+    >
+      expired
+    </span>
+    """
+  end
+
   defp load_tokens(socket) do
-    tokens = SummonerA2A.list_tokens(socket.assigns.workspace.id)
+    tokens = AccessTokens.list_tokens(socket.assigns.workspace.id, include_revoked: true)
     assign(socket, tokens: tokens)
   end
 
@@ -144,10 +148,18 @@ defmodule SummonerWeb.AccessTokenLive.Index do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
 
     cond do
+      diff < 0 -> "in #{format_relative_abs(-diff)}"
       diff < 60 -> "just now"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86_400 -> "#{div(diff, 3600)}h ago"
-      true -> "#{div(diff, 86_400)}d ago"
+      true -> "#{format_relative_abs(diff)} ago"
+    end
+  end
+
+  defp format_relative_abs(diff) do
+    cond do
+      diff < 60 -> "#{diff}s"
+      diff < 3600 -> "#{div(diff, 60)}m"
+      diff < 86_400 -> "#{div(diff, 3600)}h"
+      true -> "#{div(diff, 86_400)}d"
     end
   end
 end
