@@ -307,6 +307,15 @@ defmodule Summoner.Adapters.Persistence.Agents do
     |> Repo.preload([:failover_chain, local_agent: [provider: :api_key_secret]])
   end
 
+  @doc "Returns the display name for an agent, or a fallback if not found."
+  def get_agent_name(agent_id) do
+    case Repo.get(Agent, agent_id) do
+      %Agent{callname: callname} when not is_nil(callname) -> "@#{callname}"
+      %Agent{name: name} -> name
+      nil -> "unknown agent"
+    end
+  end
+
   # -------------------------------------------------------------------
   # Failover chain
   # -------------------------------------------------------------------

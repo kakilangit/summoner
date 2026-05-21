@@ -12,6 +12,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   alias Summoner.Domain.Events.{
     ContentToken,
     Escalation,
+    Failover,
     InvocationCompleted,
     InvocationEvent,
     InvocationFailed,
@@ -42,6 +43,7 @@ defmodule SummonerWeb.SwarmLive.Session do
     if connected?(socket) do
       Events.subscribe({:swarm, workspace.id, swarm.id})
       Events.subscribe({:escalations, workspace.id})
+      Events.subscribe({:failover, workspace.id})
     end
 
     agent_colors = build_agent_colors(swarm.members)
@@ -142,6 +144,9 @@ defmodule SummonerWeb.SwarmLive.Session do
 
   @impl true
   def handle_event("dismiss_escalation", _p, socket), do: SH.handle_dismiss_escalation(socket)
+
+  @impl true
+  def handle_event("dismiss_failover", _p, socket), do: SH.handle_dismiss_failover(socket)
 
   @impl true
   def handle_event("delete_message", params, socket), do: SH.handle_delete_message(params, socket)
@@ -336,6 +341,10 @@ defmodule SummonerWeb.SwarmLive.Session do
     do: SH.handle_escalation(event, socket)
 
   @impl true
+  def handle_info(%Failover{} = event, socket),
+    do: SH.handle_failover(event, socket)
+
+  @impl true
   def handle_info(_msg, socket), do: {:noreply, socket}
 
   # -------------------------------------------------------------------
@@ -415,6 +424,7 @@ defmodule SummonerWeb.SwarmLive.Session do
       </div>
 
       <SC.escalation_alert escalation={@escalation} />
+      <SC.failover_alert failover_event={@failover_event} />
 
       <%!-- Messages --%>
       <div class="flex-1 overflow-y-auto py-4 space-y-3" id="messages" phx-hook="ScrollBottom">

@@ -14,6 +14,7 @@ defmodule SummonerWeb.ConversationLive.Show do
   alias Summoner.Domain.Events.{
     ContentToken,
     Escalation,
+    Failover,
     InvocationCompleted,
     InvocationEvent,
     InvocationFailed,
@@ -41,6 +42,7 @@ defmodule SummonerWeb.ConversationLive.Show do
     if connected?(socket) do
       Events.subscribe({:escalations, workspace.id})
       Events.subscribe({:conversation, workspace.id, conversation_id})
+      Events.subscribe({:failover, workspace.id})
 
       if conversation.primary_agent_id do
         Events.subscribe({:agent, workspace.id, conversation.primary_agent_id})
@@ -162,6 +164,9 @@ defmodule SummonerWeb.ConversationLive.Show do
   def handle_event("dismiss_escalation", _p, socket), do: SH.handle_dismiss_escalation(socket)
 
   @impl true
+  def handle_event("dismiss_failover", _p, socket), do: SH.handle_dismiss_failover(socket)
+
+  @impl true
   def handle_event("delete_message", params, socket), do: SH.handle_delete_message(params, socket)
 
   @impl true
@@ -249,6 +254,10 @@ defmodule SummonerWeb.ConversationLive.Show do
   @impl true
   def handle_info(%Escalation{} = event, socket),
     do: SH.handle_escalation(event, socket)
+
+  @impl true
+  def handle_info(%Failover{} = event, socket),
+    do: SH.handle_failover(event, socket)
 
   @impl true
   def handle_info(%MediaGenerationCompleted{attachment_id: id}, socket) do
@@ -354,6 +363,7 @@ defmodule SummonerWeb.ConversationLive.Show do
       </div>
 
       <SC.escalation_alert escalation={@escalation} />
+      <SC.failover_alert failover_event={@failover_event} />
 
       <%!-- Messages --%>
       <div class="flex-1 overflow-y-auto py-4 space-y-3" id="messages" phx-hook="ScrollBottom">
