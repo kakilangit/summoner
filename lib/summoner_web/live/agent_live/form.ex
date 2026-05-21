@@ -631,7 +631,7 @@ defmodule SummonerWeb.AgentLive.Form do
       </.form>
 
       <%!-- Failover chain management (only when editing) --%>
-      <div :if={@editing} class="space-y-4">
+      <div :if={@editing} class="space-y-4 pb-8">
         <h2 class="text-lg font-semibold">Failover Chain</h2>
         <p class="text-sm text-base-content/60">
           Backup summons are tried in order when the primary fails with a provider error.
