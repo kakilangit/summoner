@@ -39,9 +39,10 @@ defmodule SummonerWeb.A2AClientLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Envoys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys"},
+            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+            {"Envoys",
+             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"},
             {title, nil}
           ]
         )
@@ -51,7 +52,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}")}
+       |> redirect(to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}")}
     end
   end
 
@@ -82,7 +83,9 @@ defmodule SummonerWeb.A2AClientLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Envoy created.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -104,7 +107,9 @@ defmodule SummonerWeb.A2AClientLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Envoy updated.")
-         |> push_navigate(to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys")}
+         |> push_navigate(
+           to: ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"
+         )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -202,7 +207,7 @@ defmodule SummonerWeb.A2AClientLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys"}
+            navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

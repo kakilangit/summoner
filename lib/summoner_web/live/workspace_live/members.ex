@@ -17,8 +17,8 @@ defmodule SummonerWeb.WorkspaceLive.Members do
       |> assign(members: members, is_admin: is_admin)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Members", nil}
         ]
       )

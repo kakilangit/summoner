@@ -24,8 +24,8 @@ defmodule SummonerWeb.TenantProviderLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
+          {"Guilds", ~p"/tenants"},
+          {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
           {"Gateways", nil}
         ]
       )
@@ -92,7 +92,7 @@ defmodule SummonerWeb.TenantProviderLive.Index do
         <h1 class="text-2xl font-bold">Gateways</h1>
         <.link
           :if={@tenant_can?.(:manage_resources)}
-          navigate={~p"/guilds/#{@tenant.id}/gateways/new"}
+          navigate={~p"/tenants/#{@tenant.id}/providers/new"}
           class="btn btn-primary btn-sm"
         >
           Add Gateway
@@ -136,7 +136,7 @@ defmodule SummonerWeb.TenantProviderLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/guilds/#{@tenant.id}/gateways/#{provider.id}/edit"}
+              navigate={~p"/tenants/#{@tenant.id}/providers/#{provider.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

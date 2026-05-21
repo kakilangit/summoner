@@ -20,9 +20,10 @@ defmodule SummonerWeb.A2AClientLive.Show do
       |> assign(agent: agent, remote: remote, usage: usage)
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Envoys", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+          {"Envoys",
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents"},
           {agent.name, nil}
         ]
       )
@@ -39,7 +40,7 @@ defmodule SummonerWeb.A2AClientLive.Show do
         <.link
           :if={@can?.(:configure)}
           navigate={
-            ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/envoys/#{@agent.id}/edit"
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote_agents/#{@agent.id}/edit"
           }
           class="btn btn-primary btn-sm"
         >

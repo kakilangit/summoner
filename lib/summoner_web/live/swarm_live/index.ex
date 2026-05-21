@@ -26,8 +26,8 @@ defmodule SummonerWeb.SwarmLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Partys", nil}
         ]
       )
@@ -103,7 +103,7 @@ defmodule SummonerWeb.SwarmLive.Index do
         <h1 class="text-2xl font-bold">Partys</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/new"}
+          navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/new"}
           class="btn btn-primary btn-sm"
         >
           New Party
@@ -133,7 +133,7 @@ defmodule SummonerWeb.SwarmLive.Index do
               <span class="font-medium">
                 <.link
                   navigate={
-                    ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{swarm.id}"
+                    ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/#{swarm.id}"
                   }
                   class="link link-hover"
                 >
@@ -156,7 +156,7 @@ defmodule SummonerWeb.SwarmLive.Index do
             <.link
               :if={length(swarm.members) > 0}
               navigate={
-                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{swarm.id}/channels"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/#{swarm.id}/conversations"
               }
               class="btn btn-primary btn-sm"
             >
@@ -165,7 +165,7 @@ defmodule SummonerWeb.SwarmLive.Index do
             <.link
               :if={@can?.(:configure)}
               navigate={
-                ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/parties/#{swarm.id}/edit"
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/#{swarm.id}/edit"
               }
               class="btn btn-ghost btn-sm"
             >

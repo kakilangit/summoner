@@ -261,7 +261,7 @@ defmodule SummonerWeb.UserAuth do
     end
   end
 
-  defp signed_in_path(_conn), do: ~p"/guilds"
+  defp signed_in_path(_conn), do: ~p"/tenants"
 
   @doc """
   Plug for routes that require the user to be authenticated.

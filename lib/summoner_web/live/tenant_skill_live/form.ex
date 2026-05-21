@@ -34,9 +34,9 @@ defmodule SummonerWeb.TenantSkillLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-            {"Spellbook", ~p"/guilds/#{tenant.id}/spells"},
+            {"Guilds", ~p"/tenants"},
+            {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
+            {"Spellbook", ~p"/tenants/#{tenant.id}/skills"},
             {title, nil}
           ]
         )
@@ -46,7 +46,7 @@ defmodule SummonerWeb.TenantSkillLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{tenant.id}/realms")}
+       |> redirect(to: ~p"/tenants/#{tenant.id}/workspaces")}
     end
   end
 
@@ -97,7 +97,7 @@ defmodule SummonerWeb.TenantSkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell created.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/spells")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/skills")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -112,7 +112,7 @@ defmodule SummonerWeb.TenantSkillLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Spell updated.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/spells")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/skills")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -162,7 +162,7 @@ defmodule SummonerWeb.TenantSkillLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@tenant.id}/spells"}
+            navigate={~p"/tenants/#{@tenant.id}/skills"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

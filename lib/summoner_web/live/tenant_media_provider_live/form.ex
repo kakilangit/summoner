@@ -45,9 +45,9 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-            {"Forges", ~p"/guilds/#{tenant.id}/forges"},
+            {"Guilds", ~p"/tenants"},
+            {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
+            {"Forges", ~p"/tenants/#{tenant.id}/media_providers"},
             {title, nil}
           ]
         )
@@ -58,7 +58,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{tenant.id}/realms")}
+       |> redirect(to: ~p"/tenants/#{tenant.id}/workspaces")}
     end
   end
 
@@ -156,7 +156,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge created successfully.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/forges")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media_providers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -175,7 +175,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Forge updated successfully.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/forges")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/media_providers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -224,7 +224,7 @@ defmodule SummonerWeb.TenantMediaProviderLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@tenant.id}/forges"}
+            navigate={~p"/tenants/#{@tenant.id}/media_providers"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

@@ -23,8 +23,8 @@ defmodule SummonerWeb.TenantSkillLive.Index do
       )
       |> assign(
         breadcrumbs: [
-          {"Guilds", ~p"/guilds"},
-          {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
+          {"Guilds", ~p"/tenants"},
+          {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
           {"Spellbook", nil}
         ]
       )
@@ -92,7 +92,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
         <div class="flex-shrink-0">
           <.link
             :if={@tenant_can?.(:manage_resources)}
-            navigate={~p"/guilds/#{@tenant.id}/spells/new"}
+            navigate={~p"/tenants/#{@tenant.id}/skills/new"}
             class="btn btn-primary btn-sm"
           >
             New Spell
@@ -132,7 +132,7 @@ defmodule SummonerWeb.TenantSkillLive.Index do
           <div class="flex gap-2 flex-shrink-0">
             <.link
               :if={@tenant_can?.(:manage_resources)}
-              navigate={~p"/guilds/#{@tenant.id}/spells/#{skill.id}/edit"}
+              navigate={~p"/tenants/#{@tenant.id}/skills/#{skill.id}/edit"}
               class="btn btn-ghost btn-sm"
             >
               Edit

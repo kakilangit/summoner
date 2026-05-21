@@ -279,6 +279,6 @@ defmodule Summoner.Adapters.Persistence.A2A do
   Constructs the public base URL for an A2A server endpoint.
   """
   def base_url(%A2AServer{} = server) do
-    "#{SummonerWeb.Endpoint.url()}/summons/#{server.agent_id}"
+    "#{SummonerWeb.Endpoint.url()}/agents/#{server.agent_id}"
   end
 end

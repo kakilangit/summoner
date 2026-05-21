@@ -26,11 +26,11 @@ defmodule SummonerWeb.AgentLive.Tools do
       )
       |> assign(
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-          {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+          {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
           {agent.name,
-           ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons/#{agent.id}"},
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
           {"Runes", nil}
         ]
       )
@@ -180,7 +180,9 @@ defmodule SummonerWeb.AgentLive.Tools do
         <p>
           No runes available.
           <.link
-            navigate={~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/runes/new"}
+            navigate={
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp_servers/new"
+            }
             class="link"
           >
             Add one first.

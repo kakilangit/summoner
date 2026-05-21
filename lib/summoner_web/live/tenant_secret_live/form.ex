@@ -31,9 +31,9 @@ defmodule SummonerWeb.TenantSecretLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-            {"Seals", ~p"/guilds/#{tenant.id}/seals"},
+            {"Guilds", ~p"/tenants"},
+            {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
+            {"Seals", ~p"/tenants/#{tenant.id}/secrets"},
             {title, nil}
           ]
         )
@@ -43,7 +43,7 @@ defmodule SummonerWeb.TenantSecretLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{tenant.id}/realms")}
+       |> redirect(to: ~p"/tenants/#{tenant.id}/workspaces")}
     end
   end
 
@@ -65,7 +65,7 @@ defmodule SummonerWeb.TenantSecretLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Seal created.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/seals")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/secrets")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -80,7 +80,7 @@ defmodule SummonerWeb.TenantSecretLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Seal updated.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/seals")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/secrets")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -127,7 +127,7 @@ defmodule SummonerWeb.TenantSecretLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@tenant.id}/seals"}
+            navigate={~p"/tenants/#{@tenant.id}/secrets"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

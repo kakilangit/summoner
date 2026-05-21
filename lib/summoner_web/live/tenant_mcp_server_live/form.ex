@@ -36,9 +36,9 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
         )
         |> assign(
           breadcrumbs: [
-            {"Guilds", ~p"/guilds"},
-            {tenant.name, ~p"/guilds/#{tenant.id}/realms"},
-            {"Runes", ~p"/guilds/#{tenant.id}/runes"},
+            {"Guilds", ~p"/tenants"},
+            {tenant.name, ~p"/tenants/#{tenant.id}/workspaces"},
+            {"Runes", ~p"/tenants/#{tenant.id}/mcp_servers"},
             {title, nil}
           ]
         )
@@ -48,7 +48,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
       {:ok,
        socket
        |> put_flash(:error, "You don't have permission to do that.")
-       |> redirect(to: ~p"/guilds/#{tenant.id}/realms")}
+       |> redirect(to: ~p"/tenants/#{tenant.id}/workspaces")}
     end
   end
 
@@ -163,7 +163,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune created.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/runes")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp_servers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -178,7 +178,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "Rune updated.")
-         |> push_navigate(to: ~p"/guilds/#{tenant.id}/runes")}
+         |> push_navigate(to: ~p"/tenants/#{tenant.id}/mcp_servers")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -240,7 +240,7 @@ defmodule SummonerWeb.TenantMcpServerLive.Form do
 
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/guilds/#{@tenant.id}/runes"}
+            navigate={~p"/tenants/#{@tenant.id}/mcp_servers"}
             class="btn btn-ghost btn-sm"
           >
             Cancel

@@ -44,8 +44,8 @@ defmodule SummonerWeb.WorkspaceAuth do
         Ecto.NoResultsError ->
           redirect_path =
             if socket.assigns[:tenant],
-              do: ~p"/guilds/#{socket.assigns.tenant.id}/realms",
-              else: ~p"/guilds"
+              do: ~p"/tenants/#{socket.assigns.tenant.id}/workspaces",
+              else: ~p"/tenants"
 
           socket =
             socket

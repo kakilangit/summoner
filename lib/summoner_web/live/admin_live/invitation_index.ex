@@ -51,7 +51,7 @@ defmodule SummonerWeb.AdminLive.InvitationIndex do
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">All Invites</h1>
-        <.link navigate="/archon" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
+        <.link navigate="/admin" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
       </div>
 
       <.list_controls

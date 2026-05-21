@@ -81,10 +81,10 @@ defmodule SummonerWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/guilds"
+      assert redirected_to(conn) == ~p"/tenants"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/guilds")
+      conn = get(conn, ~p"/tenants")
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/users/settings"
@@ -104,7 +104,7 @@ defmodule SummonerWeb.UserSessionControllerTest do
         })
 
       assert conn.resp_cookies["_summoner_web_user_remember_me"]
-      assert redirected_to(conn) == ~p"/guilds"
+      assert redirected_to(conn) == ~p"/tenants"
     end
 
     test "logs the user in with return to", %{conn: conn, user: user} do
@@ -158,10 +158,10 @@ defmodule SummonerWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/guilds"
+      assert redirected_to(conn) == ~p"/tenants"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/guilds")
+      conn = get(conn, ~p"/tenants")
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/users/settings"
@@ -179,13 +179,13 @@ defmodule SummonerWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/guilds"
+      assert redirected_to(conn) == ~p"/tenants"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "User confirmed successfully."
 
       assert Accounts.get_user!(user.id).confirmed_at
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/guilds")
+      conn = get(conn, ~p"/tenants")
       response = html_response(conn, 200)
       assert response =~ user.email
       assert response =~ ~p"/users/settings"

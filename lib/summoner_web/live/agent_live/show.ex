@@ -15,7 +15,8 @@ defmodule SummonerWeb.AgentLive.Show do
     if agent.type == :remote do
       {:ok,
        push_navigate(socket,
-         to: ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/envoys/#{agent.id}"
+         to:
+           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/remote_agents/#{agent.id}"
        )}
     else
       usage = Ledger.usage_for_agent(agent.id)
@@ -26,9 +27,9 @@ defmodule SummonerWeb.AgentLive.Show do
         |> assign(agent: agent, usage: usage)
         |> assign(
           breadcrumbs: [
-            {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-            {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
-            {"Summons", ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}/summons"},
+            {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+            {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
+            {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
             {agent.name, nil}
           ]
         )
@@ -88,7 +89,7 @@ defmodule SummonerWeb.AgentLive.Show do
         <.link
           :if={@can?.(:operate)}
           navigate={
-            ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/edit"
+            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/edit"
           }
           class="btn btn-primary btn-sm"
         >
@@ -138,7 +139,7 @@ defmodule SummonerWeb.AgentLive.Show do
         <div class="flex gap-2 pt-2">
           <.link
             navigate={
-              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/runes"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/mcp_servers"
             }
             class="btn btn-ghost btn-sm"
           >
@@ -146,7 +147,7 @@ defmodule SummonerWeb.AgentLive.Show do
           </.link>
           <.link
             navigate={
-              ~p"/guilds/#{@workspace.tenant_id}/realms/#{@workspace.id}/summons/#{@agent.id}/skills"
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/skills"
             }
             class="btn btn-ghost btn-sm"
           >
@@ -241,7 +242,7 @@ defmodule SummonerWeb.AgentLive.Show do
   end
 
   defp herald_url(agent) do
-    "#{SummonerWeb.Endpoint.url()}/summons/#{agent.id}"
+    "#{SummonerWeb.Endpoint.url()}/agents/#{agent.id}"
   end
 
   # -------------------------------------------------------------------

@@ -18,7 +18,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     test "lists user's workspaces", %{conn: conn, scope: scope} do
       tenant = tenant_fixture(scope)
       {:ok, ws} = Workspaces.create_workspace(scope, tenant.id, %{name: "Test Workspace"})
-      {:ok, _view, html} = live(conn, ~p"/guilds/#{tenant.id}/realms")
+      {:ok, _view, html} = live(conn, ~p"/tenants/#{tenant.id}/workspaces")
 
       assert html =~ "Realms"
       assert html =~ ws.name
@@ -26,14 +26,14 @@ defmodule SummonerWeb.WorkspaceLiveTest do
 
     test "shows empty state when no workspaces", %{conn: conn, scope: scope} do
       tenant = tenant_fixture(scope)
-      {:ok, _view, html} = live(conn, ~p"/guilds/#{tenant.id}/realms")
+      {:ok, _view, html} = live(conn, ~p"/tenants/#{tenant.id}/workspaces")
 
       assert html =~ "No realms yet"
     end
 
     test "links to new workspace form", %{conn: conn, scope: scope} do
       tenant = tenant_fixture(scope)
-      {:ok, view, _html} = live(conn, ~p"/guilds/#{tenant.id}/realms")
+      {:ok, view, _html} = live(conn, ~p"/tenants/#{tenant.id}/workspaces")
 
       assert view
              |> element("a", "New Realm")
@@ -48,20 +48,20 @@ defmodule SummonerWeb.WorkspaceLiveTest do
   describe "New" do
     test "creates a workspace", %{conn: conn, scope: scope} do
       tenant = tenant_fixture(scope)
-      {:ok, view, _html} = live(conn, ~p"/guilds/#{tenant.id}/realms/new")
+      {:ok, view, _html} = live(conn, ~p"/tenants/#{tenant.id}/workspaces/new")
 
       view
       |> form("#workspace-form", workspace: %{name: "My Workspace"})
       |> render_submit()
 
       {path, _flash} = assert_redirect(view)
-      assert path =~ "/realms/"
-      assert path =~ "/realms/"
+      assert path =~ "/workspaces/"
+      assert path =~ "/workspaces/"
     end
 
     test "validates workspace name", %{conn: conn, scope: scope} do
       tenant = tenant_fixture(scope)
-      {:ok, view, _html} = live(conn, ~p"/guilds/#{tenant.id}/realms/new")
+      {:ok, view, _html} = live(conn, ~p"/tenants/#{tenant.id}/workspaces/new")
 
       html =
         view
@@ -84,7 +84,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     end
 
     test "displays workspace dashboard", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}")
+      {:ok, _view, html} = live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}")
 
       assert html =~ ws.name
       assert html =~ "Summons"
@@ -100,8 +100,8 @@ defmodule SummonerWeb.WorkspaceLiveTest do
       {:ok, other_ws} =
         Workspaces.create_workspace(other_scope, other_tenant.id, %{name: "Other WS"})
 
-      assert {:error, {:redirect, %{to: "/guilds"}}} =
-               live(conn, ~p"/guilds/#{other_ws.tenant_id}/realms/#{other_ws.id}")
+      assert {:error, {:redirect, %{to: "/tenants"}}} =
+               live(conn, ~p"/tenants/#{other_ws.tenant_id}/workspaces/#{other_ws.id}")
     end
   end
 
@@ -117,20 +117,20 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     end
 
     test "displays settings form", %{conn: conn, workspace: ws} do
-      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/settings")
+      {:ok, _view, html} = live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/settings")
 
       assert html =~ "Settings"
       assert html =~ "Context Window"
     end
 
     test "updates settings", %{conn: conn, workspace: ws} do
-      {:ok, view, _html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/settings")
+      {:ok, view, _html} = live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/settings")
 
       view
       |> form("#settings-form", workspace_settings: %{context_window_messages: 30})
       |> render_submit()
 
-      assert_redirect(view, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}")
+      assert_redirect(view, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}")
     end
   end
 
@@ -146,7 +146,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     end
 
     test "displays workspace members", %{conn: conn, workspace: ws, user: user} do
-      {:ok, _view, html} = live(conn, ~p"/guilds/#{ws.tenant_id}/realms/#{ws.id}/members")
+      {:ok, _view, html} = live(conn, ~p"/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/members")
 
       assert html =~ "Members"
       assert html =~ user.email
@@ -162,7 +162,7 @@ defmodule SummonerWeb.WorkspaceLiveTest do
     test "redirects to login when not authenticated" do
       conn = Phoenix.ConnTest.build_conn()
 
-      assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, ~p"/guilds")
+      assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, ~p"/tenants")
     end
   end
 end

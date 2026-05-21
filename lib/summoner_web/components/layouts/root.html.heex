@@ -21,7 +21,7 @@
         <%!-- Desktop nav --%>
         <div class="hidden sm:flex items-center gap-1">
           <%= if @current_scope do %>
-            <.link href={~p"/guilds"} class="btn btn-ghost btn-sm">Guilds</.link>
+            <.link href={~p"/tenants"} class="btn btn-ghost btn-sm">Guilds</.link>
             <%= if @current_scope.user.role == "admin" do %>
               <.link href="/archon" class="btn btn-ghost btn-sm">Archon</.link>
             <% end %>
@@ -79,7 +79,7 @@
           >
             <%= if @current_scope do %>
               <li>
-                <.link href={~p"/guilds"}>Guilds</.link>
+                <.link href={~p"/tenants"}>Guilds</.link>
               </li>
               <%= if @current_scope.user.role == "admin" do %>
                 <li>

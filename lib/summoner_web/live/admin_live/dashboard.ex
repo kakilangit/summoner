@@ -57,15 +57,15 @@ defmodule SummonerWeb.AdminLive.Dashboard do
       </p>
 
       <div class="flex gap-4 flex-wrap">
-        <.link navigate="/archon/users" class="btn btn-outline btn-sm">Manage Users</.link>
-        <.link navigate="/guilds" class="btn btn-outline btn-sm">Manage Guilds</.link>
-        <.link navigate="/archon/realms" class="btn btn-outline btn-sm">
+        <.link navigate="/admin/users" class="btn btn-outline btn-sm">Manage Users</.link>
+        <.link navigate="/tenants" class="btn btn-outline btn-sm">Manage Guilds</.link>
+        <.link navigate="/admin/workspaces" class="btn btn-outline btn-sm">
           Manage Realms
         </.link>
-        <.link navigate="/archon/invites" class="btn btn-outline btn-sm">
+        <.link navigate="/admin/invites" class="btn btn-outline btn-sm">
           Manage Invites
         </.link>
-        <.link navigate="/archon/quotas" class="btn btn-outline btn-sm">
+        <.link navigate="/admin/quotas" class="btn btn-outline btn-sm">
           Manage Quotas
         </.link>
       </div>

@@ -80,7 +80,7 @@ defmodule SummonerWeb.AdminLive.UserIndex do
           <button phx-click="toggle_create_form" class="btn btn-primary btn-sm">
             Create User
           </button>
-          <.link navigate="/archon" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
+          <.link navigate="/admin" class="btn btn-ghost btn-sm">Back to Dashboard</.link>
         </div>
       </div>
 
@@ -190,7 +190,7 @@ defmodule SummonerWeb.AdminLive.UserIndex do
                 )}
               </td>
               <td>
-                <.link navigate={"/archon/users/#{user.id}"} class="btn btn-ghost btn-xs">
+                <.link navigate={"/admin/users/#{user.id}"} class="btn btn-ghost btn-xs">
                   View
                 </.link>
               </td>

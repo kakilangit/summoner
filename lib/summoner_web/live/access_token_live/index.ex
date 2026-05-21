@@ -15,8 +15,8 @@ defmodule SummonerWeb.AccessTokenLive.Index do
         page_title: "Wards - #{workspace.name}",
         new_token: nil,
         breadcrumbs: [
-          {"Realms", ~p"/guilds/#{workspace.tenant_id}/realms"},
-          {workspace.name, ~p"/guilds/#{workspace.tenant_id}/realms/#{workspace.id}"},
+          {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
+          {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
           {"Wards", nil}
         ]
       )
