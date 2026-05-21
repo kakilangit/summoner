@@ -692,16 +692,16 @@ defmodule SummonerWeb.AgentLive.Form do
         </div>
 
         <form phx-submit="add_failover" class="flex items-end gap-2">
-          <div class="form-control flex-1">
-            <label class="label">
-              <span class="label-text">Add Backup Summon</span>
+          <div class="fieldset mb-2 flex-1">
+            <label>
+              <span class="label mb-1">Add Backup Summon</span>
+              <select name="backup_agent_id" class="w-full select">
+                <option value="">Select a summon</option>
+                {Phoenix.HTML.Form.options_for_select(@backup_options, nil)}
+              </select>
             </label>
-            <select name="backup_agent_id" class="select select-bordered select-sm w-full">
-              <option value="">Select a summon</option>
-              {Phoenix.HTML.Form.options_for_select(@backup_options, nil)}
-            </select>
           </div>
-          <button type="submit" class="btn btn-secondary btn-sm">Add</button>
+          <button type="submit" class="btn btn-secondary btn-sm mb-2">Add</button>
         </form>
       </div>
     </div>
