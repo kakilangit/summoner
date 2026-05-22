@@ -44,7 +44,7 @@ defmodule Summoner.Adapters.Persistence.PluginsFixtures do
       image: "ghcr.io/summoner/grimoire-test:1.0.0",
       digest: "sha256:#{:crypto.strong_rand_bytes(32) |> Base.encode16(case: :lower)}",
       container_id: "docker-#{System.unique_integer([:positive])}",
-      container_name: "summoner-plugin-test-#{System.unique_integer([:positive])}",
+      container_name: "grimoire-test-#{System.unique_integer([:positive])}",
       host: "localhost",
       port: 9999,
       status: :running,

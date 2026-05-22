@@ -195,6 +195,6 @@ printf '%s' "ghcr.io/kakilangit/grimoire-slack" | shasum -a 256 | cut -c1-12
 
 ## Developing a Plugin
 
-Plugins are Rust binaries using the `summoner-plugin-sdk` crate. See [summoner-plugins](https://github.com/kakilangit/summoner-plugins) for the SDK and example plugins.
+Plugins are Rust binaries using the `grimoire-sdk` crate. See [grimoire](https://github.com/kakilangit/grimoire) for the SDK and example plugins.
 
 The plugin contract is defined in `priv/openapi/plugin_contract.yaml` (OpenAPI 3.1). Both the Elixir serializer and the Rust SDK types must match these schemas.

@@ -65,6 +65,6 @@ defmodule Summoner.Domain.Schemas.PluginContainer do
     |> String.split(":")
     |> List.first()
     |> String.replace(".", "-")
-    |> then(&"summoner-plugin-#{&1}")
+    |> then(&"grimoire-#{&1}")
   end
 end

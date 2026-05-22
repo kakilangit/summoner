@@ -23,7 +23,7 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
 
   @health_interval :timer.seconds(30)
   @max_restarts 3
-  @plugin_network "summoner-plugins"
+  @plugin_network "grimoire"
 
   defstruct restart_counts: %{}
 
@@ -284,7 +284,7 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   # -------------------------------------------------------------------
 
   defp generate_callback_token(container_name) do
-    secret = Application.get_env(:summoner, :plugin_callback_secret, "summoner-plugin-secret")
+    secret = Application.get_env(:summoner, :plugin_callback_secret, "grimoire-secret")
 
     :crypto.mac(:hmac, :sha256, secret, container_name)
     |> Base.encode16(case: :lower)

@@ -88,7 +88,7 @@ services:
       - "${PORT:-4000}:4000"
     networks:
       - default
-      - summoner-plugins
+      - grimoire
 
   seed:
     image: ghcr.io/kakilangit/summoner-seed:latest
@@ -110,8 +110,8 @@ services:
 
 networks:
   default:
-  summoner-plugins:
-    name: summoner-plugins
+  grimoire:
+    name: grimoire
 
 volumes:
   pgdata:

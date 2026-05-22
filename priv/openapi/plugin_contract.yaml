@@ -9,7 +9,7 @@ info:
 
     This spec is the single source of truth. Both the Elixir serializer
     (`Summoner.Services.Plugins.EventSerializer`) and the Rust SDK types
-    (`summoner-plugin-sdk/src/contract.rs`) must match these schemas.
+    (`grimoire-sdk/src/contract.rs`) must match these schemas.
   version: "1.0.0"
   contact:
     name: Summoner
