@@ -206,6 +206,16 @@ defmodule SummonerWeb.WorkspaceLive.Show do
                 <p class="text-sm text-base-content/60">Manage scoped access tokens</p>
               </div>
             </.link>
+
+            <.link
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/plugins"}
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Grimoires</h2>
+                <p class="text-sm text-base-content/60">Install and manage plugins</p>
+              </div>
+            </.link>
           </div>
         </section>
       </div>

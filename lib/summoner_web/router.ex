@@ -165,6 +165,9 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/access-tokens/new", AccessTokenLive.Form, :new
       live "/workspaces/:workspace_id/access-tokens/:id", AccessTokenLive.Show, :show
       live "/workspaces/:workspace_id/access-tokens/:id/edit", AccessTokenLive.Form, :edit
+      live "/workspaces/:workspace_id/plugins", PluginLive.Index, :index
+      live "/workspaces/:workspace_id/plugins/install", PluginLive.Install, :install
+      live "/workspaces/:workspace_id/plugins/:id", PluginLive.Show, :show
     end
   end
 
@@ -178,6 +181,7 @@ defmodule SummonerWeb.Router do
   scope "/api/v1", SummonerWeb.API.V1 do
     pipe_through [:api]
     post "/webhooks/:id/trigger", WebhookTriggerController, :trigger
+    post "/plugins/:plugin_id/hook/:route", PluginWebhookController, :trigger
   end
 
   # REST API — token-authenticated, workspace implicit (derived from token)

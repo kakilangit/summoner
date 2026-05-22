@@ -418,9 +418,8 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
           name: "__remember__",
           description:
             "Store a fact, preference, procedure, or correction to long-term memory. " <>
-              "Use this when the user tells you something you should remember, " <>
-              "corrects you, or when you learn something important. " <>
-              "Memories persist across conversations.",
+              "Use this when you learn something important that should persist across conversations " <>
+              "— whether from user input, corrections, or insights gained during a task.",
           parameters: %{
             "type" => "object",
             "properties" => %{
