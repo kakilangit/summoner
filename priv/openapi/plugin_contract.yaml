@@ -212,7 +212,7 @@ components:
           type: string
         image:
           type: string
-          description: Full Docker image reference (e.g. "docker.io/org/name:tag")
+          description: Full OCI image reference (e.g. "ghcr.io/org/name:tag")
         capabilities:
           type: array
           minItems: 1

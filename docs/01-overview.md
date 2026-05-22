@@ -25,6 +25,7 @@ Summoner uses fantasy-themed naming throughout the interface. Here is the mappin
 | **Envoy** | A2A Client / Remote Agent | Outbound connection to an external agent via A2A protocol |
 | **Ward** | Access Token | Authentication token for API, webhooks, and Herald access |
 | **Beacon** | Webhook | HTTP trigger that invokes agents from external systems (GitHub, CI/CD, etc.) |
+| **Grimoire** | Plugin | OCI container extension with capabilities (tools, webhooks, hooks, events, provider, theme) |
 
 ## Architecture
 
