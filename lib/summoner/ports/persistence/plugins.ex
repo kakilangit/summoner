@@ -27,5 +27,5 @@ defmodule Summoner.Ports.Persistence.Plugins do
   defdelegate delete_state(workspace_id, plugin_id, key), to: @adapter
 
   # Container support
-  defdelegate enabled_count_by_digest(digest), to: @adapter
+  defdelegate enabled_digests(), to: @adapter
 end

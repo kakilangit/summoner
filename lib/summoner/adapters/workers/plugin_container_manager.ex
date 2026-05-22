@@ -3,8 +3,9 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   GenServer managing plugin containers by digest.
 
   Containers are shared across plugin installations with the same image
-  digest (unless tenant-isolated). Whether a container is still needed
-  is derived by querying enabled installations — no mutable ref-counting.
+  digest (unless tenant-isolated). Orphan containers whose digest has no
+  enabled installations are swept on each health-check tick — no mutable
+  ref-counting or grace periods needed.
 
   Started as a singleton under the application supervision tree.
   """
@@ -22,10 +23,9 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
 
   @health_interval :timer.seconds(30)
   @max_restarts 3
-  @grace_period :timer.seconds(30)
   @plugin_network "summoner-plugins"
 
-  defstruct restart_counts: %{}, pending_stops: %{}
+  defstruct restart_counts: %{}
 
   # -------------------------------------------------------------------
   # Public API
@@ -42,15 +42,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   """
   def ensure_container(image, digest, isolation, tenant_id) do
     GenServer.call(__MODULE__, {:ensure_container, image, digest, isolation, tenant_id}, 60_000)
-  end
-
-  @doc """
-  Signal that a plugin no longer needs a container.
-
-  Checks enabled installations count; if zero, schedules stop after grace period.
-  """
-  def release_container(digest, tenant_id) do
-    GenServer.cast(__MODULE__, {:release_container, digest, tenant_id})
   end
 
   @doc "Get the container record for a plugin installation."
@@ -84,7 +75,7 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
 
     case lookup(digest, tid) do
       %{status: :running} = container ->
-        {:reply, {:ok, container}, cancel_pending_stop(state, {digest, tid})}
+        {:reply, {:ok, container}, state}
 
       %{status: :error} = container ->
         cleanup_container(container)
@@ -109,49 +100,11 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   end
 
   @impl true
-  def handle_cast({:release_container, digest, tenant_id}, state) do
-    case lookup(digest, tenant_id) do
-      %{} = container ->
-        if still_needed?(container.digest) do
-          {:noreply, state}
-        else
-          Logger.info("No enabled installs for #{container.container_name}, scheduling stop")
-          {:noreply, schedule_grace_stop(state, {digest, tenant_id})}
-        end
-
-      nil ->
-        {:noreply, state}
-    end
-  end
-
-  @impl true
   def handle_info(:health_check, state) do
+    sweep_orphan_containers()
     check_all_containers(state)
     schedule_health_check()
     {:noreply, state}
-  end
-
-  def handle_info({:grace_stop, key}, state) do
-    {digest, tenant_id} = key
-
-    state =
-      case lookup(digest, tenant_id) do
-        %{} = container ->
-          if still_needed?(container.digest) do
-            Logger.info("Container #{container.container_name} needed again, skipping stop")
-            state
-          else
-            Logger.info("Grace period expired, stopping container #{container.container_name}")
-            cleanup_container(container)
-            clear_restart_count(state, key)
-          end
-
-        nil ->
-          state
-      end
-
-    %{state | pending_stops: Map.delete(state.pending_stops, key)}
-    |> then(&{:noreply, &1})
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
@@ -167,6 +120,7 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     container_port = 9999
 
     ContainerRuntime.remove(container_name)
+    delete_stale_containers(container_name)
 
     opts = %{
       image: image,
@@ -242,12 +196,26 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     Ecto.StaleEntryError -> :ok
   end
 
+  defp delete_stale_containers(container_name) do
+    PluginContainer
+    |> where([c], c.container_name == ^container_name)
+    |> Repo.delete_all()
+  end
+
   # -------------------------------------------------------------------
-  # Derived state
+  # Orphan sweep
   # -------------------------------------------------------------------
 
-  defp still_needed?(digest) do
-    Persistence.enabled_count_by_digest(digest) > 0
+  defp sweep_orphan_containers do
+    enabled = Persistence.enabled_digests()
+
+    PluginContainer
+    |> where([c], c.digest not in ^enabled)
+    |> Repo.all()
+    |> Enum.each(fn container ->
+      Logger.info("Sweeping orphan container #{container.container_name}")
+      cleanup_container(container)
+    end)
   end
 
   # -------------------------------------------------------------------
@@ -273,8 +241,9 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   defp handle_container_down(container, state) do
     key = {container.digest, container.tenant_id}
     count = Map.get(state.restart_counts, key, 0)
+    enabled = Persistence.enabled_digests()
 
-    if count < @max_restarts and still_needed?(container.digest) do
+    if count < @max_restarts and container.digest in enabled do
       Logger.info("Restarting container #{container.container_name}")
       cleanup_container(container)
       start_new_container(container.image, container.digest, container.tenant_id, state)
@@ -283,31 +252,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
       |> PluginContainer.status_changeset(:error)
       |> Repo.update()
     end
-  end
-
-  # -------------------------------------------------------------------
-  # Grace period
-  # -------------------------------------------------------------------
-
-  defp schedule_grace_stop(state, key) do
-    state = cancel_pending_stop(state, key)
-    ref = Process.send_after(self(), {:grace_stop, key}, @grace_period)
-    %{state | pending_stops: Map.put(state.pending_stops, key, ref)}
-  end
-
-  defp cancel_pending_stop(state, key) do
-    case Map.get(state.pending_stops, key) do
-      nil ->
-        state
-
-      ref ->
-        Process.cancel_timer(ref)
-        %{state | pending_stops: Map.delete(state.pending_stops, key)}
-    end
-  end
-
-  defp clear_restart_count(state, key) do
-    %{state | restart_counts: Map.delete(state.restart_counts, key)}
   end
 
   # -------------------------------------------------------------------

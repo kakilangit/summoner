@@ -52,12 +52,18 @@ defmodule Summoner.Domain.Schemas.PluginContainer do
     |> validate_inclusion(:status, @statuses)
   end
 
-  @doc "Build a container name from an image reference, encoding version."
+  @doc """
+  Build a container name from an image reference.
+
+  Strips the tag so that upgrading an image replaces the existing container
+  instead of leaving the old one running alongside the new one.
+  """
   def container_name_from_image(image) do
     image
     |> String.split("/")
     |> List.last()
-    |> String.replace(":", "-")
+    |> String.split(":")
+    |> List.first()
     |> String.replace(".", "-")
     |> then(&"summoner-plugin-#{&1}")
   end

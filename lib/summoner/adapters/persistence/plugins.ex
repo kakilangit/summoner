@@ -139,9 +139,11 @@ defmodule Summoner.Adapters.Persistence.Plugins do
   # Container support
   # -------------------------------------------------------------------
 
-  def enabled_count_by_digest(digest) do
+  def enabled_digests do
     PluginInstallation
-    |> where([p], p.digest == ^digest and p.status == :enabled)
-    |> Repo.aggregate(:count)
+    |> where([p], p.status == :enabled)
+    |> select([p], p.digest)
+    |> distinct(true)
+    |> Repo.all()
   end
 end

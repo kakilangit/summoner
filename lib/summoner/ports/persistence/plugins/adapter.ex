@@ -21,5 +21,5 @@ defmodule Summoner.Ports.Persistence.Plugins.Adapter do
   @callback delete_state(String.t(), String.t(), String.t()) :: :ok
 
   # Container support
-  @callback enabled_count_by_digest(String.t()) :: non_neg_integer()
+  @callback enabled_digests() :: [String.t()]
 end

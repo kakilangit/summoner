@@ -114,12 +114,11 @@ defmodule Summoner.Services.Plugins do
     end
   end
 
-  @doc "Disable a plugin: release container reference."
+  @doc "Disable a plugin."
   def disable(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
     if plugin.status == :enabled do
-      release_plugin_container(plugin)
       Persistence.update_status(plugin, :disabled)
     else
       {:error, :not_enabled}
@@ -136,11 +135,6 @@ defmodule Summoner.Services.Plugins do
   def upgrade(workspace_id, plugin_id, new_image_ref) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
     was_enabled = plugin.status == :enabled
-
-    # Release old container reference if enabled
-    if was_enabled do
-      release_plugin_container(plugin)
-    end
 
     with :ok <- ContainerRuntime.pull(new_image_ref),
          {:ok, manifest_json} <- extract_manifest(new_image_ref),
@@ -205,11 +199,6 @@ defmodule Summoner.Services.Plugins do
   @doc "Uninstall plugin completely."
   def uninstall(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
-
-    if plugin.digest do
-      release_plugin_container(plugin)
-    end
-
     Persistence.delete_plugin(plugin)
   end
 
@@ -280,17 +269,6 @@ defmodule Summoner.Services.Plugins do
     tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
 
     PluginContainerManager.ensure_container(image, digest, isolation, tenant_id)
-  end
-
-  defp release_plugin_container(plugin) do
-    digest = plugin.digest
-
-    isolation =
-      TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
-
-    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
-
-    PluginContainerManager.release_container(digest, tenant_id)
   end
 
   defp get_plugin_container(plugin) do
