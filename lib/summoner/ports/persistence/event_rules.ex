@@ -20,4 +20,9 @@ defmodule Summoner.Ports.Persistence.EventRules do
   defdelegate list_executions(event_rule_id, opts), to: @adapter
   defdelegate list_executions_paginated(event_rule_id, opts), to: @adapter
   defdelegate change_event_rule(event_rule, attrs \\ %{}), to: @adapter
+  defdelegate count_fires_in_window(event_rule_id, since), to: @adapter
+  defdelegate record_success(event_rule_id), to: @adapter
+  defdelegate record_failure(event_rule_id), to: @adapter
+  defdelegate trip_circuit(event_rule_id, disabled_until), to: @adapter
+  defdelegate reset_circuit(event_rule_id), to: @adapter
 end

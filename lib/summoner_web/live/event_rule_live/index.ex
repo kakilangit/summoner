@@ -144,6 +144,7 @@ defmodule SummonerWeb.EventRuleLive.Index do
               <span class="badge badge-ghost badge-xs">{rule.action_type}</span>
               <span :if={rule.enabled} class="badge badge-success badge-xs">Enabled</span>
               <span :if={!rule.enabled} class="badge badge-neutral badge-xs">Disabled</span>
+              <span :if={rule.disabled_until} class="badge badge-error badge-xs">Circuit Open</span>
             </div>
             <div :if={rule.description} class="text-sm text-base-content/60 mt-1 truncate">
               {rule.description}

@@ -40,6 +40,9 @@ defmodule Summoner.Domain.Schemas.EventRule do
     field :priority, :integer, default: 100
     field :last_fired_at, :utc_datetime_usec
     field :fire_count, :integer, default: 0
+    field :consecutive_failures, :integer, default: 0
+    field :disabled_until, :utc_datetime_usec
+    field :max_fires_per_hour, :integer, default: 0
 
     belongs_to :workspace, Workspace
 
@@ -47,7 +50,7 @@ defmodule Summoner.Domain.Schemas.EventRule do
   end
 
   @cast_fields ~w(name description event_type conditions action_type action_config
-                   cooldown_s enabled priority workspace_id)a
+                   cooldown_s enabled priority workspace_id max_fires_per_hour)a
 
   def changeset(event_rule, attrs) do
     event_rule
@@ -58,6 +61,7 @@ defmodule Summoner.Domain.Schemas.EventRule do
     |> validate_inclusion(:action_type, @action_types)
     |> validate_number(:cooldown_s, greater_than_or_equal_to: 0, less_than_or_equal_to: 86_400)
     |> validate_number(:priority, greater_than_or_equal_to: 0, less_than_or_equal_to: 1000)
+    |> validate_number(:max_fires_per_hour, greater_than_or_equal_to: 0, less_than_or_equal_to: 10_000)
     |> validate_action_config()
     |> unique_constraint([:workspace_id, :name])
     |> foreign_key_constraint(:workspace_id)

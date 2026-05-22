@@ -29,6 +29,9 @@ defmodule SummonerWeb.API.V1.EventRuleJSON do
       priority: r.priority,
       last_fired_at: r.last_fired_at,
       fire_count: r.fire_count,
+      max_fires_per_hour: r.max_fires_per_hour,
+      consecutive_failures: r.consecutive_failures,
+      disabled_until: r.disabled_until,
       workspace_id: r.workspace_id,
       inserted_at: r.inserted_at,
       updated_at: r.updated_at

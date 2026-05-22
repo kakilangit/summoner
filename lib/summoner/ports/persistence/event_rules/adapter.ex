@@ -15,4 +15,9 @@ defmodule Summoner.Ports.Persistence.EventRules.Adapter do
   @callback list_executions(String.t(), keyword()) :: [struct()]
   @callback list_executions_paginated(String.t(), keyword()) :: struct()
   @callback change_event_rule(struct(), map()) :: Ecto.Changeset.t()
+  @callback count_fires_in_window(String.t(), DateTime.t()) :: non_neg_integer()
+  @callback record_success(String.t()) :: :ok
+  @callback record_failure(String.t()) :: non_neg_integer()
+  @callback trip_circuit(String.t(), DateTime.t()) :: :ok
+  @callback reset_circuit(String.t()) :: :ok
 end

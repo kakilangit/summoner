@@ -110,6 +110,52 @@ defmodule Summoner.Adapters.Persistence.EventRules do
     EventRule.changeset(event_rule, attrs)
   end
 
+  @impl true
+  def count_fires_in_window(event_rule_id, since) do
+    EventRuleExecution
+    |> where([e], e.event_rule_id == ^event_rule_id)
+    |> where([e], e.inserted_at >= ^since)
+    |> Repo.aggregate(:count)
+  end
+
+  @impl true
+  def record_success(event_rule_id) do
+    EventRule
+    |> where([r], r.id == ^event_rule_id)
+    |> Repo.update_all(set: [consecutive_failures: 0, disabled_until: nil])
+
+    :ok
+  end
+
+  @impl true
+  def record_failure(event_rule_id) do
+    {_, [%{consecutive_failures: count}]} =
+      EventRule
+      |> where([r], r.id == ^event_rule_id)
+      |> select([r], %{consecutive_failures: r.consecutive_failures})
+      |> Repo.update_all(inc: [consecutive_failures: 1])
+
+    count
+  end
+
+  @impl true
+  def trip_circuit(event_rule_id, disabled_until) do
+    EventRule
+    |> where([r], r.id == ^event_rule_id)
+    |> Repo.update_all(set: [disabled_until: disabled_until])
+
+    :ok
+  end
+
+  @impl true
+  def reset_circuit(event_rule_id) do
+    EventRule
+    |> where([r], r.id == ^event_rule_id)
+    |> Repo.update_all(set: [consecutive_failures: 0, disabled_until: nil])
+
+    :ok
+  end
+
   defp maybe_filter(query, opts) do
     Enum.reduce(opts, query, fn
       {:event_type, type}, q when not is_nil(type) ->

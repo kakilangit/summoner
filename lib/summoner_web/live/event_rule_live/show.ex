@@ -89,6 +89,18 @@ defmodule SummonerWeb.EventRuleLive.Show do
             <span class="text-sm text-base-content/60">Fire Count</span>
             <p>{@rule.fire_count}</p>
           </div>
+          <div :if={@rule.max_fires_per_hour > 0}>
+            <span class="text-sm text-base-content/60">Rate Limit</span>
+            <p>{@rule.max_fires_per_hour}/hour</p>
+          </div>
+          <div :if={@rule.consecutive_failures > 0}>
+            <span class="text-sm text-base-content/60">Consecutive Failures</span>
+            <p class="text-warning">{@rule.consecutive_failures}</p>
+          </div>
+          <div :if={@rule.disabled_until}>
+            <span class="text-sm text-base-content/60">Circuit Disabled Until</span>
+            <p class="text-error">{Calendar.strftime(@rule.disabled_until, "%Y-%m-%d %H:%M:%S")}</p>
+          </div>
           <div :if={@rule.last_fired_at}>
             <span class="text-sm text-base-content/60">Last Fired</span>
             <p>{Calendar.strftime(@rule.last_fired_at, "%Y-%m-%d %H:%M:%S")}</p>

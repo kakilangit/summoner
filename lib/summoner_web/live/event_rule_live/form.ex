@@ -229,7 +229,7 @@ defmodule SummonerWeb.EventRuleLive.Form do
           </p>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-4">
           <.input
             field={@form[:cooldown_s]}
             type="number"
@@ -244,6 +244,14 @@ defmodule SummonerWeb.EventRuleLive.Form do
             label="Priority"
             min="0"
             max="1000"
+          />
+
+          <.input
+            field={@form[:max_fires_per_hour]}
+            type="number"
+            label="Max Fires/Hour (0 = unlimited)"
+            min="0"
+            max="10000"
           />
         </div>
 
