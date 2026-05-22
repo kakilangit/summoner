@@ -139,7 +139,7 @@ defmodule SummonerWeb.PluginLive.Index do
             <div class="flex items-center gap-2">
               <.link
                 navigate={
-                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/plugins/#{plugin.id}"
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/plugins/#{plugin.ref}"
                 }
                 class="font-medium hover:underline"
               >

@@ -101,14 +101,22 @@ defmodule Summoner.Adapters.ContainerRuntime.Docker do
     temp_name = "summoner-extract-#{:erlang.unique_integer([:positive])}"
 
     with {_, 0} <- docker(["create", "--name", temp_name, image, "true"]),
-         {output, 0} <-
+         {tar_output, 0} <-
            System.cmd(@docker_cmd, ["cp", "#{temp_name}:#{path}", "-"], stderr_to_stdout: true) do
       docker(["rm", "-f", temp_name])
-      {:ok, output}
+      extract_from_tar(tar_output)
     else
       {output, _code} ->
         docker(["rm", "-f", temp_name])
         {:error, "extract failed: #{String.trim(output)}"}
+    end
+  end
+
+  defp extract_from_tar(tar_data) do
+    case :erl_tar.extract({:binary, tar_data}, [:memory]) do
+      {:ok, [{_name, content} | _]} -> {:ok, content}
+      {:ok, []} -> {:error, "tar archive is empty"}
+      {:error, reason} -> {:error, "tar extraction failed: #{inspect(reason)}"}
     end
   end
 
@@ -130,9 +138,31 @@ defmodule Summoner.Adapters.ContainerRuntime.Docker do
   defp resource_args(opts) do
     args = []
     args = if opts[:cpu], do: args ++ ["--cpus", opts.cpu], else: args
-    if opts[:memory], do: args ++ ["--memory", opts.memory], else: args
+    if opts[:memory], do: args ++ ["--memory", normalize_memory(opts.memory)], else: args
+  end
+
+  # Convert Kubernetes-style memory suffixes to Docker-style.
+  # Docker accepts: b, k, m, g (case-insensitive).
+  # Kubernetes uses: Ki, Mi, Gi, Ti.
+  defp normalize_memory(mem) when is_binary(mem) do
+    mem
+    |> String.replace(~r/([KMGT])i$/i, "\\1")
+    |> String.downcase()
   end
 
   defp network_args(%{network: false}), do: ["--network", "none"]
   defp network_args(_opts), do: []
+
+  @impl true
+  def stdio_transport_args(opts) do
+    args =
+      ["run", "-i", "--rm", "--name", opts.name] ++
+        env_args(opts[:env] || %{}) ++
+        resource_args(opts) ++
+        network_args(opts) ++
+        ["--label", "summoner.plugin=true"] ++
+        [opts.image]
+
+    {System.find_executable(@docker_cmd) || @docker_cmd, args}
+  end
 end

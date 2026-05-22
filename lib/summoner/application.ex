@@ -41,7 +41,12 @@ defmodule Summoner.Application do
         maybe_mcp_server() ++
         [
           # Start to serve requests, typically the last entry
-          SummonerWeb.Endpoint
+          SummonerWeb.Endpoint,
+          # Boot enabled plugins after everything is ready
+          Supervisor.child_spec(
+            {Task, &Summoner.Services.Plugins.start_enabled_plugins/0},
+            id: :plugin_boot
+          )
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

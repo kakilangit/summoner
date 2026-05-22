@@ -13,10 +13,38 @@ defmodule Summoner.Services.Plugins do
   alias Summoner.Ports.ContainerRuntime
   alias Summoner.Ports.Persistence.Plugins, as: Persistence
   alias Summoner.Repo
-  alias Summoner.Services.Plugins.ActionExecutor
   alias Summoner.Services.Plugins.ProtocolHandler
 
   require Logger
+
+  # -------------------------------------------------------------------
+  # Boot
+  # -------------------------------------------------------------------
+
+  @doc "Start containers for all plugins in :enabled status. Called on application boot."
+  def start_enabled_plugins do
+    import Ecto.Query
+
+    plugins =
+      PluginInstallation
+      |> where([p], p.status == :enabled)
+      |> Repo.all()
+
+    for plugin <- plugins do
+      Logger.info("Booting enabled plugin: #{plugin.name} (#{plugin.ref})")
+
+      case start_plugin_container(plugin) do
+        :ok ->
+          Logger.info("Plugin #{plugin.name} started successfully")
+
+        {:error, reason} ->
+          Logger.error("Plugin #{plugin.name} failed to start: #{inspect(reason)}")
+          Persistence.update_status(plugin, :error, "Boot failed: #{inspect(reason)}")
+      end
+    end
+
+    :ok
+  end
 
   # -------------------------------------------------------------------
   # CRUD (delegated to persistence port)
@@ -24,6 +52,7 @@ defmodule Summoner.Services.Plugins do
 
   def get_plugin!(workspace_id, id), do: Persistence.get_plugin!(workspace_id, id)
   def get_plugin(workspace_id, id), do: Persistence.get_plugin(workspace_id, id)
+  def get_plugin_by_ref!(workspace_id, ref), do: Persistence.get_plugin_by_ref!(workspace_id, ref)
   def list_plugins(workspace_id), do: Persistence.list_plugins(workspace_id)
 
   def list_plugins_paginated(workspace_id, opts \\ []),
@@ -45,9 +74,10 @@ defmodule Summoner.Services.Plugins do
     with :ok <- ContainerRuntime.pull(image_ref),
          {:ok, manifest_json} <- extract_manifest(image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
-         :ok <- ManifestValidator.validate(manifest) do
+         {:ok, _validated} <- ManifestValidator.validate(manifest) do
       attrs = %{
         name: manifest["name"],
+        ref: PluginInstallation.compute_ref(image_ref),
         version: manifest["version"],
         capabilities: manifest["capabilities"],
         manifest: manifest,
@@ -119,7 +149,7 @@ defmodule Summoner.Services.Plugins do
     with :ok <- ContainerRuntime.pull(new_image_ref),
          {:ok, manifest_json} <- extract_manifest(new_image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
-         :ok <- ManifestValidator.validate(manifest),
+         {:ok, _validated} <- ManifestValidator.validate(manifest),
          {:ok, plugin} <-
            Persistence.update_plugin(plugin, %{
              version: manifest["version"],
@@ -132,6 +162,48 @@ defmodule Summoner.Services.Plugins do
       else
         {:ok, plugin}
       end
+    end
+  end
+
+  @doc """
+  Check if a newer version is available for a plugin.
+
+  Pulls the :latest tag of the plugin image, extracts its manifest,
+  and compares versions. Returns {:ok, new_manifest} if update available,
+  :up_to_date if current, or {:error, reason}.
+
+  Reusable by periodic checks and on-demand UI checks.
+  """
+  def check_for_update(plugin) do
+    latest_ref = latest_image_ref(plugin.manifest["image"])
+
+    with :ok <- ContainerRuntime.pull(latest_ref),
+         {:ok, manifest_json} <- extract_manifest(latest_ref),
+         {:ok, manifest} <- Jason.decode(manifest_json) do
+      if Version.compare(manifest["version"], plugin.version) == :gt do
+        {:ok, %{version: manifest["version"], image: manifest["image"]}}
+      else
+        :up_to_date
+      end
+    end
+  end
+
+  @doc """
+  Check and apply update in one step. Returns {:ok, plugin} if updated,
+  :up_to_date, or {:error, reason}.
+  """
+  def update(workspace_id, plugin_id) do
+    plugin = Persistence.get_plugin!(workspace_id, plugin_id)
+
+    case check_for_update(plugin) do
+      {:ok, %{image: new_image}} ->
+        upgrade(workspace_id, plugin_id, new_image)
+
+      :up_to_date ->
+        :up_to_date
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -152,9 +224,8 @@ defmodule Summoner.Services.Plugins do
   # -------------------------------------------------------------------
 
   @doc "Handle an inbound webhook for a plugin."
-  def handle_webhook(plugin_id, route, headers, body) do
-    # Find plugin across all workspaces (webhook URL includes plugin_id)
-    case find_plugin_by_id(plugin_id) do
+  def handle_webhook(workspace_id, plugin_id, route, headers, body) do
+    case find_plugin(workspace_id, plugin_id) do
       nil ->
         {:error, :not_found}
 
@@ -162,17 +233,7 @@ defmodule Summoner.Services.Plugins do
         {:error, :plugin_not_enabled}
 
       plugin ->
-        case ProtocolHandler.send_webhook(plugin, route, headers, body) do
-          {:ok, %{"actions" => actions}} when is_list(actions) ->
-            ActionExecutor.execute_actions(plugin, plugin.workspace_id, actions)
-            {:ok, actions}
-
-          {:ok, response} ->
-            {:ok, response}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        ProtocolHandler.send_webhook(plugin, route, headers, body)
     end
   end
 
@@ -205,8 +266,26 @@ defmodule Summoner.Services.Plugins do
     end
   end
 
-  defp find_plugin_by_id(plugin_id) do
-    # Query across all workspaces since webhook URL only has plugin_id
-    Repo.get(PluginInstallation, plugin_id)
+  defp find_plugin(workspace_id, plugin_ref) do
+    import Ecto.Query
+
+    case Nulid.Ecto.cast(plugin_ref) do
+      {:ok, _} ->
+        Persistence.get_plugin(workspace_id, plugin_ref)
+
+      :error ->
+        Repo.one(
+          from(p in PluginInstallation,
+            where: p.workspace_id == ^workspace_id and p.ref == ^plugin_ref,
+            limit: 1
+          )
+        )
+    end
+  end
+
+  defp latest_image_ref(image) do
+    # Strip version tag, replace with :latest
+    # "docker.io/kakilangit/grimoire-slack:0.1.1" -> "docker.io/kakilangit/grimoire-slack:latest"
+    image |> String.replace(~r/:[^\/]+$/, ":latest")
   end
 end

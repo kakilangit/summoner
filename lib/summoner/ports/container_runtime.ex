@@ -25,6 +25,7 @@ defmodule Summoner.Ports.ContainerRuntime do
   @callback logs(String.t(), keyword()) :: {:ok, String.t()} | {:error, term()}
   @callback inspect_container(String.t()) :: {:ok, map()} | {:error, term()}
   @callback extract_file(String.t(), String.t()) :: {:ok, binary()} | {:error, term()}
+  @callback stdio_transport_args(container_opts()) :: {command :: String.t(), args :: [String.t()]}
 
   defdelegate pull(image), to: @adapter
   defdelegate create(opts), to: @adapter
@@ -35,4 +36,5 @@ defmodule Summoner.Ports.ContainerRuntime do
   defdelegate logs(container_id, opts \\ []), to: @adapter
   defdelegate inspect_container(container_id), to: @adapter
   defdelegate extract_file(image, path), to: @adapter
+  defdelegate stdio_transport_args(opts), to: @adapter
 end

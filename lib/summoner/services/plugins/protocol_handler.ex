@@ -19,9 +19,9 @@ defmodule Summoner.Services.Plugins.ProtocolHandler do
   @hook_timeout 5_000
   @default_timeout 30_000
 
-  @doc "Send a webhook to the plugin, returns list of actions."
+  @doc "Forward a raw webhook to the plugin. Returns whatever the plugin returns."
   def send_webhook(plugin, route, headers, body) do
-    call(plugin.id, "summoner/webhook", %{
+    call(plugin.id, "webhook", %{
       route: route,
       headers: headers,
       body: body
@@ -32,7 +32,7 @@ defmodule Summoner.Services.Plugins.ProtocolHandler do
   def send_hook(plugin, point, context) do
     timeout = get_hook_timeout(plugin)
 
-    call(plugin.id, "summoner/hook", %{point: point, context: context}, timeout)
+    call(plugin.id, "hook", %{point: point, context: context}, timeout)
   end
 
   @doc "Forward a domain event to the plugin."
@@ -40,17 +40,17 @@ defmodule Summoner.Services.Plugins.ProtocolHandler do
     params = %{type: event_type, data: event_data}
     params = if external_ref, do: Map.put(params, :external_ref, external_ref), else: params
 
-    call(plugin.id, "summoner/event", params)
+    call(plugin.id, "event", params)
   end
 
   @doc "List models from a provider plugin."
   def list_models(plugin) do
-    call(plugin.id, "summoner/models", %{})
+    call(plugin.id, "models", %{})
   end
 
   @doc "Chat completion via a provider plugin."
   def chat(plugin, params) do
-    call(plugin.id, "summoner/chat", params, 120_000)
+    call(plugin.id, "chat", params, 120_000)
   end
 
   # -------------------------------------------------------------------
@@ -67,6 +67,14 @@ defmodule Summoner.Services.Plugins.ProtocolHandler do
   end
 
   defp normalize_result(%{is_error: true, result: result}), do: {:error, result}
+
+  defp normalize_result(%{result: %{"content" => [%{"type" => "text", "text" => text} | _]}}) do
+    case Jason.decode(text) do
+      {:ok, parsed} -> parsed
+      {:error, _} -> text
+    end
+  end
+
   defp normalize_result(%{result: result}), do: result
   defp normalize_result(other), do: other
 

@@ -11,6 +11,7 @@ defmodule Summoner.Ports.Persistence.Plugins do
   defdelegate get_plugin!(workspace_id, id), to: @adapter
   defdelegate get_plugin(workspace_id, id), to: @adapter
   defdelegate get_plugin_by_name(workspace_id, name), to: @adapter
+  defdelegate get_plugin_by_ref!(workspace_id, ref), to: @adapter
   defdelegate list_plugins(workspace_id), to: @adapter
   defdelegate list_plugins_paginated(workspace_id, opts), to: @adapter
   defdelegate update_plugin(plugin, attrs), to: @adapter

@@ -38,6 +38,12 @@ defmodule Summoner.Adapters.Persistence.Plugins do
     Repo.get_by(PluginInstallation, workspace_id: workspace_id, name: name)
   end
 
+  def get_plugin_by_ref!(workspace_id, ref) do
+    PluginInstallation
+    |> where([p], p.workspace_id == ^workspace_id and p.ref == ^ref)
+    |> Repo.one!()
+  end
+
   def list_plugins(workspace_id) do
     PluginInstallation
     |> where([p], p.workspace_id == ^workspace_id)
