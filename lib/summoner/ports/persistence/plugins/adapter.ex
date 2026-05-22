@@ -14,4 +14,12 @@ defmodule Summoner.Ports.Persistence.Plugins.Adapter do
   @callback list_enabled_by_capability(String.t(), String.t()) :: [struct()]
   @callback upsert_conversation(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback get_conversation_by_ref(String.t(), String.t()) :: struct() | nil
+
+  # Plugin state
+  @callback get_state(String.t(), String.t(), String.t()) :: struct() | nil
+  @callback set_state(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
+  @callback delete_state(String.t(), String.t(), String.t()) :: :ok
+
+  # Container support
+  @callback enabled_count_by_digest(String.t()) :: non_neg_integer()
 end

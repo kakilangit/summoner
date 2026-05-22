@@ -26,6 +26,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
     PipelineRunStatus,
     PipelineStageInvocation,
     PipelineStageStatus,
+    PluginEvent,
     SwarmDone,
     SwarmTimeout,
     SwarmTurn
@@ -88,6 +89,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp topics(%CopilotConnectionFailed{} = e), do: [provider_topic(e)]
   defp topics(%AgentConfigChanged{} = e), do: [agent_config_topic(e)]
   defp topics(%Failover{} = e), do: [failover_topic(e)]
+  defp topics(%PluginEvent{} = e), do: [plugin_topic(e)]
 
   # -------------------------------------------------------------------
   # Topic builders
@@ -106,6 +108,7 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp swarm_topic(%{workspace_id: w, swarm_id: s}), do: "swarm:#{w}:#{s}"
   defp agent_config_topic(%{agent_id: a}), do: "agent_config:#{a}"
   defp failover_topic(%{workspace_id: w}), do: "failover:#{w}"
+  defp plugin_topic(%{workspace_id: w, plugin_id: p}), do: "plugin:#{w}:#{p}"
 
   # -------------------------------------------------------------------
   # Scope → topic string

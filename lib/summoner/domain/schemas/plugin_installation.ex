@@ -29,6 +29,8 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
     field :config, :map, default: %{}
     field :status, Ecto.Enum, values: @statuses, default: :installed
     field :error_message, :string
+    field :digest, :string
+    field :trusted, :boolean, default: false
 
     belongs_to :mcp_server, McpServer
     belongs_to :provider, Provider
@@ -51,6 +53,8 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
       :config,
       :status,
       :error_message,
+      :digest,
+      :trusted,
       :mcp_server_id,
       :provider_id,
       :workspace_id
