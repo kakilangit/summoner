@@ -1186,7 +1186,12 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
     timeout = state.agent.local_agent.step_timeout_s * 1_000
 
     if state.tool_executor do
-      context = %{agent_id: state.agent.id, workspace_id: state.agent.workspace_id}
+      context = %{
+        agent_id: state.agent.id,
+        workspace_id: state.agent.workspace_id,
+        conversation_id: state.invocation.conversation_id
+      }
+
       task = Task.async(fn -> state.tool_executor.execute(tool_call, context) end)
 
       case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do

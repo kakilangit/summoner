@@ -126,6 +126,14 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             Spellbook
           </.link>
+          <.link
+            navigate={
+              ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{@agent.id}/memories"
+            }
+            class="btn btn-ghost btn-sm"
+          >
+            Memories
+          </.link>
         </div>
 
         <div

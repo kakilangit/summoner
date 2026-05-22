@@ -94,3 +94,84 @@
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
+
+/* Spacious prose for relic/artifact document view */
+.relic-prose :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.relic-prose h1 { font-size: 1.5em; }
+.relic-prose h2 { font-size: 1.25em; }
+.relic-prose h3 { font-size: 1.1em; }
+
+.relic-prose :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.relic-prose p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  line-height: 1.7;
+}
+
+.relic-prose p:first-child {
+  margin-top: 0;
+}
+
+.relic-prose :is(ul, ol) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-left: 1.5em;
+}
+
+.relic-prose li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+.relic-prose blockquote {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  padding-left: 1em;
+  border-left-width: 3px;
+  font-style: italic;
+}
+
+.relic-prose pre {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  padding: 0.75em 1em;
+  border-radius: 0.5rem;
+  font-size: 0.85em;
+  overflow-x: auto;
+}
+
+.relic-prose code:not(pre code) {
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.relic-prose hr {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.relic-prose table {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  width: 100%;
+}
+
+.relic-prose th,
+.relic-prose td {
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+
+.relic-prose em {
+  font-style: italic;
+}

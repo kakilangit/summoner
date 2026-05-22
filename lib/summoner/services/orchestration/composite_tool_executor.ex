@@ -12,12 +12,15 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
   @behaviour Summoner.Services.Orchestration.ToolExecutor
 
+  alias Summoner.Ports.Persistence.AgentMemories
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Artifacts
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Ports.Workers
+  alias Summoner.Services.Embedding
+  alias Summoner.Services.Memory.PartySharing
   alias Summoner.Services.Orchestration.{BuiltinTools, McpToolExecutor}
 
   @impl true
@@ -33,6 +36,9 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
       tool_name in ~w(__create_artifact__ __update_artifact__ __read_artifact__) ->
         execute_artifact_tool(tool_name, tool_call, context)
+
+      tool_name == "__remember__" ->
+        execute_remember(tool_call, context)
 
       BuiltinTools.builtin?(tool_name) ->
         execute_builtin(tool_call, workspace_id)
@@ -128,70 +134,104 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
     end
   end
 
-  defp execute_artifact_tool("__create_artifact__", tool_call, context) do
+  defp execute_artifact_tool(action, tool_call, context)
+       when action in ~w(__create_artifact__ __update_artifact__) do
     with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
-      attrs = %{
-        name: args["name"],
-        type: args["type"],
-        content: args["content"],
-        content_type: args["content_type"] || "text/markdown",
-        workspace_id: context.workspace_id,
-        agent_id: context.agent_id,
-        conversation_id: context[:conversation_id]
-      }
-
-      scope = %{user: nil}
-
-      case Artifacts.create_artifact(scope, attrs) do
-        {:ok, artifact} ->
-          {:ok, "Artifact '#{artifact.name}' created (v#{artifact.version}, ID: #{artifact.id})."}
-
-        {:error, changeset} ->
-          {:error, "Failed to create artifact: #{inspect(changeset.errors)}"}
-      end
-    end
-  end
-
-  defp execute_artifact_tool("__update_artifact__", tool_call, context) do
-    with {:ok, args} <- parse_arguments(tool_call.function.arguments),
-         existing when not is_nil(existing) <-
-           Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
-      attrs = %{
-        name: existing.name,
-        type: existing.type,
-        content: args["content"],
-        content_type: existing.content_type,
-        version: existing.version + 1,
-        parent_id: existing.id,
-        workspace_id: context.workspace_id,
-        agent_id: context.agent_id,
-        conversation_id: context[:conversation_id]
-      }
-
-      case Artifacts.create_artifact(%{user: nil}, attrs) do
-        {:ok, artifact} ->
-          {:ok,
-           "Artifact '#{artifact.name}' updated to v#{artifact.version} (ID: #{artifact.id})."}
-
-        {:error, changeset} ->
-          {:error, "Failed to update artifact: #{inspect(changeset.errors)}"}
-      end
-    else
-      nil -> {:error, "Artifact not found."}
-      error -> error
+      existing = lookup_artifact(context[:conversation_id], args["name"])
+      attrs = build_artifact_attrs(args, existing, context)
+      upsert_artifact(attrs, existing)
     end
   end
 
   defp execute_artifact_tool("__read_artifact__", tool_call, context) do
     with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
-      case Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
-        nil ->
-          {:error, "Artifact '#{args["name"]}' not found."}
-
-        artifact ->
-          {:ok,
-           "# #{artifact.name} (v#{artifact.version}, #{artifact.type})\n\n#{artifact.content || ""}"}
+      case lookup_artifact(context[:conversation_id], args["name"]) do
+        nil -> {:error, "Artifact '#{args["name"]}' not found."}
+        a -> {:ok, "# #{a.name} (v#{a.version}, #{a.type})\n\n#{a.content || ""}"}
       end
+    end
+  end
+
+  defp upsert_artifact(attrs, existing) do
+    case Artifacts.create_artifact(%{user: nil}, attrs) do
+      {:ok, artifact} ->
+        verb = if existing, do: "updated to", else: "created"
+        {:ok, "Artifact '#{artifact.name}' #{verb} v#{artifact.version} (ID: #{artifact.id})."}
+
+      {:error, changeset} ->
+        {:error, "Failed to create artifact: #{inspect(changeset.errors)}"}
+    end
+  end
+
+  defp lookup_artifact(nil, _name), do: nil
+
+  defp lookup_artifact(conversation_id, name),
+    do: Artifacts.get_artifact_by_name(conversation_id, name)
+
+  defp build_artifact_attrs(args, existing, context) do
+    base = %{
+      name: args["name"],
+      type: args["type"] || (existing && existing.type) || "document",
+      content: args["content"],
+      content_type:
+        args["content_type"] || (existing && existing.content_type) || "text/markdown",
+      workspace_id: context.workspace_id,
+      agent_id: context.agent_id,
+      conversation_id: context[:conversation_id]
+    }
+
+    if existing do
+      Map.merge(base, %{version: existing.version + 1, parent_id: existing.id})
+    else
+      base
+    end
+  end
+
+  defp execute_remember(tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments),
+         {:ok, attrs} <- build_memory_attrs(args, context),
+         attrs = maybe_embed_memory(attrs, context.workspace_id),
+         {:ok, memory} <- AgentMemories.create_memory(attrs) do
+      Task.start(fn -> PartySharing.share_memory(memory) end)
+      {:ok, "Remembered #{memory.type}: #{String.slice(memory.content, 0..50)}..."}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, "Failed to store memory: #{inspect(changeset.errors)}"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @memory_types %{
+    "fact" => :fact,
+    "preference" => :preference,
+    "procedure" => :procedure,
+    "correction" => :correction
+  }
+
+  defp build_memory_attrs(args, context) do
+    case Map.fetch(@memory_types, args["type"]) do
+      {:ok, type} ->
+        {:ok,
+         %{
+           content: args["content"],
+           type: type,
+           agent_id: context.agent_id,
+           workspace_id: context.workspace_id,
+           source_conversation_id: context[:conversation_id]
+         }}
+
+      :error ->
+        {:error,
+         "Invalid memory type: #{inspect(args["type"])}. Must be one of: fact, preference, procedure, correction"}
+    end
+  end
+
+  defp maybe_embed_memory(attrs, workspace_id) do
+    case Embedding.embed(workspace_id, attrs.content) do
+      {:ok, vector} -> Map.put(attrs, :embedding, vector)
+      _ -> attrs
     end
   end
 

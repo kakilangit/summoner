@@ -2,9 +2,12 @@ defmodule Summoner.Adapters.Persistence.Artifacts do
   @moduledoc """
   The Artifacts context (Relics).
 
-  Manages workspace-scoped artifacts — persistent agent outputs that
-  outlive conversations. Supports versioning via parent_id chains,
-  soft-delete, and pinning.
+  Manages conversation-scoped artifacts — persistent agent outputs that
+  outlive individual messages. Supports append-only versioning via
+  parent_id chains, soft-delete, and pinning.
+
+  Artifact names are unique per conversation. Creating an artifact with
+  a name that already exists in the same conversation bumps the version.
   """
 
   import Ecto.Query, warn: false
@@ -30,10 +33,19 @@ defmodule Summoner.Adapters.Persistence.Artifacts do
     |> Repo.all()
   end
 
-  @doc "Lists artifacts with pagination."
+  @doc "Lists latest-version artifacts with pagination, preloading source."
   def list_artifacts_paginated(%{user: _user}, workspace_id, opts \\ []) do
+    # Inner query: pick latest version per (name, conversation_id)
+    latest =
+      Artifact
+      |> where([a], a.workspace_id == ^workspace_id and is_nil(a.deleted_at))
+      |> distinct([a], [a.name, a.conversation_id])
+      |> order_by([a], asc: a.name, asc: a.conversation_id, desc: a.version)
+
+    # Wrap so Pagination can apply its own sort/filter freely
     Artifact
-    |> where([a], a.workspace_id == ^workspace_id and is_nil(a.deleted_at))
+    |> join(:inner, [a], l in subquery(latest), on: a.id == l.id)
+    |> preload([:agent, conversation: :swarm])
     |> Pagination.paginate(opts)
   end
 
@@ -44,16 +56,19 @@ defmodule Summoner.Adapters.Persistence.Artifacts do
     |> Repo.get!(artifact_id)
   end
 
-  @doc "Gets an artifact by name within a workspace."
-  def get_artifact_by_name(workspace_id, name) do
+  @doc "Gets the latest version of an artifact by name within a conversation."
+  def get_artifact_by_name(conversation_id, name) do
     Artifact
-    |> where([a], a.workspace_id == ^workspace_id and a.name == ^name and is_nil(a.deleted_at))
+    |> where(
+      [a],
+      a.conversation_id == ^conversation_id and a.name == ^name and is_nil(a.deleted_at)
+    )
     |> order_by([a], desc: a.version)
     |> limit(1)
     |> Repo.one()
   end
 
-  @doc "Updates an artifact."
+  @doc "Updates an artifact's metadata (pin, etc.)."
   def update_artifact(%{user: _user}, %Artifact{} = artifact, attrs) do
     artifact
     |> Artifact.changeset(attrs)
@@ -75,9 +90,8 @@ defmodule Summoner.Adapters.Persistence.Artifacts do
     |> Repo.all()
   end
 
-  @doc "Lists all versions of an artifact (by following parent chain)."
+  @doc "Lists all versions of an artifact by name within its conversation."
   def list_versions(workspace_id, artifact_id) do
-    # Get the artifact and find all versions with the same name
     case Repo.get(Artifact, artifact_id) do
       nil ->
         []
@@ -86,7 +100,8 @@ defmodule Summoner.Adapters.Persistence.Artifacts do
         Artifact
         |> where(
           [a],
-          a.workspace_id == ^workspace_id and a.name == ^artifact.name and is_nil(a.deleted_at)
+          a.workspace_id == ^workspace_id and a.name == ^artifact.name and
+            is_nil(a.deleted_at)
         )
         |> order_by([a], asc: a.version)
         |> Repo.all()

@@ -32,4 +32,8 @@ defmodule Summoner.Ports.Persistence.Providers.Adapter do
   @callback list_tenant_providers_paginated(String.t()) :: struct()
   @callback list_tenant_providers_paginated(String.t(), keyword()) :: struct()
   @callback get_tenant_provider!(String.t(), String.t()) :: Provider.t()
+
+  # Embedding
+  @callback find_embedding_provider(String.t()) ::
+              {:ok, Provider.t(), String.t()} | {:error, :no_embedding_provider}
 end

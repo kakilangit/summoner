@@ -22,6 +22,7 @@ defmodule Summoner.Ports.Persistence.Swarms.Adapter do
               {:ok, [SwarmMember.t()]} | {:error, term()}
   @callback member_query() :: Ecto.Query.t()
   @callback preload_members(Swarm.t()) :: Swarm.t()
+  @callback list_peer_agent_ids(String.t()) :: [String.t()]
 
   # Conversations
   @callback list_swarm_conversations_paginated(map(), String.t()) :: struct()
