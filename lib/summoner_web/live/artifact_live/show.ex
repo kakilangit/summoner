@@ -113,10 +113,31 @@ defmodule SummonerWeb.ArtifactLive.Show do
       </div>
 
       <%!-- Content --%>
-      <div :if={!@compare_version} class="bg-base-200 rounded-lg p-6">
-        <div class="prose prose-sm max-w-none">
+      <div
+        :if={!@compare_version}
+        class="bg-base-200 rounded-lg p-6"
+        id="artifact-content"
+        phx-hook="CopyMessage"
+      >
+        <div class="flex justify-end mb-2">
+          <button
+            type="button"
+            data-copy="raw"
+            class="btn btn-ghost btn-xs btn-square opacity-60 hover:opacity-100 transition-opacity"
+            title="Copy"
+          >
+            <span class="hero-clipboard-document size-4"></span>
+          </button>
+        </div>
+        <div class="prose prose-sm max-w-none" data-raw={@artifact.content}>
           <pre :if={code_type?(@artifact.content_type)}><code>{@artifact.content}</code></pre>
-          <div :if={!code_type?(@artifact.content_type)} class="whitespace-pre-wrap">
+          <div :if={markdown_type?(@artifact.content_type)} class="break-words">
+            {markdown(@artifact.content)}
+          </div>
+          <div
+            :if={!code_type?(@artifact.content_type) && !markdown_type?(@artifact.content_type)}
+            class="whitespace-pre-wrap"
+          >
             {@artifact.content}
           </div>
         </div>
@@ -181,5 +202,18 @@ defmodule SummonerWeb.ArtifactLive.Show do
       text/x-java text/x-c text/x-cpp text/x-ruby text/x-shell
       text/plain
     )
+  end
+
+  defp markdown_type?(content_type), do: content_type == "text/markdown"
+
+  defp markdown(nil), do: ""
+
+  defp markdown(text) when is_binary(text) do
+    text
+    |> Earmark.as_html(escape: false, smartypants: false)
+    |> case do
+      {:ok, html, _} -> Phoenix.HTML.raw(html)
+      {:error, html, _} -> Phoenix.HTML.raw(html)
+    end
   end
 end
