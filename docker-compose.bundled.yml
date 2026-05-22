@@ -86,6 +86,9 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
     ports:
       - "${PORT:-4000}:4000"
+    networks:
+      - default
+      - summoner-plugins
 
   seed:
     image: ghcr.io/kakilangit/summoner-seed:latest
@@ -104,6 +107,11 @@ services:
       PGDATABASE: ${POSTGRES_DB:-summoner}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       BUNDLED_OLLAMA_URL: http://ollama:11434
+
+networks:
+  default:
+  summoner-plugins:
+    name: summoner-plugins
 
 volumes:
   pgdata:

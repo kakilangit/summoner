@@ -3,9 +3,9 @@ defmodule SummonerWeb.PluginLive.Show do
 
   import SummonerWeb.AuthorizeHelper
 
-  alias Summoner.Services.Plugins
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Secrets
+  alias Summoner.Services.Plugins
 
   @impl true
   def mount(%{"ref" => ref}, _session, socket) do
@@ -218,7 +218,8 @@ defmodule SummonerWeb.PluginLive.Show do
           >
             Update to v{@update_available}
           </button>
-          <span :if={@checking_update} class="btn btn-sm btn-ghost loading loading-spinner loading-xs"></span>
+          <span :if={@checking_update} class="btn btn-sm btn-ghost loading loading-spinner loading-xs">
+          </span>
           <button
             :if={@plugin.status in [:installed, :disabled, :error]}
             phx-click="enable"
@@ -298,7 +299,10 @@ defmodule SummonerWeb.PluginLive.Show do
             <div :if={@plugin.config != %{}} class="space-y-2">
               <div :for={{key, value} <- @plugin.config} class="flex gap-2">
                 <span class="font-mono text-sm font-semibold">{key}:</span>
-                <span :if={field_src(@config_schema, key) == "secret"} class="text-sm badge badge-ghost">
+                <span
+                  :if={field_src(@config_schema, key) == "secret"}
+                  class="text-sm badge badge-ghost"
+                >
                   {secret_name(@secret_options, value)}
                 </span>
                 <span :if={field_src(@config_schema, key) == "agent"} class="text-sm badge badge-info">

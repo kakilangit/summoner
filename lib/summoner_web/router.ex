@@ -187,6 +187,13 @@ defmodule SummonerWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
+  # Plugin callback API — authenticated via X-Plugin-Token
+  scope "/api/internal/plugins", SummonerWeb.API.Internal do
+    pipe_through [:api, SummonerWeb.Plugs.PluginCallbackAuth]
+
+    post "/callback", PluginCallbackController, :callback
+  end
+
   # Webhook trigger — public, explicitly scoped by URL
   scope "/api/v1/tenants/:tenant_id/workspaces/:workspace_id", SummonerWeb.API.V1 do
     pipe_through [:scoped_api]

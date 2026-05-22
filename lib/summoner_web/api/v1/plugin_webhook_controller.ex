@@ -1,10 +1,15 @@
 defmodule SummonerWeb.API.V1.PluginWebhookController do
-  @moduledoc "Receives inbound webhooks and forwards to plugin containers."
+  @moduledoc """
+  Receives inbound webhooks and forwards to plugin containers.
+
+  Pure HTTP response forwarding — plugins use the callback API
+  for actions (invoke_agent, emit_event, etc.) instead of returning
+  actions in webhook responses.
+  """
 
   use SummonerWeb, :controller
 
   alias Summoner.Services.Plugins
-  alias Summoner.Services.Plugins.ActionExecutor
 
   require Logger
 
@@ -16,20 +21,16 @@ defmodule SummonerWeb.API.V1.PluginWebhookController do
     raw_body = conn.assigns[:raw_body] || ""
 
     case Plugins.handle_webhook(workspace_id, plugin_ref, route, headers, raw_body) do
-      {:ok, %{"status" => status, "headers" => resp_headers, "body" => body} = response} ->
-        maybe_execute_actions(workspace_id, plugin_ref, response)
-
+      {:ok, %{"status" => status, "headers" => resp_headers, "body" => body}} ->
         conn
         |> set_resp_headers(resp_headers)
         |> put_status(status)
         |> json(body)
 
-      {:ok, %{"body" => body} = response} ->
-        maybe_execute_actions(workspace_id, plugin_ref, response)
+      {:ok, %{"body" => body}} ->
         json(conn, body)
 
       {:ok, response} ->
-        maybe_execute_actions(workspace_id, plugin_ref, response)
         json(conn, response)
 
       {:error, :not_found} ->
@@ -43,18 +44,6 @@ defmodule SummonerWeb.API.V1.PluginWebhookController do
         conn |> put_status(:internal_server_error) |> json(%{error: inspect(reason)})
     end
   end
-
-  defp maybe_execute_actions(workspace_id, plugin_ref, %{"actions" => actions})
-       when is_list(actions) and actions != [] do
-    plugin = Plugins.get_plugin_by_ref!(workspace_id, plugin_ref)
-
-    Task.Supervisor.start_child(
-      Summoner.TaskSupervisor,
-      fn -> ActionExecutor.execute_actions(plugin, workspace_id, actions) end
-    )
-  end
-
-  defp maybe_execute_actions(_workspace_id, _plugin_ref, _response), do: :ok
 
   defp set_resp_headers(conn, headers) when is_map(headers) do
     Enum.reduce(headers, conn, fn {k, v}, acc ->
