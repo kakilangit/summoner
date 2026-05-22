@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+      - "cli-v*"
 
 env:
   MIX_ENV: test
@@ -12,40 +13,53 @@ env:
   OTP_VERSION: "28"
 
 jobs:
-  check-version:
-    name: Check Version Consistency
+  # ── Detect release type ──────────────────────────────────────────────
+  detect:
+    name: Detect Release Type
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get-version.outputs.version }}
+      is-app: ${{ steps.detect.outputs.is-app }}
+      is-cli: ${{ steps.detect.outputs.is-cli }}
+      version: ${{ steps.detect.outputs.version }}
+    steps:
+      - id: detect
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "$TAG" == cli-v* ]]; then
+            echo "is-app=false" >> $GITHUB_OUTPUT
+            echo "is-cli=true" >> $GITHUB_OUTPUT
+            echo "version=${TAG#cli-v}" >> $GITHUB_OUTPUT
+          else
+            echo "is-app=true" >> $GITHUB_OUTPUT
+            echo "is-cli=false" >> $GITHUB_OUTPUT
+            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          fi
+
+  # ── App: version check ──────────────────────────────────────────────
+  check-version:
+    name: Check Version Consistency
+    if: needs.detect.outputs.is-app == 'true'
+    needs: detect
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Get version from mix.exs
-        id: get-version
+      - name: Verify mix.exs matches tag
         run: |
-          VERSION=$(grep 'version: "' mix.exs | sed 's/.*version: "\(.*\)".*/\1/')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "mix.exs version: $VERSION"
-
-      - name: Get version from tag
-        id: get-tag
-        run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
-          echo "Tag version: $TAG_VERSION"
-
-      - name: Verify versions match
-        run: |
-          if [ "${{ steps.get-version.outputs.version }}" != "${{ steps.get-tag.outputs.version }}" ]; then
-            echo "Version mismatch: mix.exs has ${{ steps.get-version.outputs.version }}, tag has ${{ steps.get-tag.outputs.version }}"
+          MIX_VERSION=$(grep 'version: "' mix.exs | sed 's/.*version: "\(.*\)".*/\1/')
+          TAG_VERSION="${{ needs.detect.outputs.version }}"
+          if [ "$MIX_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: mix.exs has $MIX_VERSION, tag has $TAG_VERSION"
             exit 1
           fi
-          echo "Versions match: ${{ steps.get-version.outputs.version }}"
+          echo "Versions match: $MIX_VERSION"
 
+  # ── App: test ───────────────────────────────────────────────────────
   test:
     name: Test Before Release
+    if: needs.detect.outputs.is-app == 'true'
+    needs: [detect, check-version]
     runs-on: ubuntu-latest
-    needs: check-version
     services:
       postgres:
         image: pgvector/pgvector:pg17
@@ -79,92 +93,224 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            cli/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('cli/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - run: mix deps.get
       - run: mix ecto.create
       - run: mix ecto.migrate
       - run: make ci
 
+  # ── App: docker ─────────────────────────────────────────────────────
   docker:
     name: Docker Images
-    needs: [check-version, test]
+    if: needs.detect.outputs.is-app == 'true'
+    needs: [detect, test]
     uses: ./.github/workflows/docker-build.yml
     with:
       images: all
-      tag: ${{ needs.check-version.outputs.version }}
+      tag: ${{ needs.detect.outputs.version }}
       latest: true
     permissions:
       contents: read
       packages: write
 
-  check-release:
-    name: Check if GitHub Release Exists
-    permissions:
-      contents: read
+  # ── App: GitHub release ─────────────────────────────────────────────
+  app-release:
+    name: Create App Release
+    if: always() && needs.detect.outputs.is-app == 'true' && needs.docker.result != 'failure'
+    needs: [detect, docker]
     runs-on: ubuntu-latest
-    needs: check-version
-    outputs:
-      release-exists: ${{ steps.check-release.outputs.release-exists }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Check if GitHub release exists
-        id: check-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_NAME="v${{ needs.check-version.outputs.version }}"
-          echo "Checking if GitHub release for tag $TAG_NAME exists..."
-
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME")
-
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "GitHub release for $TAG_NAME already exists"
-            echo "release-exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "GitHub release for $TAG_NAME does not exist"
-            echo "release-exists=false" >> $GITHUB_OUTPUT
-          fi
-
-  create-release:
-    name: Create GitHub Release
     permissions:
       contents: write
-    runs-on: ubuntu-latest
-    needs: [check-version, check-release, docker]
-    if: always() && needs.check-release.outputs.release-exists == 'false' && needs.docker.result != 'failure'
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Generate changelog
-        id: changelog
+      - name: Check if release exists
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${{ github.ref_name }}$" | head -1)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}")
+          echo "exists=$( [ "$HTTP_STATUS" = "200" ] && echo true || echo false )" >> $GITHUB_OUTPUT
 
+      - name: Generate changelog
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E "^v" | grep -v "^${{ github.ref_name }}$" | head -1)
           if [ -z "$PREV_TAG" ]; then
-            echo "No previous tag found, using all commits"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${{ github.ref_name }})
+            git log --pretty=format:"- %s (%h)" ${{ github.ref_name }} > changelog.txt
           else
-            echo "Previous tag: $PREV_TAG"
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..${{ github.ref_name }})
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..${{ github.ref_name }} > changelog.txt
           fi
 
-          echo "$CHANGELOG" > changelog.txt
-          echo "Generated changelog with $(echo "$CHANGELOG" | wc -l) entries"
-
       - name: Create Release
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PRERELEASE_FLAG=""
-          if [[ "${{ needs.check-version.outputs.version }}" == *"-"* ]]; then
+          if [[ "${{ needs.detect.outputs.version }}" == *"-"* ]]; then
             PRERELEASE_FLAG="--prerelease"
           fi
 
           gh release create "${{ github.ref_name }}" \
-            --title "Release ${{ needs.check-version.outputs.version }}" \
+            --title "Release ${{ needs.detect.outputs.version }}" \
             --notes-file changelog.txt \
             $PRERELEASE_FLAG
+
+  # ── CLI: version check ─────────────────────────────────────────────
+  cli-check-version:
+    name: Check CLI Version
+    if: needs.detect.outputs.is-cli == 'true'
+    needs: detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify Cargo.toml matches tag
+        run: |
+          CARGO_VERSION=$(grep '^version' cli/Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+          TAG_VERSION="${{ needs.detect.outputs.version }}"
+          if [ "$CARGO_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: Cargo.toml has $CARGO_VERSION, tag has $TAG_VERSION"
+            exit 1
+          fi
+          echo "Versions match: $CARGO_VERSION"
+
+  # ── CLI: lint & test ────────────────────────────────────────────────
+  cli-test:
+    name: CLI Lint & Test
+    if: needs.detect.outputs.is-cli == 'true'
+    needs: [detect, cli-check-version]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            cli/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('cli/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo test
+
+  # ── CLI: build binaries ─────────────────────────────────────────────
+  cli-build:
+    name: CLI Build
+    if: needs.detect.outputs.is-cli == 'true'
+    needs: [detect, cli-test]
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: cli
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            artifact: summoner-linux-amd64
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+            artifact: summoner-linux-arm64
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary
+        run: cp target/${{ matrix.target }}/release/summoner ${{ matrix.artifact }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: cli/${{ matrix.artifact }}
+
+  # ── CLI: GitHub release ─────────────────────────────────────────────
+  cli-release:
+    name: Create CLI Release
+    if: needs.detect.outputs.is-cli == 'true'
+    needs: [detect, cli-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Check if release exists
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}")
+          echo "exists=$( [ "$HTTP_STATUS" = "200" ] && echo true || echo false )" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E "^cli-v" | grep -v "^${{ github.ref_name }}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" ${{ github.ref_name }} -- cli/ > changelog.txt
+          else
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..${{ github.ref_name }} -- cli/ > changelog.txt
+          fi
+
+      - name: Create Release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "${{ needs.detect.outputs.version }}" == *"-"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "CLI v${{ needs.detect.outputs.version }}" \
+            --notes-file changelog.txt \
+            $PRERELEASE_FLAG \
+            artifacts/*

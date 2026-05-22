@@ -35,6 +35,7 @@ defmodule Summoner.Application do
         maybe_registry() ++
         maybe_discovery() ++
         maybe_theme_init() ++
+        maybe_mcp_server() ++
         [
           # Start to serve requests, typically the last entry
           SummonerWeb.Endpoint
@@ -73,6 +74,14 @@ defmodule Summoner.Application do
   defp maybe_theme_init do
     if Application.get_env(:summoner, :start_theme_init, true) do
       [{Task, &Themes.seed_builtins/0}]
+    else
+      []
+    end
+  end
+
+  defp maybe_mcp_server do
+    if Application.get_env(:summoner, :start_mcp_server, true) do
+      [{Summoner.Adapters.MCP.Server, transport: :streamable_http}]
     else
       []
     end
