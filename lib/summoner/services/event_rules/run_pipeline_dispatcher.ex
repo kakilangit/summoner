@@ -7,6 +7,7 @@ defmodule Summoner.Services.EventRules.RunPipelineDispatcher do
 
   alias Summoner.Ports.Persistence.Pipelines
   alias Summoner.Ports.Workers
+  alias Summoner.Services.EventRules.InvokeAgentDispatcher
 
   require Logger
 
@@ -45,7 +46,7 @@ defmodule Summoner.Services.EventRules.RunPipelineDispatcher do
   def dispatch(_config, _event_data), do: {:error, :no_pipeline_specified}
 
   defp build_input(%{"input_template" => template}, event_data) when is_binary(template) do
-    Summoner.Services.EventRules.InvokeAgentDispatcher.interpolate(template, event_data)
+    InvokeAgentDispatcher.interpolate(template, event_data)
   end
 
   defp build_input(_config, event_data) do

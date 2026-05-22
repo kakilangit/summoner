@@ -75,28 +75,26 @@ defmodule Summoner.Domain.Schemas.EventRule do
   defp validate_action_config(changeset) do
     action_type = get_field(changeset, :action_type)
     action_config = get_field(changeset, :action_config) || %{}
-
-    case action_type do
-      :invoke_agent ->
-        if is_nil(action_config["agent_id"]) and is_nil(action_config["agent_callname"]),
-          do: add_error(changeset, :action_config, "requires agent_id or agent_callname"),
-          else: changeset
-
-      :run_pipeline ->
-        if is_nil(action_config["pipeline_id"]),
-          do: add_error(changeset, :action_config, "requires pipeline_id"),
-          else: changeset
-
-      :call_webhook ->
-        if is_nil(action_config["url"]),
-          do: add_error(changeset, :action_config, "requires url"),
-          else: changeset
-
-      :send_notification ->
-        changeset
-
-      _ ->
-        changeset
-    end
+    do_validate_action_config(changeset, action_type, action_config)
   end
+
+  defp do_validate_action_config(changeset, :invoke_agent, config) do
+    if is_nil(config["agent_id"]) and is_nil(config["agent_callname"]),
+      do: add_error(changeset, :action_config, "requires agent_id or agent_callname"),
+      else: changeset
+  end
+
+  defp do_validate_action_config(changeset, :run_pipeline, config) do
+    if is_nil(config["pipeline_id"]),
+      do: add_error(changeset, :action_config, "requires pipeline_id"),
+      else: changeset
+  end
+
+  defp do_validate_action_config(changeset, :call_webhook, config) do
+    if is_nil(config["url"]),
+      do: add_error(changeset, :action_config, "requires url"),
+      else: changeset
+  end
+
+  defp do_validate_action_config(changeset, _action_type, _config), do: changeset
 end

@@ -8,6 +8,8 @@ defmodule Summoner.Services.EventRules.CallWebhookDispatcher do
 
   @behaviour Summoner.Services.EventRules.ActionDispatcher
 
+  alias Summoner.Services.EventRules.InvokeAgentDispatcher
+
   require Logger
 
   @default_timeout_ms 15_000
@@ -62,7 +64,7 @@ defmodule Summoner.Services.EventRules.CallWebhookDispatcher do
   end
 
   defp interpolate_value(v, data) when is_binary(v) do
-    Summoner.Services.EventRules.InvokeAgentDispatcher.interpolate(v, data)
+    InvokeAgentDispatcher.interpolate(v, data)
   end
 
   defp interpolate_value(v, data) when is_map(v), do: interpolate_map(v, data)

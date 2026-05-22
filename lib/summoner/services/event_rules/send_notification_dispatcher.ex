@@ -8,6 +8,8 @@ defmodule Summoner.Services.EventRules.SendNotificationDispatcher do
 
   @behaviour Summoner.Services.EventRules.ActionDispatcher
 
+  alias Summoner.Services.EventRules.InvokeAgentDispatcher
+
   require Logger
 
   @impl true
@@ -30,7 +32,7 @@ defmodule Summoner.Services.EventRules.SendNotificationDispatcher do
   end
 
   defp interpolate(template, event_data) do
-    Summoner.Services.EventRules.InvokeAgentDispatcher.interpolate(template, event_data)
+    InvokeAgentDispatcher.interpolate(template, event_data)
   end
 
   defp default_message(event_data) do

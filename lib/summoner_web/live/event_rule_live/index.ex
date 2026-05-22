@@ -64,10 +64,10 @@ defmodule SummonerWeb.EventRuleLive.Index do
       workspace = socket.assigns.workspace
       rule = EventRules.get_rule!(scope, workspace.id, id)
       enabled = enabled == "true"
+      label = if enabled, do: "disabled", else: "enabled"
 
       case EventRules.toggle_rule(scope, rule, !enabled) do
         {:ok, _} ->
-          label = if enabled, do: "disabled", else: "enabled"
           {:noreply, socket |> load_page() |> put_flash(:info, "Omen #{label}.")}
 
         {:error, _} ->
