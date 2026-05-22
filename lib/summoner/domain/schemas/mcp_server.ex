@@ -15,7 +15,7 @@ defmodule Summoner.Domain.Schemas.McpServer do
 
   schema "mcp_servers" do
     field :name, :string
-    field :transport, Ecto.Enum, values: [:stdio, :http]
+    field :transport, Ecto.Enum, values: [:stdio, :http, :managed]
     field :command_or_url, :string
     field :config, :map, default: %{}
 
@@ -48,6 +48,11 @@ defmodule Summoner.Domain.Schemas.McpServer do
       :stdio ->
         changeset
         |> validate_length(:command_or_url, min: 1, message: "command is required")
+
+      :managed ->
+        # Managed by plugin system — command_or_url holds the OCI image reference
+        changeset
+        |> validate_length(:command_or_url, min: 1, message: "image reference is required")
 
       _ ->
         changeset
