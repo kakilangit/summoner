@@ -3,8 +3,10 @@ defmodule SummonerWeb.AgentLive.Memories do
 
   import SummonerWeb.AuthorizeHelper
 
+  alias Summoner.Domain.Schemas.AgentMemory
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.AgentMemories
+  alias Summoner.Services.Embedding
 
   @sort_options [
     {"Confidence", :confidence},
@@ -40,7 +42,9 @@ defmodule SummonerWeb.AgentLive.Memories do
         filter: "",
         type_filter: nil,
         sort_options: @sort_options,
-        type_options: @type_options
+        type_options: @type_options,
+        editing_memory: nil,
+        edit_form: nil
       )
       |> assign(
         breadcrumbs: [
@@ -118,6 +122,57 @@ defmodule SummonerWeb.AgentLive.Memories do
     end)
   end
 
+  @impl true
+  def handle_event("edit", %{"id" => id}, socket) do
+    memory = AgentMemories.get_memory!(id)
+    changeset = AgentMemory.changeset(memory, %{})
+
+    {:noreply,
+     assign(socket,
+       editing_memory: memory,
+       edit_form: to_form(changeset)
+     )}
+  end
+
+  @impl true
+  def handle_event("cancel_edit", _params, socket) do
+    {:noreply, assign(socket, editing_memory: nil, edit_form: nil)}
+  end
+
+  @impl true
+  def handle_event("validate_edit", %{"agent_memory" => params}, socket) do
+    changeset =
+      socket.assigns.editing_memory
+      |> AgentMemory.changeset(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, edit_form: to_form(changeset))}
+  end
+
+  @impl true
+  def handle_event("save_edit", %{"agent_memory" => params}, socket) do
+    authorize(socket, :configure, fn ->
+      memory = socket.assigns.editing_memory
+      content_changed = params["content"] != memory.content
+
+      case AgentMemories.update_memory(memory, params) do
+        {:ok, updated} ->
+          if content_changed do
+            re_embed_async(socket.assigns.workspace.id, updated)
+          end
+
+          {:noreply,
+           socket
+           |> assign(editing_memory: nil, edit_form: nil)
+           |> load_page()
+           |> put_flash(:info, "Memory updated.")}
+
+        {:error, changeset} ->
+          {:noreply, assign(socket, edit_form: to_form(changeset))}
+      end
+    end)
+  end
+
   defp load_page(socket) do
     %{agent: agent} = socket.assigns
 
@@ -141,6 +196,14 @@ defmodule SummonerWeb.AgentLive.Memories do
   defp toggle_dir(:asc), do: :desc
   defp toggle_dir(:desc), do: :asc
 
+  defp re_embed_async(workspace_id, memory) do
+    Task.Supervisor.start_child(Summoner.TaskSupervisor, fn ->
+      with {:ok, vector} <- Embedding.embed(workspace_id, memory.content) do
+        AgentMemories.update_embedding(memory, vector)
+      end
+    end)
+  end
+
   defp confidence_color(confidence) when confidence >= 0.7, do: "text-success"
   defp confidence_color(confidence) when confidence >= 0.4, do: "text-warning"
   defp confidence_color(_), do: "text-error"
@@ -149,6 +212,16 @@ defmodule SummonerWeb.AgentLive.Memories do
   defp type_badge_class(:preference), do: "badge-accent"
   defp type_badge_class(:procedure), do: "badge-success"
   defp type_badge_class(:correction), do: "badge-warning"
+
+  defp to_float(val) when is_float(val), do: val
+  defp to_float(val) when is_integer(val), do: val / 1
+  defp to_float(val) when is_binary(val) do
+    case Float.parse(val) do
+      {f, _} -> f
+      :error -> 0.0
+    end
+  end
+  defp to_float(_), do: 0.0
 
   defp format_confidence(confidence) do
     confidence
@@ -232,6 +305,14 @@ defmodule SummonerWeb.AgentLive.Memories do
               </span>
               <button
                 :if={@can?.(:configure)}
+                phx-click="edit"
+                phx-value-id={memory.id}
+                class="btn btn-ghost btn-xs"
+              >
+                Edit
+              </button>
+              <button
+                :if={@can?.(:configure)}
                 phx-click={show_confirm("#delete-memory-#{memory.id}")}
                 class="btn btn-error btn-xs btn-outline"
               >
@@ -252,6 +333,48 @@ defmodule SummonerWeb.AgentLive.Memories do
       </div>
 
       <.pagination page={@page} />
+
+      <div :if={@editing_memory} class="modal modal-open">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg">Edit Memory</h3>
+          <.form for={@edit_form} phx-change="validate_edit" phx-submit="save_edit" class="space-y-4 mt-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Content</span></label>
+              <textarea
+                name={@edit_form[:content].name}
+                class="textarea textarea-bordered h-32"
+                phx-debounce="300"
+              >{Phoenix.HTML.Form.normalize_value("textarea", @edit_form[:content].value)}</textarea>
+              <span
+                :for={msg <- Enum.map(@edit_form[:content].errors, &translate_error/1)}
+                class="text-error text-sm"
+              >
+                {msg}
+              </span>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Confidence</span></label>
+              <input
+                type="range"
+                name={@edit_form[:confidence].name}
+                value={@edit_form[:confidence].value}
+                min="0"
+                max="1"
+                step="0.05"
+                class="range range-sm"
+              />
+              <div class="text-sm text-center mt-1">
+                {format_confidence(@edit_form[:confidence].value |> to_float())}
+              </div>
+            </div>
+            <div class="modal-action">
+              <button type="button" phx-click="cancel_edit" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </.form>
+        </div>
+        <div class="modal-backdrop" phx-click="cancel_edit"></div>
+      </div>
     </div>
     """
   end

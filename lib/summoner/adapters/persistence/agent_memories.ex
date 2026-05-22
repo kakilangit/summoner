@@ -51,6 +51,14 @@ defmodule Summoner.Adapters.Persistence.AgentMemories do
     |> Repo.update()
   end
 
+  @doc "Updates only the embedding vector for a memory."
+  @impl true
+  def update_embedding(%AgentMemory{} = memory, embedding) do
+    memory
+    |> AgentMemory.embedding_changeset(%{embedding: embedding})
+    |> Repo.update()
+  end
+
   @doc "Deletes an agent memory."
   @impl true
   def delete_memory(%AgentMemory{} = memory) do

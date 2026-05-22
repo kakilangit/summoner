@@ -11,6 +11,7 @@ defmodule Summoner.Ports.Persistence.AgentMemories do
   defdelegate get_memory!(id), to: @adapter
   defdelegate list_by_agent(agent_id, opts \\ []), to: @adapter
   defdelegate update_memory(memory, attrs), to: @adapter
+  defdelegate update_embedding(memory, embedding), to: @adapter
   defdelegate delete_memory(memory), to: @adapter
   defdelegate cosine_search(agent_id, embedding, opts \\ []), to: @adapter
   defdelegate update_access(memory), to: @adapter
