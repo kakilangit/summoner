@@ -17,9 +17,10 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Webhooks (Beacons) — trigger agents from external systems (GitHub, CI/CD, etc.)
 - Backup agents with ordered failover chains (automatic retry on failure)
 - OpenAI-compatible API (`/v1/chat/completions`, `/v1/models`) with streaming support
-- Artifact system with versioning, cross-conversation sharing, and agent tools
+- Artifact system with conversation-scoped naming, append-only versioning, and agent tools
 - Approval flows with configurable triggers, timeout actions, and human-in-the-loop
 - Event rules with JSON condition DSL, cooldowns, rate limiting, and circuit breaker
+- Plugin system (Grimoires) — OCI-based extensions with capabilities (tools, webhooks, hooks, events, provider, theme)
 - MCP server mode — expose agents as MCP tools for Claude Code, Cursor, etc.
 - Agent memory with pgvector embeddings, confidence decay, and party sharing
 - Hexagonal architecture with persistence ports, worker ports, and domain event system

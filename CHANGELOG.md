@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2026-05-22
+
+### Added
+
+- **Plugin System (Phase 1)**
+  - `plugin_installations` and `plugin_conversations` tables with indexes and constraints
+  - `PluginInstallation` schema with capabilities array, status enum (installed/enabled/disabled/error), manifest map, linked mcp_server_id/provider_id
+  - `PluginConversation` schema for external_ref to conversation mapping with upsert
+  - `ManifestValidator` policy — pure validation per capability (tools, webhooks, hooks, events, provider, theme)
+  - Persistence port and adapter — CRUD, status transitions, capability filtering, conversation upsert
+  - `:managed` transport option on `McpServer` for plugin-managed containers
+
+### Changed
+
+- `__remember__`, `__create_artifact__`, `__update_artifact__` tool descriptions widened to be context-agnostic (reference "task" not "user") for swarm and pipeline compatibility
+- Agent show page nav links (Runes/Spellbook/Memories) moved before Instructions/Persona collapsibles
+
 ## [0.1.10] - 2026-05-22
 
 ### Added
@@ -325,6 +342,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.11]: https://github.com/kakilangit/summoner/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/kakilangit/summoner/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/kakilangit/summoner/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/kakilangit/summoner/compare/v0.1.7...v0.1.8
