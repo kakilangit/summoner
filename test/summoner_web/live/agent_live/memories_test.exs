@@ -57,7 +57,11 @@ defmodule SummonerWeb.AgentLive.MemoriesTest do
     end
 
     test "lists memories", %{conn: conn, workspace: ws, agent: agent} do
-      agent_memory_fixture(agent.id, ws.id, %{content: "User prefers dark mode", type: :preference})
+      agent_memory_fixture(agent.id, ws.id, %{
+        content: "User prefers dark mode",
+        type: :preference
+      })
+
       agent_memory_fixture(agent.id, ws.id, %{content: "API endpoint is /v2", type: :fact})
 
       {:ok, _view, html} = live(conn, memories_path(ws, agent))

@@ -4,8 +4,8 @@ defmodule SummonerWeb.AgentLive.Memories do
   import SummonerWeb.AuthorizeHelper
 
   alias Summoner.Domain.Schemas.AgentMemory
-  alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.AgentMemories
+  alias Summoner.Ports.Persistence.Agents
   alias Summoner.Services.Embedding
 
   @sort_options [
@@ -53,8 +53,7 @@ defmodule SummonerWeb.AgentLive.Memories do
         breadcrumbs: [
           {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
           {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-          {"Summons",
-           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
+          {"Summons", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents"},
           {agent.name,
            ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/agents/#{agent.id}"},
           {"Memories", nil}
@@ -160,9 +159,7 @@ defmodule SummonerWeb.AgentLive.Memories do
 
       case AgentMemories.update_memory(memory, params) do
         {:ok, updated} ->
-          if content_changed do
-            re_embed_async(socket.assigns.workspace.id, updated)
-          end
+          maybe_re_embed(content_changed, socket.assigns.workspace.id, updated)
 
           {:noreply,
            socket
@@ -231,6 +228,9 @@ defmodule SummonerWeb.AgentLive.Memories do
   defp toggle_dir(:asc), do: :desc
   defp toggle_dir(:desc), do: :asc
 
+  defp maybe_re_embed(true, workspace_id, memory), do: re_embed_async(workspace_id, memory)
+  defp maybe_re_embed(false, _workspace_id, _memory), do: :ok
+
   defp re_embed_async(workspace_id, memory) do
     Task.Supervisor.start_child(Summoner.TaskSupervisor, fn ->
       with {:ok, vector} <- Embedding.embed(workspace_id, memory.content) do
@@ -250,12 +250,14 @@ defmodule SummonerWeb.AgentLive.Memories do
 
   defp to_float(val) when is_float(val), do: val
   defp to_float(val) when is_integer(val), do: val / 1
+
   defp to_float(val) when is_binary(val) do
     case Float.parse(val) do
       {f, _} -> f
       :error -> 0.0
     end
   end
+
   defp to_float(_), do: 0.0
 
   defp format_confidence(confidence) do
@@ -267,12 +269,13 @@ defmodule SummonerWeb.AgentLive.Memories do
   end
 
   defp format_similarity(nil), do: "—"
+
   defp format_similarity(similarity) do
     similarity
     |> Kernel.*(100)
     |> Float.round(1)
     |> to_string()
-    |> then(&("#{&1}% similar"))
+    |> then(&"#{&1}% similar")
   end
 
   @impl true
@@ -314,7 +317,11 @@ defmodule SummonerWeb.AgentLive.Memories do
             phx-change="filter_type"
             name="type"
           >
-            <option :for={{label, value} <- @type_options} value={value || ""} selected={@type_filter == value}>
+            <option
+              :for={{label, value} <- @type_options}
+              value={value || ""}
+              selected={@type_filter == value}
+            >
               {label}
             </option>
           </select>
@@ -371,7 +378,9 @@ defmodule SummonerWeb.AgentLive.Memories do
       </div>
 
       <div :if={@page.entries == []} class="text-center py-12 text-base-content/60">
-        <p :if={@filter == "" and is_nil(@type_filter)}>No memories yet. This agent hasn't learned anything.</p>
+        <p :if={@filter == "" and is_nil(@type_filter)}>
+          No memories yet. This agent hasn't learned anything.
+        </p>
         <p :if={@filter != "" or not is_nil(@type_filter)}>No memories match your filters.</p>
       </div>
 
@@ -430,7 +439,12 @@ defmodule SummonerWeb.AgentLive.Memories do
       <div :if={@editing_memory} class="modal modal-open">
         <div class="modal-box">
           <h3 class="font-bold text-lg">Edit Memory</h3>
-          <.form for={@edit_form} phx-change="validate_edit" phx-submit="save_edit" class="space-y-4 mt-4">
+          <.form
+            for={@edit_form}
+            phx-change="validate_edit"
+            phx-submit="save_edit"
+            class="space-y-4 mt-4"
+          >
             <div class="form-control">
               <label class="label"><span class="label-text">Content</span></label>
               <textarea
