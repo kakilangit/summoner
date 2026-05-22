@@ -87,28 +87,6 @@ defmodule SummonerWeb.AgentLive.Show do
           </span>
         </div>
 
-        <div
-          :if={@agent.local_agent && @agent.local_agent.system_prompt}
-          class="collapse collapse-arrow bg-base-200"
-        >
-          <input type="checkbox" checked />
-          <div class="collapse-title text-sm font-medium">Instructions</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">
-            {@agent.local_agent.system_prompt}
-          </div>
-        </div>
-
-        <div
-          :if={@agent.local_agent && @agent.local_agent.personality}
-          class="collapse collapse-arrow bg-base-200"
-        >
-          <input type="checkbox" checked />
-          <div class="collapse-title text-sm font-medium">Persona</div>
-          <div class="collapse-content text-sm whitespace-pre-wrap">
-            {@agent.local_agent.personality}
-          </div>
-        </div>
-
         <div class="flex gap-2 pt-2">
           <.link
             navigate={
@@ -134,6 +112,28 @@ defmodule SummonerWeb.AgentLive.Show do
           >
             Memories
           </.link>
+        </div>
+
+        <div
+          :if={@agent.local_agent && @agent.local_agent.system_prompt}
+          class="collapse collapse-arrow bg-base-200"
+        >
+          <input type="checkbox" checked />
+          <div class="collapse-title text-sm font-medium">Instructions</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.system_prompt}
+          </div>
+        </div>
+
+        <div
+          :if={@agent.local_agent && @agent.local_agent.personality}
+          class="collapse collapse-arrow bg-base-200"
+        >
+          <input type="checkbox" checked />
+          <div class="collapse-title text-sm font-medium">Persona</div>
+          <div class="collapse-content text-sm whitespace-pre-wrap">
+            {@agent.local_agent.personality}
+          </div>
         </div>
 
         <div
