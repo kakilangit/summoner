@@ -69,8 +69,8 @@ defmodule SummonerWeb.API.V1.SkillController do
 
     attrs =
       attrs
+      |> Map.drop(["tenant_id", "workspace_id"])
       |> Map.put("workspace_id", conn.assigns.current_workspace_id)
-      |> Map.put("tenant_id", conn.assigns.current_tenant_id)
 
     case Skills.create_skill(scope, attrs) do
       {:ok, skill} ->

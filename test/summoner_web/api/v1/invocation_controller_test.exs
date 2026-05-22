@@ -36,8 +36,10 @@ defmodule SummonerWeb.API.V1.InvocationControllerTest do
   end
 
   describe "show" do
-    test "returns invocation details", %{conn: conn, invocation: inv} do
-      conn = get(conn, ~p"/api/v1/invocations/#{inv.id}")
+    test "returns invocation details", %{conn: conn, invocation: inv, workspace: ws} do
+      conn =
+        get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/invocations/#{inv.id}")
+
       data = json_response(conn, 200)
       assert data["id"] == inv.id
       assert data["status"] == "completed"
@@ -45,32 +47,49 @@ defmodule SummonerWeb.API.V1.InvocationControllerTest do
   end
 
   describe "steps" do
-    test "returns empty steps for invocation", %{conn: conn, invocation: inv} do
-      conn = get(conn, ~p"/api/v1/invocations/#{inv.id}/steps")
+    test "returns empty steps for invocation", %{conn: conn, invocation: inv, workspace: ws} do
+      conn =
+        get(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/invocations/#{inv.id}/steps"
+        )
+
       assert %{"items" => []} = json_response(conn, 200)
     end
   end
 
   describe "events" do
-    test "returns empty events for invocation", %{conn: conn, invocation: inv} do
-      conn = get(conn, ~p"/api/v1/invocations/#{inv.id}/events")
+    test "returns empty events for invocation", %{conn: conn, invocation: inv, workspace: ws} do
+      conn =
+        get(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/invocations/#{inv.id}/events"
+        )
+
       assert %{"items" => []} = json_response(conn, 200)
     end
   end
 
   describe "cancel" do
-    test "returns 202 accepted", %{conn: conn, invocation: inv} do
-      conn = post(conn, ~p"/api/v1/invocations/#{inv.id}/cancel")
+    test "returns 202 accepted", %{conn: conn, invocation: inv, workspace: ws} do
+      conn =
+        post(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/invocations/#{inv.id}/cancel"
+        )
+
       assert response(conn, 202)
     end
   end
 
   describe "auth" do
-    test "returns 401 without token" do
+    test "returns 401 without token", %{workspace: ws} do
       conn =
         build_conn()
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/invocations/#{Nulid.generate() |> elem(1)}")
+        |> get(
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/invocations/#{Nulid.generate() |> elem(1)}"
+        )
 
       assert json_response(conn, 401)["error"]["code"] == "missing_token"
     end

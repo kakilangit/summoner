@@ -19,16 +19,16 @@ defmodule SummonerWeb.API.V1.UsageControllerTest do
   end
 
   describe "index" do
-    test "returns usage summary", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/usages")
+    test "returns usage summary", %{conn: conn, workspace: ws} do
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/usages")
       data = json_response(conn, 200)
       assert is_integer(data["rolling_30_day_tokens"]) or is_nil(data["rolling_30_day_tokens"])
     end
   end
 
   describe "breakdowns" do
-    test "returns breakdown by agent, model, provider", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/usages/breakdowns")
+    test "returns breakdown by agent, model, provider", %{conn: conn, workspace: ws} do
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/usages/breakdowns")
       data = json_response(conn, 200)
       assert is_list(data["by_agent"])
       assert is_list(data["by_model"])
@@ -37,11 +37,11 @@ defmodule SummonerWeb.API.V1.UsageControllerTest do
   end
 
   describe "auth" do
-    test "returns 401 without token" do
+    test "returns 401 without token", %{workspace: ws} do
       conn =
         build_conn()
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/usages")
+        |> get(~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/usages")
 
       assert json_response(conn, 401)["error"]["code"] == "missing_token"
     end

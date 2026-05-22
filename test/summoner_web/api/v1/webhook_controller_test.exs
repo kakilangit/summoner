@@ -46,7 +46,7 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
   describe "index" do
     test "lists webhooks", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       webhook = create_webhook(scope, ws, agent)
-      conn = get(conn, ~p"/api/v1/webhooks")
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks")
       response = json_response(conn, 200)
       assert %{"items" => [%{"id" => id}], "meta" => meta} = response
       assert id == webhook.id
@@ -54,16 +54,16 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
       assert meta["total_entries"] == 1
     end
 
-    test "returns empty list when no webhooks", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/webhooks")
+    test "returns empty list when no webhooks", %{conn: conn, workspace: ws} do
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks")
       assert %{"items" => [], "meta" => %{"total_entries" => 0}} = json_response(conn, 200)
     end
 
-    test "returns 401 without token" do
+    test "returns 401 without token", %{workspace: ws} do
       conn =
         build_conn()
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/webhooks")
+        |> get(~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks")
 
       assert json_response(conn, 401)
     end
@@ -72,7 +72,10 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
   describe "show" do
     test "returns webhook", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       webhook = create_webhook(scope, ws, agent)
-      conn = get(conn, ~p"/api/v1/webhooks/#{webhook.id}")
+
+      conn =
+        get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks/#{webhook.id}")
+
       response = json_response(conn, 200)
       assert response["id"] == webhook.id
       assert response["name"] == webhook.name
@@ -82,7 +85,7 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
   end
 
   describe "create" do
-    test "creates webhook with valid params", %{conn: conn, agent: agent} do
+    test "creates webhook with valid params", %{conn: conn, agent: agent, workspace: ws} do
       params = %{
         "name" => "my-webhook",
         "target_type" => "agent",
@@ -91,7 +94,7 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
         "response_mode" => "async"
       }
 
-      conn = post(conn, ~p"/api/v1/webhooks", params)
+      conn = post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks", params)
       response = json_response(conn, 201)
       assert response["name"] == "my-webhook"
       assert response["target_type"] == "agent"
@@ -100,9 +103,9 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
       assert response["enabled"] == true
     end
 
-    test "returns validation error for missing name", %{conn: conn, agent: agent} do
+    test "returns validation error for missing name", %{conn: conn, agent: agent, workspace: ws} do
       params = %{"target_type" => "agent", "target_id" => agent.id}
-      conn = post(conn, ~p"/api/v1/webhooks", params)
+      conn = post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks", params)
       assert json_response(conn, 422)
     end
   end
@@ -110,14 +113,28 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
   describe "update" do
     test "updates webhook", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       webhook = create_webhook(scope, ws, agent)
-      conn = put(conn, ~p"/api/v1/webhooks/#{webhook.id}", %{"name" => "updated-name"})
+
+      conn =
+        put(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks/#{webhook.id}",
+          %{"name" => "updated-name"}
+        )
+
       response = json_response(conn, 200)
       assert response["name"] == "updated-name"
     end
 
     test "updates enabled flag", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       webhook = create_webhook(scope, ws, agent)
-      conn = put(conn, ~p"/api/v1/webhooks/#{webhook.id}", %{"enabled" => false})
+
+      conn =
+        put(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks/#{webhook.id}",
+          %{"enabled" => false}
+        )
+
       response = json_response(conn, 200)
       assert response["enabled"] == false
     end
@@ -126,7 +143,13 @@ defmodule SummonerWeb.API.V1.WebhookControllerTest do
   describe "delete" do
     test "deletes webhook", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       webhook = create_webhook(scope, ws, agent)
-      conn = delete(conn, ~p"/api/v1/webhooks/#{webhook.id}")
+
+      conn =
+        delete(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/webhooks/#{webhook.id}"
+        )
+
       assert response(conn, 204)
     end
   end

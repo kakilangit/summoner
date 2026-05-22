@@ -23,8 +23,7 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
     |> put_req_header("authorization", "Bearer #{bearer_token}")
   end
 
-  test "assigns current_token and current_workspace_id on valid token", %{
-    workspace: workspace,
+  test "assigns current_token on valid token", %{
     plaintext: plaintext
   } do
     conn =
@@ -32,10 +31,8 @@ defmodule SummonerWeb.Plugs.TokenAuthTest do
       |> build_conn()
       |> TokenAuth.call(TokenAuth.init(required_scope: "api"))
 
+    assert %AccessToken{} = conn.assigns[:current_token]
     assert conn.assigns[:current_token].id != nil
-    assert conn.assigns[:current_workspace_id] == workspace.id
-    assert conn.assigns[:current_tenant_id] == workspace.tenant_id
-    assert conn.assigns[:current_scope] != nil
     refute conn.halted
   end
 

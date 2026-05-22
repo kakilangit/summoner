@@ -30,11 +30,11 @@ defmodule Summoner.Application do
         {Task.Supervisor, name: Summoner.TaskSupervisor},
         Summoner.Services.EventLog,
         Summoner.Services.Agents.ProcessMonitor,
-        Summoner.Adapters.Workers.EventRuleEvaluator,
-        Summoner.Adapters.Workers.PluginEventForwarder,
         {Oban, Application.fetch_env!(:summoner, Oban)},
         Summoner.Adapters.Crypto.Vault
       ] ++
+        maybe_event_rule_evaluator() ++
+        maybe_plugin_event_forwarder() ++
         maybe_registry() ++
         maybe_discovery() ++
         maybe_theme_init() ++
@@ -90,6 +90,22 @@ defmodule Summoner.Application do
   defp maybe_mcp_server do
     if Application.get_env(:summoner, :start_mcp_server, true) do
       [{Summoner.Adapters.MCP.Server, transport: :streamable_http}]
+    else
+      []
+    end
+  end
+
+  defp maybe_event_rule_evaluator do
+    if Application.get_env(:summoner, :start_event_rule_evaluator, true) do
+      [Summoner.Adapters.Workers.EventRuleEvaluator]
+    else
+      []
+    end
+  end
+
+  defp maybe_plugin_event_forwarder do
+    if Application.get_env(:summoner, :start_plugin_event_forwarder, true) do
+      [Summoner.Adapters.Workers.PluginEventForwarder]
     else
       []
     end

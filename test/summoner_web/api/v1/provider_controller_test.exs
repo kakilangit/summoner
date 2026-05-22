@@ -22,7 +22,7 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
   describe "index" do
     test "lists providers", %{conn: conn, scope: scope, workspace: ws} do
       provider = provider_fixture(scope, ws.id)
-      conn = get(conn, ~p"/api/v1/providers")
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/providers")
       assert %{"items" => [%{"id" => id}]} = json_response(conn, 200)
       assert id == provider.id
     end
@@ -31,14 +31,20 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
   describe "show" do
     test "returns provider", %{conn: conn, scope: scope, workspace: ws} do
       provider = provider_fixture(scope, ws.id)
-      conn = get(conn, ~p"/api/v1/providers/#{provider.id}")
+
+      conn =
+        get(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/providers/#{provider.id}"
+        )
+
       assert %{"id" => id, "kind" => "ollama"} = json_response(conn, 200)
       assert id == provider.id
     end
   end
 
   describe "create" do
-    test "creates provider", %{conn: conn} do
+    test "creates provider", %{conn: conn, workspace: ws} do
       attrs = %{
         "name" => "New Provider",
         "kind" => "ollama",
@@ -47,7 +53,7 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
         "base_url" => "http://localhost:11434"
       }
 
-      conn = post(conn, ~p"/api/v1/providers", attrs)
+      conn = post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/providers", attrs)
       assert %{"name" => "New Provider"} = json_response(conn, 201)
     end
   end
@@ -55,7 +61,13 @@ defmodule SummonerWeb.API.V1.ProviderControllerTest do
   describe "delete" do
     test "deletes provider", %{conn: conn, scope: scope, workspace: ws} do
       provider = provider_fixture(scope, ws.id)
-      conn = delete(conn, ~p"/api/v1/providers/#{provider.id}")
+
+      conn =
+        delete(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/providers/#{provider.id}"
+        )
+
       assert response(conn, 204)
     end
   end

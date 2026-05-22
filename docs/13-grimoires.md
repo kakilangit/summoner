@@ -27,7 +27,7 @@ Summoner ──HTTP──▶ Plugin Container
 
 ## Capabilities
 
-### `webhooks`
+### `webhooks` (tested with grimoire-slack)
 
 External HTTP requests are forwarded to the plugin. Routes are declared in `grimoire.json`:
 
@@ -41,7 +41,7 @@ External HTTP requests are forwarded to the plugin. Routes are declared in `grim
 
 Inbound URL pattern: `POST /api/v1/plugins/:plugin_id/hook/:route`
 
-### `events`
+### `events` (tested with grimoire-slack)
 
 The plugin subscribes to Summoner domain events (invocation lifecycle, approvals, etc.):
 
@@ -60,7 +60,7 @@ The plugin subscribes to Summoner domain events (invocation lifecycle, approvals
 
 Events are delivered as HTTP POST requests to the plugin's `/event` endpoint.
 
-### `tools`
+### `tools` (tested with grimoire-slack)
 
 The plugin provides MCP tools to agents. Expected tools are declared in the manifest:
 
@@ -72,15 +72,15 @@ The plugin provides MCP tools to agents. Expected tools are declared in the mani
 }
 ```
 
-### `hooks`
+### `hooks` (not yet tested)
 
 Lifecycle hooks execute at specific points in the invocation pipeline: `before_invocation`, `after_invocation`, `on_tool_call`, `on_error`. A circuit breaker protects against failing hooks.
 
-### `provider`
+### `provider` (not yet tested)
 
 The plugin acts as an LLM provider, exposing `/models` and `/chat` endpoints.
 
-### `theme`
+### `theme` (not yet tested)
 
 The plugin provides a custom UI theme.
 
