@@ -460,6 +460,9 @@ components:
           type: string
         invocation_id:
           type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
 
     InvocationCompletedData:
       type: object
@@ -474,6 +477,9 @@ components:
           type: string
         invocation_id:
           type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
         response:
           type: ["string", "null"]
           description: The agent's text response
@@ -491,6 +497,9 @@ components:
           type: string
         invocation_id:
           type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
         error:
           type: ["string", "null"]
           description: Error message
