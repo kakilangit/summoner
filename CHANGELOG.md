@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-05-22
+
+### Added
+
+- **Event Rules (Omens)**
+  - `event_rules` and `event_rule_executions` tables with full audit trail
+  - Declarative JSON condition DSL with `all`/`any`/`none` combinators and 10 operators (`eq`, `neq`, `in`, `contains`, `gt`, `lt`, `gte`, `lte`, `exists`, `matches`)
+  - Nested field access in conditions (e.g. `agent.name`)
+  - Four action types: `invoke_agent`, `run_pipeline`, `call_webhook`, `send_notification`
+  - Template interpolation in action configs via `{{field.path}}`
+  - Per-rule cooldown windows (0-86400 seconds)
+  - Per-rule hourly rate limiting (`max_fires_per_hour`, 0 = unlimited)
+  - Circuit breaker: auto-disables rules after 5 consecutive failures with exponential backoff
+  - Telemetry events: `[:summoner, :event_rule, :evaluated]` and `[:summoner, :event_rule, :fired]`
+  - Global PubSub scope — all domain events broadcast to `events:global` topic
+  - `EventRuleEvaluator` GenServer subscribes once and dispatches via `Task.Supervisor`
+  - REST API: CRUD + test endpoint + executions (`/api/v1/event-rules`)
+  - LiveView UI: index (list with sort/filter/paginate, enable/disable toggle), form (new/edit with JSON editors for conditions and action config), show (detail view with paginated execution history)
+  - Dry-run testing via API and UI
+
 ## [0.1.7] - 2026-05-22
 
 ### Added

@@ -43,6 +43,9 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
       Phoenix.PubSub.broadcast(@pubsub, topic, event)
     end
 
+    # Always broadcast to global topic for event rule evaluation
+    Phoenix.PubSub.broadcast(@pubsub, "events:global", event)
+
     :ok
   end
 
@@ -118,4 +121,5 @@ defmodule Summoner.Adapters.PubSub.EventsAdapter do
   defp topic_for_scope({:swarm, w, s}), do: "swarm:#{w}:#{s}"
   defp topic_for_scope({:agent_config, a}), do: "agent_config:#{a}"
   defp topic_for_scope({:failover, w}), do: "failover:#{w}"
+  defp topic_for_scope(:global), do: "events:global"
 end

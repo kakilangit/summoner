@@ -11,3 +11,4 @@
 - [Backup Agents & Failover](09-failover.md)
 - [Artifacts](10-artifacts.md)
 - [Approval Flows](11-approvals.md)
+- [Event Rules](12-event-rules.md)
