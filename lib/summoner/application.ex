@@ -22,6 +22,8 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
+        {Registry, keys: :unique, name: Summoner.PluginRegistry},
+        {DynamicSupervisor, name: Summoner.PluginSupervisor, strategy: :one_for_one},
         {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
         {DynamicSupervisor,
          name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
@@ -29,6 +31,7 @@ defmodule Summoner.Application do
         Summoner.Services.EventLog,
         Summoner.Services.Agents.ProcessMonitor,
         Summoner.Adapters.Workers.EventRuleEvaluator,
+        Summoner.Adapters.Workers.PluginEventForwarder,
         {Oban, Application.fetch_env!(:summoner, Oban)},
         Summoner.Adapters.Crypto.Vault
       ] ++
