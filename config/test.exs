@@ -70,5 +70,8 @@ config :summoner, :start_model_registry, false
 # Disable theme init in tests (requires DB seeding)
 config :summoner, :start_theme_init, false
 
+# Disable MCP server in tests (starts transport)
+config :summoner, :start_mcp_server, false
+
 # Use a temporary directory for workspace data in tests
 config :summoner, :data_dir, Path.join(System.tmp_dir!(), "summoner_test")

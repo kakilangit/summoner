@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.9] - 2026-05-22
+
+### Added
+
+- **MCP Server Mode**
+  - Summoner exposes itself as an MCP server via Streamable HTTP transport at `/mcp`
+  - 5 MCP tools: `invoke_agent`, `list_agents`, `run_pipeline`, `list_pipelines`, `search_skills`
+  - Bearer token auth via `MCPAuth` plug — workspace derived from API access token
+  - Stdio transport via `mix summoner.mcp.stdio` for local development
+  - Config generator `mix summoner.mcp.config` outputs JSON for Claude Code, Cursor, etc.
+  - Telemetry event: `[:summoner, :mcp, :session_started]`
+  - Built on `anubis_mcp` server with compile-time component registration
+
+- **CLI Tool (Rust)**
+  - `summoner-cli/` — single-binary CLI wrapping the REST API
+  - Commands: `agents list/show`, `invoke`, `chat` (interactive + one-shot), `pipelines list/runs`, `swarms list`, `completion`
+  - TOML config with profiles (`~/.config/summoner/config.toml`)
+  - Env var overrides: `SUMMONER_URL`, `SUMMONER_TOKEN`, `SUMMONER_WORKSPACE`, `SUMMONER_PROFILE`
+  - Colored table output, JSON format mode, progress spinners
+  - Stdin pipe support for `invoke` command
+  - Shell completions for bash/zsh/fish
+
 ## [0.1.8] - 2026-05-22
 
 ### Added

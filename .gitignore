@@ -52,3 +52,6 @@ AGENTS.md
 
 # Generated docs
 docs/_site/
+
+# Rust CLI build artifacts
+/cli/target/

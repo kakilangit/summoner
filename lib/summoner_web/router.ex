@@ -246,6 +246,19 @@ defmodule SummonerWeb.Router do
     forward "/", SummonerWeb.A2AEndpoint
   end
 
+  # MCP Server endpoint — Streamable HTTP transport
+  # Auth is handled by MCPAuth plug (Bearer token → workspace)
+  pipeline :mcp do
+    plug :accepts, ["json"]
+    plug SummonerWeb.Plugs.MCPAuth
+  end
+
+  scope "/mcp" do
+    pipe_through :mcp
+
+    forward "/", Anubis.Server.Transport.StreamableHTTP.Plug, server: Summoner.Adapters.MCP.Server
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:summoner, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put

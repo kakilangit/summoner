@@ -1,4 +1,4 @@
-.PHONY: setup server iex fmt lint test ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build hooks docs
+.PHONY: setup server iex fmt lint test ci cli.fmt cli.lint cli.test cli.ci db.setup db.reset db.migrate release infra infra.up infra.down infra.logs docker.build docker.up docker.down docker.destroy docker.logs build.builder build.base build.app build.seed build hooks docs
 
 ## Git Hooks
 
@@ -45,7 +45,20 @@ lint:
 test:
 	mix test
 
-ci: lint test
+ci: lint test cli.ci
+
+## CLI (Rust)
+
+cli.fmt:
+	cd cli && cargo fmt --check
+
+cli.lint: cli.fmt
+	cd cli && cargo clippy -- -D warnings
+
+cli.test:
+	cd cli && cargo test
+
+cli.ci: cli.lint cli.test
 
 ## Database
 
