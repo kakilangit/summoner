@@ -2,7 +2,7 @@
 
 All notable changes to the Summoner CLI will be documented in this file.
 
-## [0.1.9] - 2025-05-22
+## [0.1.0] - 2025-05-22
 
 ### Added
 
