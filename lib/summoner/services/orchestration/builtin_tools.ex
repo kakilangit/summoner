@@ -251,7 +251,8 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
                    "__create_artifact__",
                    "__update_artifact__",
                    "__read_artifact__",
-                   "__remember__"
+                   "__remember__",
+                   "__search_knowledge__"
                  ])
 
   @generate_image_def %{
@@ -435,6 +436,38 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
               }
             },
             "required" => ["content", "type"],
+            "additionalProperties" => false
+          }
+        }
+      }
+    ]
+  end
+
+  @doc "Returns the knowledge search tool definitions (injected when agent has linked KBs)."
+  def knowledge_tool_definitions do
+    [
+      %{
+        type: "function",
+        function: %{
+          name: "__search_knowledge__",
+          description:
+            "Search linked knowledge bases for relevant information. " <>
+              "Use this to find specific facts, procedures, or context from documents " <>
+              "uploaded to the knowledge base. Returns ranked results with source citations.",
+          parameters: %{
+            "type" => "object",
+            "properties" => %{
+              "query" => %{
+                "type" => "string",
+                "description" => "The search query — describe what information you need"
+              },
+              "limit" => %{
+                "type" => "integer",
+                "description" => "Maximum number of results (default: 5)",
+                "default" => 5
+              }
+            },
+            "required" => ["query"],
             "additionalProperties" => false
           }
         }

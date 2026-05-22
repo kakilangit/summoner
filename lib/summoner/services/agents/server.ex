@@ -21,6 +21,7 @@ defmodule Summoner.Services.Agents.Server do
   alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Audit
+  alias Summoner.Ports.Persistence.KnowledgeBases
   alias Summoner.Ports.Persistence.Ledger
   alias Summoner.Ports.Persistence.MCP
   alias Summoner.Ports.Persistence.MediaProviders
@@ -611,10 +612,19 @@ defmodule Summoner.Services.Agents.Server do
     builtin_defs = BuiltinTools.tool_definitions()
     artifact_defs = BuiltinTools.artifact_tool_definitions()
     memory_defs = BuiltinTools.memory_tool_definitions()
+    knowledge_defs = load_knowledge_tools(agent_id)
     media_tool_defs = load_media_tools(agent_id)
 
     {CompositeToolExecutor,
-     builtin_defs ++ artifact_defs ++ memory_defs ++ media_tool_defs ++ mcp_intent_tools}
+     builtin_defs ++
+       artifact_defs ++ memory_defs ++ knowledge_defs ++ media_tool_defs ++ mcp_intent_tools}
+  end
+
+  defp load_knowledge_tools(agent_id) do
+    case KnowledgeBases.list_knowledge_bases_for_agent(agent_id) do
+      [] -> []
+      _kbs -> BuiltinTools.knowledge_tool_definitions()
+    end
   end
 
   defp load_media_tools(agent_id) do

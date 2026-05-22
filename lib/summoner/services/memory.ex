@@ -22,6 +22,7 @@ defmodule Summoner.Services.Memory do
   alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Services.Embedding
   alias Summoner.Services.GitContext
+  alias Summoner.Services.RAG
 
   @doc """
   Assembles the context for an invocation.
@@ -52,6 +53,7 @@ defmodule Summoner.Services.Memory do
     system_prompt = build_system_prompt(agent, workspace_id, harness: harness)
     skill_messages = build_skill_messages(skills)
     memory_messages = build_memory_messages(agent_id, workspace_id, new_message)
+    knowledge_messages = build_knowledge_messages(agent_id, workspace_id, new_message)
     tool_messages = build_tool_messages(tools)
     history = load_history(conversation_id, context_window, agent.id, swarm_members)
 
@@ -69,7 +71,8 @@ defmodule Summoner.Services.Memory do
         []
       end
 
-    [system_prompt] ++ skill_messages ++ memory_messages ++ tool_messages ++ history ++ tail
+    [system_prompt] ++
+      skill_messages ++ memory_messages ++ knowledge_messages ++ tool_messages ++ history ++ tail
   end
 
   @doc """
@@ -152,6 +155,28 @@ defmodule Summoner.Services.Memory do
         |> AgentMemories.cosine_search(embedding, limit: 5, min_confidence: 0.2)
         |> tap(fn memories -> Enum.each(memories, &AgentMemories.update_access/1) end)
         |> format_memory_messages()
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp build_knowledge_messages(nil, _workspace_id, _message), do: []
+  defp build_knowledge_messages(_agent_id, _workspace_id, nil), do: []
+  defp build_knowledge_messages(_agent_id, nil, _message), do: []
+
+  defp build_knowledge_messages(agent_id, workspace_id, message) do
+    text = if is_list(message), do: Content.text_only(message), else: message
+
+    case RAG.search(agent_id, workspace_id, text, limit: 3) do
+      {:ok, []} ->
+        []
+
+      {:ok, chunks} ->
+        case RAG.format_for_prompt(chunks) do
+          nil -> []
+          formatted -> [%{role: :system, content: Intent.text(formatted)}]
+        end
 
       {:error, _} ->
         []
