@@ -101,9 +101,7 @@ defmodule SummonerWeb.EventRuleLive.Index do
         <h1 class="text-2xl font-bold">Omens</h1>
         <.link
           :if={@can?.(:configure)}
-          navigate={
-            ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/event-rules/new"
-          }
+          navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/event-rules/new"}
           class="btn btn-primary btn-sm"
         >
           New Omen
@@ -151,7 +149,7 @@ defmodule SummonerWeb.EventRuleLive.Index do
             </div>
             <div class="text-xs text-base-content/40 mt-1">
               Priority: {rule.priority} | Fired: {rule.fire_count} times
-              <span :if={rule.cooldown_s > 0}> | Cooldown: {rule.cooldown_s}s</span>
+              <span :if={rule.cooldown_s > 0}> | Cooldown:  {rule.cooldown_s}s</span>
             </div>
           </div>
           <div class="flex gap-2 flex-shrink-0">

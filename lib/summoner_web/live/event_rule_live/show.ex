@@ -20,8 +20,7 @@ defmodule SummonerWeb.EventRuleLive.Show do
         breadcrumbs: [
           {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
           {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-          {"Omens",
-           ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/event-rules"},
+          {"Omens", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/event-rules"},
           {rule.name, nil}
         ]
       )
@@ -32,8 +31,7 @@ defmodule SummonerWeb.EventRuleLive.Show do
 
   @impl true
   def handle_event("paginate_executions", %{"page" => page_num}, socket) do
-    {:noreply,
-     socket |> assign(exec_page_num: String.to_integer(page_num)) |> load_executions()}
+    {:noreply, socket |> assign(exec_page_num: String.to_integer(page_num)) |> load_executions()}
   end
 
   @impl true

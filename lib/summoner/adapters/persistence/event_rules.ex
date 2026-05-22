@@ -40,7 +40,7 @@ defmodule Summoner.Adapters.Persistence.EventRules do
   def list_event_rules(%{user: _user}, workspace_id, opts) do
     EventRule
     |> where([r], r.workspace_id == ^workspace_id)
-    |> order_by([r], [asc: r.priority, desc: r.inserted_at])
+    |> order_by([r], asc: r.priority, desc: r.inserted_at)
     |> maybe_filter(opts)
     |> Repo.all()
   end

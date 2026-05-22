@@ -28,10 +28,15 @@ defmodule Summoner.Services.EventRules do
   # -------------------------------------------------------------------
 
   def create_rule(scope, attrs), do: Persistence.create_event_rule(scope, attrs)
-  def update_rule(scope, event_rule, attrs), do: Persistence.update_event_rule(scope, event_rule, attrs)
+
+  def update_rule(scope, event_rule, attrs),
+    do: Persistence.update_event_rule(scope, event_rule, attrs)
+
   def delete_rule(scope, event_rule), do: Persistence.delete_event_rule(scope, event_rule)
   def get_rule!(scope, workspace_id, id), do: Persistence.get_event_rule!(scope, workspace_id, id)
-  def list_rules(scope, workspace_id, opts \\ []), do: Persistence.list_event_rules(scope, workspace_id, opts)
+
+  def list_rules(scope, workspace_id, opts \\ []),
+    do: Persistence.list_event_rules(scope, workspace_id, opts)
 
   def list_rules_paginated(scope, workspace_id, opts \\ []),
     do: Persistence.list_event_rules_paginated(scope, workspace_id, opts)

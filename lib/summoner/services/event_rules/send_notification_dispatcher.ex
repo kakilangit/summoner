@@ -14,7 +14,9 @@ defmodule Summoner.Services.EventRules.SendNotificationDispatcher do
   def dispatch(action_config, event_data) do
     channel = action_config["channel"] || "log"
     template = action_config["template"]
-    message = if template, do: interpolate(template, event_data), else: default_message(event_data)
+
+    message =
+      if template, do: interpolate(template, event_data), else: default_message(event_data)
 
     case channel do
       "log" ->

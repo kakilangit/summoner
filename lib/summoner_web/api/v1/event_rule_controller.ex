@@ -62,7 +62,9 @@ defmodule SummonerWeb.API.V1.EventRuleController do
       page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false],
       per_page: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false]
     ],
-    responses: [ok: {"Execution list", "application/json", Schemas.EventRuleExecutionListResponse}]
+    responses: [
+      ok: {"Execution list", "application/json", Schemas.EventRuleExecutionListResponse}
+    ]
 
   def index(conn, params) do
     scope = conn.assigns.current_scope

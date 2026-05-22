@@ -61,7 +61,10 @@ defmodule Summoner.Domain.Schemas.EventRule do
     |> validate_inclusion(:action_type, @action_types)
     |> validate_number(:cooldown_s, greater_than_or_equal_to: 0, less_than_or_equal_to: 86_400)
     |> validate_number(:priority, greater_than_or_equal_to: 0, less_than_or_equal_to: 1000)
-    |> validate_number(:max_fires_per_hour, greater_than_or_equal_to: 0, less_than_or_equal_to: 10_000)
+    |> validate_number(:max_fires_per_hour,
+      greater_than_or_equal_to: 0,
+      less_than_or_equal_to: 10_000
+    )
     |> validate_action_config()
     |> unique_constraint([:workspace_id, :name])
     |> foreign_key_constraint(:workspace_id)

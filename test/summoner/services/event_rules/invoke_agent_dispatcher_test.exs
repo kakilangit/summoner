@@ -11,7 +11,9 @@ defmodule Summoner.Services.EventRules.InvokeAgentDispatcherTest do
 
     test "replaces nested placeholders" do
       data = %{"payload" => %{"status" => "completed"}}
-      assert "Status: completed" == InvokeAgentDispatcher.interpolate("Status: {{payload.status}}", data)
+
+      assert "Status: completed" ==
+               InvokeAgentDispatcher.interpolate("Status: {{payload.status}}", data)
     end
 
     test "replaces multiple placeholders" do

@@ -47,8 +47,7 @@ defmodule SummonerWeb.EventRuleLive.Form do
           breadcrumbs: [
             {"Realms", ~p"/tenants/#{workspace.tenant_id}/workspaces"},
             {workspace.name, ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}"},
-            {"Omens",
-             ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/event-rules"},
+            {"Omens", ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/event-rules"},
             {title, nil}
           ]
         )
@@ -225,7 +224,8 @@ defmodule SummonerWeb.EventRuleLive.Form do
             placeholder={~s|{"agent_id": "...", "prompt": "Handle: {{event.type}}"}|}
           >{@action_config_json}</textarea>
           <p class="text-xs text-base-content/50 mt-1">
-            JSON config for the action. Use <code>{"{{field.path}}"}</code> for template interpolation.
+            JSON config for the action. Use <code>{"{{field.path}}"}</code>
+            for template interpolation.
           </p>
         </div>
 
