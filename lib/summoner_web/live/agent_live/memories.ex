@@ -44,7 +44,10 @@ defmodule SummonerWeb.AgentLive.Memories do
         sort_options: @sort_options,
         type_options: @type_options,
         editing_memory: nil,
-        edit_form: nil
+        edit_form: nil,
+        semantic_query: "",
+        search_results: nil,
+        searching: false
       )
       |> assign(
         breadcrumbs: [
@@ -173,6 +176,33 @@ defmodule SummonerWeb.AgentLive.Memories do
     end)
   end
 
+  @impl true
+  def handle_event("semantic_search", %{"query" => query}, socket) when byte_size(query) > 0 do
+    socket = assign(socket, semantic_query: query, searching: true)
+
+    case Embedding.embed(socket.assigns.workspace.id, query) do
+      {:ok, vector} ->
+        results = AgentMemories.cosine_search(socket.assigns.agent.id, vector, limit: 10)
+        {:noreply, assign(socket, search_results: results, searching: false)}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(searching: false)
+         |> put_flash(:error, "Could not embed query. Check provider configuration.")}
+    end
+  end
+
+  @impl true
+  def handle_event("semantic_search", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_search", _params, socket) do
+    {:noreply, assign(socket, semantic_query: "", search_results: nil, searching: false)}
+  end
+
   defp load_page(socket) do
     %{agent: agent} = socket.assigns
 
@@ -231,6 +261,15 @@ defmodule SummonerWeb.AgentLive.Memories do
     |> Kernel.<>("%")
   end
 
+  defp format_similarity(nil), do: "—"
+  defp format_similarity(similarity) do
+    similarity
+    |> Kernel.*(100)
+    |> Float.round(1)
+    |> to_string()
+    |> then(&("#{&1}% similar"))
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -274,6 +313,55 @@ defmodule SummonerWeb.AgentLive.Memories do
               {label}
             </option>
           </select>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="checkbox" />
+        <div class="collapse-title text-sm font-medium">Semantic Search</div>
+        <div class="collapse-content">
+          <form phx-submit="semantic_search" class="flex gap-2 mt-2">
+            <input
+              type="text"
+              name="query"
+              value={@semantic_query}
+              placeholder="What does this agent know about..."
+              class="input input-bordered input-sm flex-1"
+            />
+            <button type="submit" class="btn btn-primary btn-sm" disabled={@searching}>
+              {if @searching, do: "Searching...", else: "Search"}
+            </button>
+            <button
+              :if={@search_results}
+              type="button"
+              phx-click="clear_search"
+              class="btn btn-ghost btn-sm"
+            >
+              Clear
+            </button>
+          </form>
+          <div :if={@search_results} class="space-y-2 mt-4">
+            <div :if={@search_results == []} class="text-sm text-base-content/60">
+              No similar memories found.
+            </div>
+            <div
+              :for={memory <- @search_results}
+              class="p-3 bg-base-300 rounded-lg space-y-1"
+            >
+              <div class="flex items-center gap-2">
+                <span class={["badge badge-sm", type_badge_class(memory.type)]}>
+                  {memory.type}
+                </span>
+                <span class="font-mono text-xs text-primary">
+                  {format_similarity(memory.similarity)}
+                </span>
+                <span class={["font-mono text-xs", confidence_color(memory.confidence)]}>
+                  {format_confidence(memory.confidence)}
+                </span>
+              </div>
+              <div class="text-sm whitespace-pre-wrap">{memory.content}</div>
+            </div>
+          </div>
         </div>
       </div>
 
