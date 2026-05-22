@@ -19,6 +19,9 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - OpenAI-compatible API (`/v1/chat/completions`, `/v1/models`) with streaming support
 - Artifact system with versioning, cross-conversation sharing, and agent tools
 - Approval flows with configurable triggers, timeout actions, and human-in-the-loop
+- Event rules with JSON condition DSL, cooldowns, rate limiting, and circuit breaker
+- MCP server mode — expose agents as MCP tools for Claude Code, Cursor, etc.
+- Agent memory with pgvector embeddings, confidence decay, and party sharing
 - Hexagonal architecture with persistence ports, worker ports, and domain event system
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)
