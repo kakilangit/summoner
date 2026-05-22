@@ -206,9 +206,14 @@ defmodule SummonerWeb.AgentLive.Memories do
   defp load_page(socket) do
     %{agent: agent} = socket.assigns
 
+    current_page =
+      Map.get(socket.assigns, :page_num) ||
+        (socket.assigns[:page] && socket.assigns.page.page) ||
+        1
+
     opts =
       [
-        page: Map.get(socket.assigns, :page_num, get_in(socket.assigns, [:page, :page])) || 1,
+        page: current_page,
         sort_by: socket.assigns.sort_by,
         sort_dir: socket.assigns.sort_dir,
         filter: socket.assigns.filter,
