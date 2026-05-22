@@ -9,12 +9,11 @@ defmodule Summoner.Domain.Schemas.EventRuleTest do
         name: "test-rule",
         event_type: "invocation.completed",
         action_type: :invoke_agent,
-        action_config: %{"agent_id" => "some-id"},
-        workspace_id: "ws-id"
+        action_config: %{"agent_id" => "some-id"}
       }
 
       changeset = EventRule.changeset(%EventRule{}, attrs)
-      assert changeset.valid?
+      assert changeset.valid?, "Changeset errors: #{inspect(changeset.errors)}"
     end
 
     test "requires name" do
