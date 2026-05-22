@@ -11,6 +11,7 @@ defmodule Summoner.Ports.Persistence.Plugins do
   defdelegate get_plugin!(workspace_id, id), to: @adapter
   defdelegate get_plugin(workspace_id, id), to: @adapter
   defdelegate get_plugin_by_name(workspace_id, name), to: @adapter
+  defdelegate get_plugin_by_ref!(workspace_id, ref), to: @adapter
   defdelegate list_plugins(workspace_id), to: @adapter
   defdelegate list_plugins_paginated(workspace_id, opts), to: @adapter
   defdelegate update_plugin(plugin, attrs), to: @adapter
@@ -19,4 +20,13 @@ defmodule Summoner.Ports.Persistence.Plugins do
   defdelegate list_enabled_by_capability(workspace_id, capability), to: @adapter
   defdelegate upsert_conversation(attrs), to: @adapter
   defdelegate get_conversation_by_ref(plugin_id, external_ref), to: @adapter
+  defdelegate get_conversation_by_id(plugin_id, conversation_id), to: @adapter
+
+  # Plugin state
+  defdelegate get_state(workspace_id, plugin_id, key), to: @adapter
+  defdelegate set_state(attrs), to: @adapter
+  defdelegate delete_state(workspace_id, plugin_id, key), to: @adapter
+
+  # Container support
+  defdelegate enabled_digests(), to: @adapter
 end

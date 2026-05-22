@@ -39,14 +39,14 @@ defmodule SummonerWeb.PluginLive.Install do
       socket = assign(socket, installing: true)
       workspace = socket.assigns.workspace
 
-      case Plugins.install(workspace.id, image_ref) do
+      case Plugins.install(workspace.id, String.trim(image_ref)) do
         {:ok, plugin} ->
           {:noreply,
            socket
            |> put_flash(:info, "Grimoire #{plugin.name} installed.")
            |> push_navigate(
              to:
-               ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/plugins/#{plugin.id}"
+               ~p"/tenants/#{workspace.tenant_id}/workspaces/#{workspace.id}/plugins/#{plugin.ref}"
            )}
 
         {:error, %Ecto.Changeset{} = changeset} ->

@@ -69,8 +69,8 @@ defmodule SummonerWeb.API.V1.McpServerController do
 
     attrs =
       attrs
+      |> Map.drop(["tenant_id", "workspace_id"])
       |> Map.put("workspace_id", conn.assigns.current_workspace_id)
-      |> Map.put("tenant_id", conn.assigns.current_tenant_id)
 
     case MCP.create_server(scope, attrs) do
       {:ok, server} ->

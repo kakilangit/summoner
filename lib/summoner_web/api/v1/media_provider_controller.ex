@@ -79,8 +79,8 @@ defmodule SummonerWeb.API.V1.MediaProviderController do
 
     attrs =
       attrs
+      |> Map.drop(["tenant_id", "workspace_id"])
       |> Map.put("workspace_id", conn.assigns.current_workspace_id)
-      |> Map.put("tenant_id", conn.assigns.current_tenant_id)
 
     case MediaProviders.create_media_provider(scope, attrs) do
       {:ok, provider} ->

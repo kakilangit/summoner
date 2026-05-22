@@ -30,7 +30,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
   describe "index" do
     test "lists agents", %{conn: conn, scope: scope, workspace: ws, provider: provider} do
       agent = agent_fixture(scope, ws.id, provider.id)
-      conn = get(conn, ~p"/api/v1/agents")
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents")
       response = json_response(conn, 200)
       assert %{"items" => [%{"id" => id, "name" => name}], "meta" => meta} = response
       assert id == agent.id
@@ -39,26 +39,26 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
       assert meta["total_entries"] == 1
     end
 
-    test "returns empty list when no agents", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/agents")
+    test "returns empty list when no agents", %{conn: conn, workspace: ws} do
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents")
       assert %{"items" => [], "meta" => %{"total_entries" => 0}} = json_response(conn, 200)
     end
 
-    test "returns 401 without token" do
+    test "returns 401 without token", %{workspace: ws} do
       conn =
         build_conn()
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/agents")
+        |> get(~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents")
 
       assert json_response(conn, 401)["error"]["code"] == "missing_token"
     end
 
-    test "returns 401 with invalid token" do
+    test "returns 401 with invalid token", %{workspace: ws} do
       conn =
         build_conn()
         |> put_req_header("authorization", "Bearer shk_invalid")
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/agents")
+        |> get(~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents")
 
       assert json_response(conn, 401)["error"]["code"] == "invalid_token"
     end
@@ -70,7 +70,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
         build_conn()
         |> put_req_header("authorization", "Bearer #{token.token}")
         |> put_req_header("accept", "application/json")
-        |> get(~p"/api/v1/agents")
+        |> get(~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents")
 
       assert json_response(conn, 403)["error"]["code"] == "insufficient_scope"
     end
@@ -84,7 +84,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
       provider: provider
     } do
       agent = agent_fixture(scope, ws.id, provider.id)
-      conn = get(conn, ~p"/api/v1/agents/#{agent.id}")
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{agent.id}")
       data = json_response(conn, 200)
       assert data["id"] == agent.id
       assert data["type"] == "local"
@@ -94,7 +94,7 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
   end
 
   describe "create" do
-    test "creates local agent", %{conn: conn, provider: provider} do
+    test "creates local agent", %{conn: conn, workspace: ws, provider: provider} do
       attrs = %{
         "name" => "New Agent",
         "role" => "autonomous",
@@ -102,15 +102,17 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
         "provider_id" => provider.id
       }
 
-      conn = post(conn, ~p"/api/v1/agents", attrs)
+      conn = post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents", attrs)
       data = json_response(conn, 201)
       assert data["name"] == "New Agent"
       assert data["type"] == "local"
       assert data["local_agent"]["model"] == "test-model"
     end
 
-    test "returns 422 with invalid attrs", %{conn: conn} do
-      conn = post(conn, ~p"/api/v1/agents", %{"name" => ""})
+    test "returns 422 with invalid attrs", %{conn: conn, workspace: ws} do
+      conn =
+        post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents", %{"name" => ""})
+
       assert json_response(conn, 422)["error"]["code"] == "validation_error"
     end
   end
@@ -118,7 +120,12 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
   describe "update" do
     test "updates agent name", %{conn: conn, scope: scope, workspace: ws, provider: provider} do
       agent = agent_fixture(scope, ws.id, provider.id)
-      conn = patch(conn, ~p"/api/v1/agents/#{agent.id}", %{"name" => "Updated"})
+
+      conn =
+        patch(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{agent.id}", %{
+          "name" => "Updated"
+        })
+
       assert %{"name" => "Updated"} = json_response(conn, 200)
     end
   end
@@ -126,7 +133,10 @@ defmodule SummonerWeb.API.V1.AgentControllerTest do
   describe "delete" do
     test "soft-deletes agent", %{conn: conn, scope: scope, workspace: ws, provider: provider} do
       agent = agent_fixture(scope, ws.id, provider.id)
-      conn = delete(conn, ~p"/api/v1/agents/#{agent.id}")
+
+      conn =
+        delete(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/agents/#{agent.id}")
+
       assert response(conn, 204)
     end
   end

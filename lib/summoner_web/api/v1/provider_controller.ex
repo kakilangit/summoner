@@ -70,7 +70,10 @@ defmodule SummonerWeb.API.V1.ProviderController do
   def create(conn, attrs) do
     scope = conn.assigns.current_scope
 
-    attrs = Map.put(attrs, "workspace_id", conn.assigns.current_workspace_id)
+    attrs =
+      attrs
+      |> Map.drop(["tenant_id", "workspace_id"])
+      |> Map.put("workspace_id", conn.assigns.current_workspace_id)
 
     case Providers.create_provider(scope, attrs) do
       {:ok, provider} ->

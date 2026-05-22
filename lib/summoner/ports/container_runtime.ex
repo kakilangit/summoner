@@ -16,6 +16,15 @@ defmodule Summoner.Ports.ContainerRuntime do
           memory: String.t()
         }
 
+  @type detached_opts :: %{
+          image: String.t(),
+          name: String.t(),
+          network_name: String.t(),
+          env: %{String.t() => String.t()},
+          cpu: String.t(),
+          memory: String.t()
+        }
+
   @callback pull(String.t()) :: :ok | {:error, term()}
   @callback create(container_opts()) :: {:ok, String.t()} | {:error, term()}
   @callback start(String.t()) :: :ok | {:error, term()}
@@ -25,6 +34,11 @@ defmodule Summoner.Ports.ContainerRuntime do
   @callback logs(String.t(), keyword()) :: {:ok, String.t()} | {:error, term()}
   @callback inspect_container(String.t()) :: {:ok, map()} | {:error, term()}
   @callback extract_file(String.t(), String.t()) :: {:ok, binary()} | {:error, term()}
+  @callback run_detached(detached_opts()) :: {:ok, String.t()} | {:error, term()}
+  @callback resolve_digest(String.t()) :: {:ok, String.t()} | {:error, term()}
+  @callback host_port(String.t(), non_neg_integer()) ::
+              {:ok, non_neg_integer()} | {:error, term()}
+  @callback ensure_network(String.t()) :: :ok | {:error, term()}
 
   defdelegate pull(image), to: @adapter
   defdelegate create(opts), to: @adapter
@@ -35,4 +49,8 @@ defmodule Summoner.Ports.ContainerRuntime do
   defdelegate logs(container_id, opts \\ []), to: @adapter
   defdelegate inspect_container(container_id), to: @adapter
   defdelegate extract_file(image, path), to: @adapter
+  defdelegate run_detached(opts), to: @adapter
+  defdelegate resolve_digest(image), to: @adapter
+  defdelegate host_port(container_id, container_port), to: @adapter
+  defdelegate ensure_network(name), to: @adapter
 end

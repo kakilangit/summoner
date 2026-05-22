@@ -7,7 +7,7 @@ defmodule Summoner.Adapters.Persistence.Plugins do
   import Ecto.Query, warn: false
 
   alias Summoner.Adapters.Persistence.Pagination
-  alias Summoner.Domain.Schemas.{PluginConversation, PluginInstallation}
+  alias Summoner.Domain.Schemas.{PluginConversation, PluginInstallation, PluginState}
   alias Summoner.Repo
 
   @behaviour Summoner.Ports.Persistence.Plugins.Adapter
@@ -36,6 +36,12 @@ defmodule Summoner.Adapters.Persistence.Plugins do
 
   def get_plugin_by_name(workspace_id, name) do
     Repo.get_by(PluginInstallation, workspace_id: workspace_id, name: name)
+  end
+
+  def get_plugin_by_ref!(workspace_id, ref) do
+    PluginInstallation
+    |> where([p], p.workspace_id == ^workspace_id and p.ref == ^ref)
+    |> Repo.one!()
   end
 
   def list_plugins(workspace_id) do
@@ -95,5 +101,56 @@ defmodule Summoner.Adapters.Persistence.Plugins do
       plugin_id: plugin_id,
       external_ref: external_ref
     )
+  end
+
+  def get_conversation_by_id(plugin_id, conversation_id) do
+    Repo.get_by(PluginConversation,
+      plugin_id: plugin_id,
+      conversation_id: conversation_id
+    )
+  end
+
+  # -------------------------------------------------------------------
+  # Plugin State
+  # -------------------------------------------------------------------
+
+  def get_state(workspace_id, plugin_id, key) do
+    Repo.get_by(PluginState,
+      workspace_id: workspace_id,
+      plugin_id: plugin_id,
+      key: key
+    )
+  end
+
+  def set_state(attrs) do
+    %PluginState{}
+    |> PluginState.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace, [:value, :updated_at]},
+      conflict_target: [:workspace_id, :plugin_id, :key]
+    )
+  end
+
+  def delete_state(workspace_id, plugin_id, key) do
+    PluginState
+    |> where(
+      [s],
+      s.workspace_id == ^workspace_id and s.plugin_id == ^plugin_id and s.key == ^key
+    )
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  # -------------------------------------------------------------------
+  # Container support
+  # -------------------------------------------------------------------
+
+  def enabled_digests do
+    PluginInstallation
+    |> where([p], p.status == :enabled)
+    |> select([p], p.digest)
+    |> distinct(true)
+    |> Repo.all()
   end
 end

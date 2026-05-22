@@ -3,37 +3,21 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
   GenServer that subscribes to global PubSub and forwards domain events
   to enabled plugin containers with `events` capability.
 
-  Enriches events with `external_ref` when the conversation has a
-  plugin conversation mapping.
+  Uses `PluginClient` (HTTP) to forward events. Actions returned in
+  responses are no longer supported — plugins use the callback API instead.
   """
 
   use GenServer
 
+  alias Summoner.Adapters.Workers.PluginContainerManager
   alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Plugins
-  alias Summoner.Services.Plugins.ActionExecutor
-  alias Summoner.Services.Plugins.ProtocolHandler
+  alias Summoner.Services.Plugins, as: PluginsService
+  alias Summoner.Services.Plugins.EventSerializer
+  alias Summoner.Services.Plugins.PluginClient
+  alias Summoner.Services.Plugins.TrustVerifier
 
   require Logger
-
-  # Domain event structs → event_type string mapping (same as EventRuleEvaluator)
-  @event_type_map %{
-    Summoner.Domain.Events.InvocationStarted => "invocation.started",
-    Summoner.Domain.Events.InvocationCompleted => "invocation.completed",
-    Summoner.Domain.Events.InvocationFailed => "invocation.failed",
-    Summoner.Domain.Events.PipelineRunStatus => "pipeline.started",
-    Summoner.Domain.Events.PipelineStageStatus => "pipeline.completed",
-    Summoner.Domain.Events.SwarmTurn => "swarm.turn",
-    Summoner.Domain.Events.SwarmDone => "swarm.done",
-    Summoner.Domain.Events.SwarmTimeout => "swarm.timeout",
-    Summoner.Domain.Events.WebhookTriggered => "webhook.triggered",
-    Summoner.Domain.Events.WebhookFailed => "webhook.failed",
-    Summoner.Domain.Events.Failover => "failover",
-    Summoner.Domain.Events.MediaGenerationStarted => "media.started",
-    Summoner.Domain.Events.MediaGenerationCompleted => "media.completed",
-    Summoner.Domain.Events.MediaGenerationFailed => "media.failed",
-    Summoner.Domain.Events.AgentConfigChanged => "agent.config_changed"
-  }
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -72,21 +56,37 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
 
     plugins
     |> Enum.filter(&event_subscribed?(&1, event_type))
-    |> Enum.each(fn plugin ->
-      conversation_id = Map.get(event_data, "conversation_id")
-      external_ref = resolve_external_ref(plugin, conversation_id)
+    |> Enum.each(&forward_single_event(&1, event_type, event_data))
+  end
 
-      case ProtocolHandler.send_event(plugin, event_type, event_data, external_ref) do
-        {:ok, %{"actions" => actions}} when is_list(actions) ->
-          ActionExecutor.execute_actions(plugin, workspace_id, actions)
+  defp forward_single_event(plugin, event_type, event_data) do
+    conversation_id = Map.get(event_data, "conversation_id")
+    external_ref = resolve_external_ref(plugin, conversation_id)
 
+    with {:ok, container} <- get_container_for_plugin(plugin),
+         context <- PluginsService.build_context(plugin, container) do
+      case PluginClient.send_event(container, context, event_type, event_data, external_ref) do
         {:ok, _} ->
           :ok
 
         {:error, reason} ->
           Logger.warning("Plugin #{plugin.name} event forward failed: #{inspect(reason)}")
       end
-    end)
+    else
+      {:error, reason} ->
+        Logger.warning("Plugin #{plugin.name} container not available: #{inspect(reason)}")
+    end
+  end
+
+  defp get_container_for_plugin(plugin) do
+    isolation =
+      TrustVerifier.effective_isolation(
+        plugin.trusted,
+        get_in(plugin.manifest, ["isolation"])
+      )
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+    PluginContainerManager.get_container(plugin.digest, tenant_id)
   end
 
   defp event_subscribed?(plugin, event_type) do
@@ -97,38 +97,20 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
   defp resolve_external_ref(_plugin, nil), do: nil
 
   defp resolve_external_ref(plugin, conversation_id) do
-    case Plugins.get_conversation_by_ref(plugin.id, conversation_id) do
+    case Plugins.get_conversation_by_id(plugin.id, conversation_id) do
       %{external_ref: ref} -> ref
       nil -> nil
     end
   end
 
   defp resolve_event(event) do
-    event_type = Map.get(@event_type_map, event.__struct__)
+    case EventSerializer.serialize(event) do
+      {event_type, event_data} ->
+        workspace_id = Map.get(event_data, "workspace_id")
+        {event_type, workspace_id, event_data}
 
-    if event_type do
-      workspace_id = Map.get(event, :workspace_id)
-      event_data = event_to_map(event, event_type)
-      {event_type, workspace_id, event_data}
-    else
-      nil
+      nil ->
+        nil
     end
   end
-
-  defp event_to_map(event, event_type) do
-    event
-    |> Map.from_struct()
-    |> Map.put(:event_type, event_type)
-    |> stringify_keys()
-  end
-
-  defp stringify_keys(map) when is_map(map) do
-    Map.new(map, fn {k, v} -> {to_string(k), stringify_value(v)} end)
-  end
-
-  defp stringify_value(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
-  defp stringify_value(v) when is_atom(v), do: to_string(v)
-  defp stringify_value(v) when is_map(v), do: stringify_keys(v)
-  defp stringify_value(v) when is_list(v), do: Enum.map(v, &stringify_value/1)
-  defp stringify_value(v), do: v
 end

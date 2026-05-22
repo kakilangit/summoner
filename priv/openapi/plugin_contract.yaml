@@ -1,0 +1,894 @@
+openapi: 3.1.0
+info:
+  title: Summoner Plugin Contract
+  description: |
+    Bidirectional HTTP contract between Summoner and plugin containers.
+
+    **Summoner → Plugin**: Summoner calls endpoints on the plugin container.
+    **Plugin → Summoner**: Plugin calls the callback API on Summoner.
+
+    This spec is the single source of truth. Both the Elixir serializer
+    (`Summoner.Services.Plugins.EventSerializer`) and the Rust SDK types
+    (`grimoire-sdk/src/contract.rs`) must match these schemas.
+  version: "1.0.0"
+  contact:
+    name: Summoner
+
+# ── Summoner → Plugin ───────────────────────────────────────────────
+
+paths:
+  /webhook:
+    post:
+      operationId: pluginWebhook
+      summary: Forward an external webhook to the plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookRequest"
+      responses:
+        "200":
+          description: Plugin's HTTP response to forward back
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResponse"
+
+  /event:
+    post:
+      operationId: pluginEvent
+      summary: Forward a domain event to the plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRequest"
+      responses:
+        "200":
+          description: Acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AckResponse"
+
+  /hook:
+    post:
+      operationId: pluginHook
+      summary: Call a lifecycle hook on the plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HookRequest"
+      responses:
+        "200":
+          description: Hook decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HookResponse"
+
+  /tool:
+    post:
+      operationId: pluginTool
+      summary: Execute a tool on the plugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolRequest"
+      responses:
+        "200":
+          description: Tool result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolResponse"
+
+  /health:
+    get:
+      operationId: pluginHealth
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AckResponse"
+
+  /manifest:
+    get:
+      operationId: pluginManifest
+      summary: Return grimoire.json manifest
+      responses:
+        "200":
+          description: Plugin manifest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrimoireManifest"
+
+  # ── Plugin → Summoner (Callback API) ──────────────────────────────
+
+  /api/internal/plugins/callback:
+    post:
+      operationId: pluginCallback
+      summary: Plugin callback to Summoner
+      description: |
+        Single endpoint for all plugin-to-Summoner actions.
+        Authenticated via X-Plugin-Token header.
+      parameters:
+        - name: X-Plugin-Token
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Workspace-Id
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Plugin-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CallbackRequest"
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallbackResponse"
+
+components:
+  schemas:
+    # ────────────────────────────────────────────────────────────────
+    # Shared
+    # ────────────────────────────────────────────────────────────────
+
+    Context:
+      type: object
+      required: [workspace_id, plugin_id, config, callback_url, callback_token]
+      properties:
+        workspace_id:
+          type: string
+          description: NULID of the workspace
+        plugin_id:
+          type: string
+          description: NULID of the plugin installation
+        config:
+          type: object
+          additionalProperties:
+            type: string
+          description: Resolved plugin config (secrets decrypted)
+        callback_url:
+          type: string
+          description: Full URL for plugin-to-Summoner callbacks
+        callback_token:
+          type: string
+          description: Per-container auth token for callback requests
+
+    AckResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          const: true
+
+    # ────────────────────────────────────────────────────────────────
+    # Grimoire Manifest (grimoire.json)
+    # ────────────────────────────────────────────────────────────────
+
+    GrimoireManifest:
+      type: object
+      required: [name, version, image, capabilities]
+      properties:
+        name:
+          type: string
+          description: Plugin name (must match Plugin::name() in the SDK)
+        ref:
+          type: string
+          description: 12-char hex digest derived from SHA256 of image without tag
+        version:
+          type: string
+          description: SemVer version string
+        summoner:
+          type: string
+          description: Required Summoner version constraint (e.g. ">= 0.1.13")
+        description:
+          type: string
+        image:
+          type: string
+          description: Full OCI image reference (e.g. "ghcr.io/org/name:tag")
+        capabilities:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Capability"
+        webhooks:
+          $ref: "#/components/schemas/ManifestWebhooks"
+        events:
+          $ref: "#/components/schemas/ManifestEvents"
+        hooks:
+          $ref: "#/components/schemas/ManifestHooks"
+        tools:
+          $ref: "#/components/schemas/ManifestTools"
+        provider:
+          $ref: "#/components/schemas/ManifestProvider"
+        config_schema:
+          $ref: "#/components/schemas/ManifestConfigSchema"
+        network:
+          type: boolean
+          description: Whether the container needs outbound network access
+          default: false
+        resources:
+          $ref: "#/components/schemas/ManifestResources"
+        isolation:
+          type: string
+          enum: [shared, tenant]
+          description: Container isolation mode (default shared)
+          default: shared
+
+    Capability:
+      type: string
+      enum:
+        - tools
+        - webhooks
+        - hooks
+        - events
+        - provider
+        - theme
+
+    ManifestWebhooks:
+      type: object
+      required: [routes]
+      description: Required when "webhooks" capability is present
+      properties:
+        routes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: Webhook route names (e.g. ["events", "commands", "interactions"])
+
+    ManifestEvents:
+      type: object
+      required: [subscribes]
+      description: Required when "events" capability is present
+      properties:
+        subscribes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/EventType"
+          description: Domain event types this plugin subscribes to
+
+    ManifestHooks:
+      type: object
+      required: [points]
+      description: Required when "hooks" capability is present
+      properties:
+        points:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/HookPoint"
+          description: Lifecycle hook points this plugin intercepts
+
+    ManifestTools:
+      type: object
+      properties:
+        expected:
+          type: array
+          items:
+            type: string
+          description: Tool names the plugin is expected to register
+
+    ManifestProvider:
+      type: object
+      required: [name]
+      description: Required when "provider" capability is present
+      properties:
+        name:
+          type: string
+          description: Provider name
+
+    ManifestConfigSchema:
+      type: object
+      description: JSON Schema describing the plugin's configuration keys
+      properties:
+        type:
+          type: string
+          const: object
+        properties:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ManifestConfigProperty"
+        required:
+          type: array
+          items:
+            type: string
+
+    ManifestConfigProperty:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+        src:
+          type: string
+          enum: [secret, agent]
+          description: |
+            Value source. "secret" = resolved from encrypted secrets.
+            "agent" = resolved to agent NULID ID.
+        description:
+          type: string
+
+    ManifestResources:
+      type: object
+      properties:
+        cpu:
+          type: string
+          description: CPU limit (e.g. "0.25")
+        memory:
+          type: string
+          description: Memory limit (e.g. "128Mi")
+
+    # ────────────────────────────────────────────────────────────────
+    # Summoner → Plugin: Webhook
+    # ────────────────────────────────────────────────────────────────
+
+    WebhookRequest:
+      type: object
+      required: [context, route, headers, body]
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        route:
+          type: string
+          description: Webhook route (e.g. "events", "commands", "interactions")
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        body:
+          type: string
+          description: Raw request body
+
+    WebhookResponse:
+      type: object
+      required: [status, body]
+      properties:
+        status:
+          type: integer
+          default: 200
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          default: {}
+        body:
+          description: Response body (any JSON value)
+
+    # ────────────────────────────────────────────────────────────────
+    # Summoner → Plugin: Event
+    # ────────────────────────────────────────────────────────────────
+
+    EventRequest:
+      type: object
+      required: [context, event_type, data]
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        event_type:
+          $ref: "#/components/schemas/EventType"
+        data:
+          $ref: "#/components/schemas/EventData"
+        external_ref:
+          type: ["string", "null"]
+          description: External reference for conversation continuity
+
+    EventType:
+      type: string
+      enum:
+        - invocation.started
+        - invocation.completed
+        - invocation.failed
+        - pipeline.started
+        - pipeline.completed
+        - swarm.turn
+        - swarm.done
+        - swarm.timeout
+        - webhook.triggered
+        - webhook.failed
+        - failover
+        - media.started
+        - media.completed
+        - media.failed
+        - agent.config_changed
+
+    # ── Event data: discriminated by event_type ────────────────────
+
+    EventData:
+      type: object
+      required: [event_type]
+      properties:
+        event_type:
+          $ref: "#/components/schemas/EventType"
+      discriminator:
+        propertyName: event_type
+        mapping:
+          invocation.started: "#/components/schemas/InvocationStartedData"
+          invocation.completed: "#/components/schemas/InvocationCompletedData"
+          invocation.failed: "#/components/schemas/InvocationFailedData"
+          pipeline.started: "#/components/schemas/PipelineRunStatusData"
+          pipeline.completed: "#/components/schemas/PipelineStageStatusData"
+          swarm.turn: "#/components/schemas/SwarmTurnData"
+          swarm.done: "#/components/schemas/SwarmDoneData"
+          swarm.timeout: "#/components/schemas/SwarmTimeoutData"
+          webhook.triggered: "#/components/schemas/WebhookTriggeredData"
+          webhook.failed: "#/components/schemas/WebhookFailedData"
+          failover: "#/components/schemas/FailoverData"
+          media.started: "#/components/schemas/MediaStartedData"
+          media.completed: "#/components/schemas/MediaCompletedData"
+          media.failed: "#/components/schemas/MediaFailedData"
+          agent.config_changed: "#/components/schemas/AgentConfigChangedData"
+
+    InvocationStartedData:
+      type: object
+      required: [event_type, workspace_id, agent_id, invocation_id]
+      properties:
+        event_type:
+          type: string
+          const: invocation.started
+        workspace_id:
+          type: string
+        agent_id:
+          type: string
+        invocation_id:
+          type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
+
+    InvocationCompletedData:
+      type: object
+      required: [event_type, workspace_id, agent_id, invocation_id]
+      properties:
+        event_type:
+          type: string
+          const: invocation.completed
+        workspace_id:
+          type: string
+        agent_id:
+          type: string
+        invocation_id:
+          type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
+        response:
+          type: ["string", "null"]
+          description: The agent's text response
+
+    InvocationFailedData:
+      type: object
+      required: [event_type, workspace_id, agent_id, invocation_id]
+      properties:
+        event_type:
+          type: string
+          const: invocation.failed
+        workspace_id:
+          type: string
+        agent_id:
+          type: string
+        invocation_id:
+          type: string
+        conversation_id:
+          type: ["string", "null"]
+          description: Summoner conversation ID (used to resolve external_ref)
+        error:
+          type: ["string", "null"]
+          description: Error message
+
+    PipelineRunStatusData:
+      type: object
+      required: [event_type, workspace_id, pipeline_id, run_id, status]
+      properties:
+        event_type:
+          type: string
+          const: pipeline.started
+        workspace_id:
+          type: string
+        pipeline_id:
+          type: string
+        run_id:
+          type: string
+        status:
+          type: string
+
+    PipelineStageStatusData:
+      type: object
+      required: [event_type, workspace_id, pipeline_id, run_id, position, status]
+      properties:
+        event_type:
+          type: string
+          const: pipeline.completed
+        workspace_id:
+          type: string
+        pipeline_id:
+          type: string
+        run_id:
+          type: string
+        position:
+          type: integer
+        status:
+          type: string
+
+    SwarmTurnData:
+      type: object
+      required: [event_type, workspace_id, swarm_id, conversation_id, agent_id]
+      properties:
+        event_type:
+          type: string
+          const: swarm.turn
+        workspace_id:
+          type: string
+        swarm_id:
+          type: string
+        conversation_id:
+          type: string
+        agent_id:
+          type: string
+
+    SwarmDoneData:
+      type: object
+      required: [event_type, workspace_id, swarm_id, conversation_id, summary]
+      properties:
+        event_type:
+          type: string
+          const: swarm.done
+        workspace_id:
+          type: string
+        swarm_id:
+          type: string
+        conversation_id:
+          type: string
+        summary:
+          type: string
+
+    SwarmTimeoutData:
+      type: object
+      required: [event_type, workspace_id, swarm_id, conversation_id, agent_id]
+      properties:
+        event_type:
+          type: string
+          const: swarm.timeout
+        workspace_id:
+          type: string
+        swarm_id:
+          type: string
+        conversation_id:
+          type: string
+        agent_id:
+          type: string
+
+    WebhookTriggeredData:
+      type: object
+      required: [event_type, workspace_id, webhook_id, response_mode, invocation_id]
+      properties:
+        event_type:
+          type: string
+          const: webhook.triggered
+        workspace_id:
+          type: string
+        webhook_id:
+          type: string
+        response_mode:
+          type: string
+        invocation_id:
+          type: string
+        timestamp:
+          type: ["string", "null"]
+          format: date-time
+
+    WebhookFailedData:
+      type: object
+      required: [event_type, workspace_id, webhook_id, error_reason]
+      properties:
+        event_type:
+          type: string
+          const: webhook.failed
+        workspace_id:
+          type: string
+        webhook_id:
+          type: string
+        error_reason:
+          type: string
+        timestamp:
+          type: ["string", "null"]
+          format: date-time
+
+    FailoverData:
+      type: object
+      required: [event_type, invocation_id, from_agent_id, to_agent_id, reason, depth]
+      properties:
+        event_type:
+          type: string
+          const: failover
+        workspace_id:
+          type: ["string", "null"]
+        invocation_id:
+          type: string
+        from_agent_id:
+          type: string
+        to_agent_id:
+          type: string
+        reason:
+          type: string
+        depth:
+          type: integer
+
+    MediaStartedData:
+      type: object
+      required: [event_type, workspace_id, conversation_id, attachment_id, type, prompt]
+      properties:
+        event_type:
+          type: string
+          const: media.started
+        workspace_id:
+          type: string
+        conversation_id:
+          type: string
+        attachment_id:
+          type: string
+        type:
+          type: string
+        prompt:
+          type: string
+
+    MediaCompletedData:
+      type: object
+      required: [event_type, workspace_id, conversation_id, attachment_id, url]
+      properties:
+        event_type:
+          type: string
+          const: media.completed
+        workspace_id:
+          type: string
+        conversation_id:
+          type: string
+        attachment_id:
+          type: string
+        url:
+          type: string
+
+    MediaFailedData:
+      type: object
+      required: [event_type, workspace_id, conversation_id, attachment_id, error]
+      properties:
+        event_type:
+          type: string
+          const: media.failed
+        workspace_id:
+          type: string
+        conversation_id:
+          type: string
+        attachment_id:
+          type: string
+        error:
+          type: string
+
+    AgentConfigChangedData:
+      type: object
+      required: [event_type, agent_id]
+      properties:
+        event_type:
+          type: string
+          const: agent.config_changed
+        agent_id:
+          type: string
+
+    # ────────────────────────────────────────────────────────────────
+    # Summoner → Plugin: Hook
+    # ────────────────────────────────────────────────────────────────
+
+    HookRequest:
+      type: object
+      required: [context, point, data]
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        point:
+          $ref: "#/components/schemas/HookPoint"
+        data:
+          description: Hook-specific data (shape varies by hook point)
+
+    HookPoint:
+      type: string
+      enum:
+        - before_invocation
+        - after_invocation
+        - on_tool_call
+        - on_error
+
+    HookResponse:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [proceed, modify, halt]
+        context:
+          description: Modified context (present when action=modify)
+        reason:
+          type: string
+          description: Halt reason (present when action=halt)
+
+    # ────────────────────────────────────────────────────────────────
+    # Summoner → Plugin: Tool
+    # ────────────────────────────────────────────────────────────────
+
+    ToolRequest:
+      type: object
+      required: [context, name, arguments]
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        name:
+          type: string
+        arguments:
+          description: Tool arguments (schema defined per tool)
+
+    ToolResponse:
+      type: object
+      required: [result]
+      properties:
+        result:
+          description: Tool result (schema defined per tool)
+
+    # ────────────────────────────────────────────────────────────────
+    # Plugin → Summoner: Callback
+    # ────────────────────────────────────────────────────────────────
+
+    CallbackRequest:
+      type: object
+      required: [action, params]
+      properties:
+        action:
+          $ref: "#/components/schemas/CallbackAction"
+        params:
+          $ref: "#/components/schemas/CallbackParams"
+
+    CallbackAction:
+      type: string
+      enum:
+        - invoke_agent
+        - invoke_agent_async
+        - emit_event
+        - log
+        - get_state
+        - set_state
+        - delete_state
+
+    CallbackParams:
+      oneOf:
+        - $ref: "#/components/schemas/InvokeAgentParams"
+        - $ref: "#/components/schemas/EmitEventParams"
+        - $ref: "#/components/schemas/LogParams"
+        - $ref: "#/components/schemas/GetStateParams"
+        - $ref: "#/components/schemas/SetStateParams"
+        - $ref: "#/components/schemas/DeleteStateParams"
+
+    InvokeAgentParams:
+      type: object
+      required: [agent, message]
+      properties:
+        agent:
+          type: string
+          description: Agent callname or NULID ID
+        message:
+          type: string
+        external_ref:
+          type: ["string", "null"]
+          description: External reference for conversation continuity
+
+    EmitEventParams:
+      type: object
+      required: [event, data]
+      properties:
+        event:
+          type: string
+          description: Event name (will be namespaced as plugin.<name>.<event>)
+        data:
+          description: Event payload (any JSON value)
+
+    LogParams:
+      type: object
+      required: [level, message]
+      properties:
+        level:
+          type: string
+          enum: [info, warn, error]
+        message:
+          type: string
+
+    GetStateParams:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+
+    SetStateParams:
+      type: object
+      required: [key, value]
+      properties:
+        key:
+          type: string
+        value:
+          description: State value (any JSON value)
+
+    DeleteStateParams:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+
+    CallbackResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        result:
+          $ref: "#/components/schemas/CallbackResult"
+        error:
+          type: string
+          description: Present when ok=false
+
+    CallbackResult:
+      oneOf:
+        - $ref: "#/components/schemas/AsyncResult"
+        - $ref: "#/components/schemas/InvocationResult"
+        - $ref: "#/components/schemas/StateResult"
+
+    AsyncResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: accepted
+
+    InvocationResult:
+      type: object
+      required: [invocation_id, output]
+      properties:
+        invocation_id:
+          type: string
+        output:
+          type: string
+
+    StateResult:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+        value:
+          description: State value (any JSON value, null if key not found)

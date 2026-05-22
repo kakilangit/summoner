@@ -6,6 +6,7 @@ defmodule Summoner.Domain.Schemas.PluginInstallationTest do
   defp valid_attrs do
     %{
       name: "grimoire-test",
+      ref: "a1b2c3d4e5f6",
       version: "1.0.0",
       capabilities: ["tools"],
       manifest: %{"name" => "grimoire-test", "version" => "1.0.0"},
@@ -19,11 +20,12 @@ defmodule Summoner.Domain.Schemas.PluginInstallationTest do
       assert changeset.valid?
     end
 
-    test "requires name, version, manifest, workspace_id" do
+    test "requires name, ref, version, manifest, workspace_id" do
       changeset = PluginInstallation.changeset(%PluginInstallation{}, %{})
       errors = errors_on(changeset)
 
       assert errors[:name]
+      assert errors[:ref]
       assert errors[:version]
       assert errors[:manifest]
       assert errors[:workspace_id]

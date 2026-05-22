@@ -7,6 +7,7 @@ defmodule Summoner.Application do
 
   alias Summoner.Adapters.Persistence.Themes
   alias Summoner.Services.Inference.Discovery
+  alias Summoner.Services.Plugins
 
   @impl true
   def start(_type, _args) do
@@ -22,26 +23,30 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
-        {Registry, keys: :unique, name: Summoner.PluginRegistry},
-        {DynamicSupervisor, name: Summoner.PluginSupervisor, strategy: :one_for_one},
+        Summoner.Adapters.Workers.PluginContainerManager,
         {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
         {DynamicSupervisor,
          name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
         {Task.Supervisor, name: Summoner.TaskSupervisor},
         Summoner.Services.EventLog,
         Summoner.Services.Agents.ProcessMonitor,
-        Summoner.Adapters.Workers.EventRuleEvaluator,
-        Summoner.Adapters.Workers.PluginEventForwarder,
         {Oban, Application.fetch_env!(:summoner, Oban)},
         Summoner.Adapters.Crypto.Vault
       ] ++
+        maybe_event_rule_evaluator() ++
+        maybe_plugin_event_forwarder() ++
         maybe_registry() ++
         maybe_discovery() ++
         maybe_theme_init() ++
         maybe_mcp_server() ++
         [
           # Start to serve requests, typically the last entry
-          SummonerWeb.Endpoint
+          SummonerWeb.Endpoint,
+          # Boot enabled plugins after everything is ready
+          Supervisor.child_spec(
+            {Task, &Plugins.start_enabled_plugins/0},
+            id: :plugin_boot
+          )
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -85,6 +90,22 @@ defmodule Summoner.Application do
   defp maybe_mcp_server do
     if Application.get_env(:summoner, :start_mcp_server, true) do
       [{Summoner.Adapters.MCP.Server, transport: :streamable_http}]
+    else
+      []
+    end
+  end
+
+  defp maybe_event_rule_evaluator do
+    if Application.get_env(:summoner, :start_event_rule_evaluator, true) do
+      [Summoner.Adapters.Workers.EventRuleEvaluator]
+    else
+      []
+    end
+  end
+
+  defp maybe_plugin_event_forwarder do
+    if Application.get_env(:summoner, :start_plugin_event_forwarder, true) do
+      [Summoner.Adapters.Workers.PluginEventForwarder]
     else
       []
     end

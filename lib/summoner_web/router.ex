@@ -18,6 +18,12 @@ defmodule SummonerWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: SummonerWeb.API.ApiSpec
   end
 
+  pipeline :scoped_api do
+    plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: SummonerWeb.API.ApiSpec
+    plug SummonerWeb.Plugs.ScopeFromPath
+  end
+
   scope "/", SummonerWeb do
     pipe_through :browser
 
@@ -167,7 +173,7 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/access-tokens/:id/edit", AccessTokenLive.Form, :edit
       live "/workspaces/:workspace_id/plugins", PluginLive.Index, :index
       live "/workspaces/:workspace_id/plugins/install", PluginLive.Install, :install
-      live "/workspaces/:workspace_id/plugins/:id", PluginLive.Show, :show
+      live "/workspaces/:workspace_id/plugins/:ref", PluginLive.Show, :show
       live "/workspaces/:workspace_id/knowledge-bases", KnowledgeBaseLive.Index, :index
       live "/workspaces/:workspace_id/knowledge-bases/new", KnowledgeBaseLive.Form, :new
       live "/workspaces/:workspace_id/knowledge-bases/:id", KnowledgeBaseLive.Show, :show
@@ -181,16 +187,24 @@ defmodule SummonerWeb.Router do
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
-  # Webhook trigger — self-authenticated (public/token/hmac per webhook config)
-  scope "/api/v1", SummonerWeb.API.V1 do
-    pipe_through [:api]
-    post "/webhooks/:id/trigger", WebhookTriggerController, :trigger
-    post "/plugins/:plugin_id/hook/:route", PluginWebhookController, :trigger
+  # Plugin callback API — authenticated via X-Plugin-Token
+  scope "/api/internal/plugins", SummonerWeb.API.Internal do
+    pipe_through [:api, SummonerWeb.Plugs.PluginCallbackAuth]
+
+    post "/callback", PluginCallbackController, :callback
   end
 
-  # REST API — token-authenticated, workspace implicit (derived from token)
-  scope "/api/v1", SummonerWeb.API.V1 do
-    pipe_through [:api]
+  # Webhook trigger — public, explicitly scoped by URL
+  scope "/api/v1/tenants/:tenant_id/workspaces/:workspace_id", SummonerWeb.API.V1 do
+    pipe_through [:scoped_api]
+
+    post "/webhooks/:id/trigger", WebhookTriggerController, :trigger
+    post "/plugins/:plugin_ref/webhooks/:route", PluginWebhookController, :trigger
+  end
+
+  # REST API — token-authenticated, explicitly scoped by URL
+  scope "/api/v1/tenants/:tenant_id/workspaces/:workspace_id", SummonerWeb.API.V1 do
+    pipe_through [:scoped_api]
 
     resources "/agents", AgentController, except: [:new, :edit] do
       post "/invoke", InvocationController, :invoke
@@ -230,15 +244,17 @@ defmodule SummonerWeb.Router do
     # Usage analytics
     get "/usages", UsageController, :index
     get "/usages/breakdowns", UsageController, :breakdowns
+  end
 
-    # Admin (requires admin scope)
-    scope "/admin" do
-      get "/tenants", AdminController, :list_tenants
-      get "/users", AdminController, :list_users
-      patch "/users/:id", AdminController, :update_user
-      get "/invitations", AdminController, :list_invitations
-      get "/stats", AdminController, :stats
-    end
+  # Admin API — token-authenticated, global (no workspace scope)
+  scope "/api/v1/admin", SummonerWeb.API.V1 do
+    pipe_through [:api]
+
+    get "/tenants", AdminController, :list_tenants
+    get "/users", AdminController, :list_users
+    patch "/users/:id", AdminController, :update_user
+    get "/invitations", AdminController, :list_invitations
+    get "/stats", AdminController, :stats
   end
 
   # OpenAI-compatible API — token-authenticated

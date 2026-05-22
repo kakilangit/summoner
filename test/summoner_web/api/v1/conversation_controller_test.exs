@@ -26,7 +26,7 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
   describe "index" do
     test "lists conversations", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       conv = conversation_fixture(scope, ws.id, agent.id)
-      conn = get(conn, ~p"/api/v1/conversations")
+      conn = get(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/conversations")
       assert %{"items" => [%{"id" => id}]} = json_response(conn, 200)
       assert id == conv.id
     end
@@ -35,16 +35,25 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
   describe "show" do
     test "returns conversation", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       conv = conversation_fixture(scope, ws.id, agent.id)
-      conn = get(conn, ~p"/api/v1/conversations/#{conv.id}")
+
+      conn =
+        get(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/conversations/#{conv.id}"
+        )
+
       assert %{"id" => id, "kind" => "chat"} = json_response(conn, 200)
       assert id == conv.id
     end
   end
 
   describe "create" do
-    test "creates conversation", %{conn: conn, agent: agent} do
+    test "creates conversation", %{conn: conn, workspace: ws, agent: agent} do
       attrs = %{"title" => "Test Chat", "primary_agent_id" => agent.id}
-      conn = post(conn, ~p"/api/v1/conversations", attrs)
+
+      conn =
+        post(conn, ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/conversations", attrs)
+
       assert %{"title" => "Test Chat"} = json_response(conn, 201)
     end
   end
@@ -52,7 +61,13 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
   describe "delete" do
     test "deletes conversation", %{conn: conn, scope: scope, workspace: ws, agent: agent} do
       conv = conversation_fixture(scope, ws.id, agent.id)
-      conn = delete(conn, ~p"/api/v1/conversations/#{conv.id}")
+
+      conn =
+        delete(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/conversations/#{conv.id}"
+        )
+
       assert response(conn, 204)
     end
   end
@@ -65,7 +80,13 @@ defmodule SummonerWeb.API.V1.ConversationControllerTest do
       agent: agent
     } do
       conv = conversation_fixture(scope, ws.id, agent.id)
-      conn = get(conn, ~p"/api/v1/conversations/#{conv.id}/messages")
+
+      conn =
+        get(
+          conn,
+          ~p"/api/v1/tenants/#{ws.tenant_id}/workspaces/#{ws.id}/conversations/#{conv.id}/messages"
+        )
+
       assert %{"items" => messages} = json_response(conn, 200)
       assert is_list(messages)
     end

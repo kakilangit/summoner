@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.13] - 2026-05-22
+
+### Changed
+
+- **Plugin System v2 — Shared Container + HTTP**
+  - Replaced stdio/MCP transport with bidirectional HTTP: Summoner calls plugin endpoints, plugins call Summoner's callback API
+  - One container per unique image digest (shared across installations), config sent per-request
+  - Container runtime uses Docker CLI adapter with health checks and auto-restart
+  - `PluginContainerManager` manages container lifecycle under DynamicSupervisor with Registry-based lookup
+  - `ProtocolHandler` bridges JSON-RPC for webhook, hook, event, models, and chat capabilities
+  - `ContractValidator` policy for pure validation of plugin capability responses
+  - `PluginWebhookController` for inbound webhooks at `POST /api/v1/plugins/:plugin_id/hook/:route`
+  - `HookRunner` for lifecycle hooks (before/after invocation, on_tool_call, on_error) with circuit breaker
+  - `PluginEventForwarder` subscribes to global PubSub and forwards domain events to plugins with `events` capability
+  - `ActionExecutor` processes plugin actions (invoke_agent, invoke_agent_async, emit_event, log)
+  - Container and state schemas for tracking container digests, ports, and status
+
+- **OpenAPI Plugin Contract**
+  - `plugin_contract.yaml` as single source of truth for the bidirectional HTTP contract
+  - `EventSerializer` with explicit per-event serialization (replaces generic `Map.from_struct`)
+  - Flattened `output.response`/`error` into top-level event fields
+
+### Fixed
+
+- Orphan sweep replaces grace-period container cleanup — strips version tag from container name so upgrades replace existing containers; health-check sweep removes containers whose digest has no enabled installations
+- `external_ref` resolution uses `get_conversation_by_id` to find the external_ref (Slack channel) from Summoner's internal conversation_id
+- `conversation_id` added to `InvocationStarted`, `InvocationCompleted`, `InvocationFailed` event structs and OpenAPI schemas
+
 ## [0.1.12] - 2026-05-22
 
 ### Added

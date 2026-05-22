@@ -127,7 +127,8 @@ defmodule Summoner.Adapters.Persistence.Orchestration do
     base = %{
       workspace_id: invocation.workspace_id,
       agent_id: invocation.agent_id,
-      invocation_id: invocation.id
+      invocation_id: invocation.id,
+      conversation_id: invocation.conversation_id
     }
 
     event =

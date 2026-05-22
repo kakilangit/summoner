@@ -2,9 +2,8 @@ defmodule SummonerWeb.Plugs.TokenAuth do
   @moduledoc """
   Plug for Bearer token authentication on API endpoints.
 
-  Extracts a Bearer token from the `Authorization` header, verifies it
-  globally against all active access tokens, and derives the workspace
-  from the matched token. No workspace ID is needed in the URL.
+  Extracts a Bearer token from the `Authorization` header and verifies it.
+  Workspace and tenant are derived from URL path (via ScopeFromPath), not the token.
 
   ## Options
 
@@ -18,7 +17,6 @@ defmodule SummonerWeb.Plugs.TokenAuth do
 
   import Plug.Conn
 
-  alias Summoner.Domain.Schemas.Scope
   alias Summoner.Ports.Persistence.AccessTokens
 
   @behaviour Plug
@@ -32,11 +30,7 @@ defmodule SummonerWeb.Plugs.TokenAuth do
 
     with {:ok, token_string} <- extract_bearer_token(conn),
          {:ok, token} <- AccessTokens.verify_token(token_string, scope: required_scope) do
-      conn
-      |> assign(:current_token, token)
-      |> assign(:current_workspace_id, token.workspace_id)
-      |> assign(:current_tenant_id, token.tenant_id)
-      |> assign(:current_scope, %Scope{user: nil})
+      assign(conn, :current_token, token)
     else
       {:error, :no_token} ->
         conn |> send_json_error(401, "missing_token", "Authorization header required") |> halt()

@@ -22,12 +22,15 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
 
   schema "plugin_installations" do
     field :name, :string
+    field :ref, :string
     field :version, :string
     field :capabilities, {:array, :string}, default: []
     field :manifest, :map
     field :config, :map, default: %{}
     field :status, Ecto.Enum, values: @statuses, default: :installed
     field :error_message, :string
+    field :digest, :string
+    field :trusted, :boolean, default: false
 
     belongs_to :mcp_server, McpServer
     belongs_to :provider, Provider
@@ -43,23 +46,28 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
     plugin
     |> cast(attrs, [
       :name,
+      :ref,
       :version,
       :capabilities,
       :manifest,
       :config,
       :status,
       :error_message,
+      :digest,
+      :trusted,
       :mcp_server_id,
       :provider_id,
       :workspace_id
     ])
-    |> validate_required([:name, :version, :capabilities, :manifest, :workspace_id])
+    |> validate_required([:name, :ref, :version, :capabilities, :manifest, :workspace_id])
     |> validate_length(:name, min: 1, max: 255)
+    |> validate_length(:ref, is: 12)
     |> validate_capabilities()
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:mcp_server_id)
     |> foreign_key_constraint(:provider_id)
     |> unique_constraint([:workspace_id, :name])
+    |> unique_constraint([:workspace_id, :ref])
   end
 
   def status_changeset(plugin, status, error_message \\ nil) do
@@ -84,4 +92,19 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
   end
 
   def valid_capabilities, do: @capabilities
+
+  @doc """
+  Compute a stable 12-char ref from an OCI image path (without version tag).
+
+  Examples:
+    "docker.io/kakilangit/grimoire-slack:0.1.3" -> "a1b2c3d4e5f6"
+    "docker.io/kakilangit/grimoire-slack"        -> "a1b2c3d4e5f6"
+  """
+  def compute_ref(image) do
+    image
+    |> String.replace(~r/:[^\/]+$/, "")
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 12)
+  end
 end
