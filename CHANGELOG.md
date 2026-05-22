@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] - 2026-05-22
+
+### Added
+
+- **RAG Pipeline (Codex)**
+  - `knowledge_bases`, `knowledge_chunks`, `knowledge_base_agents` tables with pgvector IVFFlat cosine index
+  - `KnowledgeBase` schema with type, chunking config, status, file hashes for change detection
+  - `KnowledgeChunk` schema with pgvector embedding and virtual similarity field
+  - `KnowledgeBaseAgent` join schema for agent-to-KB linking
+  - Persistence ports and adapters for CRUD, agent linking, cosine search, and bulk insert
+  - `DocumentParser` port with TXT, Markdown, HTML, PDF (pdftotext CLI), and DOCX (zip XML) adapters
+  - `Chunker` service with three strategies: fixed-size, paragraph, semantic (all sentence-aware with overlap)
+  - `IngestionWorker` Oban job: parse → chunk → batch embed → bulk insert → status update
+  - `ReindexWorker` Oban job with incremental (single document) and full (all documents) modes
+  - `__search_knowledge__` builtin tool for agents with linked knowledge bases
+  - `CitationFormatter` policy for source annotations with `[N] [Source: ...]` markers
+  - `RAG` service: search, format_for_prompt, ingest, reindex, document change detection
+  - Knowledge context injected into agent system prompt alongside memories
+  - File upload controller with 50MB limit, type validation, SHA-256 hashing
+  - Knowledge base LiveViews: paginated index, create/edit form, detail page with document upload, search testing, agent linking
+  - Codex card on workspace dashboard
+
 ## [0.1.11] - 2026-05-22
 
 ### Added
