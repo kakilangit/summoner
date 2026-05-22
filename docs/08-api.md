@@ -141,6 +141,18 @@ GET    /api/v1/access-tokens/:id      Get token
 DELETE /api/v1/access-tokens/:id      Revoke token
 ```
 
+### Event Rules (Omens)
+
+```
+GET    /api/v1/event-rules              List event rules
+POST   /api/v1/event-rules              Create event rule
+GET    /api/v1/event-rules/:id          Get event rule
+PUT    /api/v1/event-rules/:id          Update event rule
+DELETE /api/v1/event-rules/:id          Delete event rule
+POST   /api/v1/event-rules/test         Dry-run condition evaluation
+GET    /api/v1/event-rules/:id/executions  List execution history
+```
+
 ### Trigger (self-authenticated)
 
 ```
