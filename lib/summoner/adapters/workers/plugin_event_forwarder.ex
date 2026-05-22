@@ -97,7 +97,7 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
   defp resolve_external_ref(_plugin, nil), do: nil
 
   defp resolve_external_ref(plugin, conversation_id) do
-    case Plugins.get_conversation_by_ref(plugin.id, conversation_id) do
+    case Plugins.get_conversation_by_id(plugin.id, conversation_id) do
       %{external_ref: ref} -> ref
       nil -> nil
     end

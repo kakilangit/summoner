@@ -20,6 +20,7 @@ defmodule Summoner.Ports.Persistence.Plugins do
   defdelegate list_enabled_by_capability(workspace_id, capability), to: @adapter
   defdelegate upsert_conversation(attrs), to: @adapter
   defdelegate get_conversation_by_ref(plugin_id, external_ref), to: @adapter
+  defdelegate get_conversation_by_id(plugin_id, conversation_id), to: @adapter
 
   # Plugin state
   defdelegate get_state(workspace_id, plugin_id, key), to: @adapter

@@ -103,6 +103,13 @@ defmodule Summoner.Adapters.Persistence.Plugins do
     )
   end
 
+  def get_conversation_by_id(plugin_id, conversation_id) do
+    Repo.get_by(PluginConversation,
+      plugin_id: plugin_id,
+      conversation_id: conversation_id
+    )
+  end
+
   # -------------------------------------------------------------------
   # Plugin State
   # -------------------------------------------------------------------

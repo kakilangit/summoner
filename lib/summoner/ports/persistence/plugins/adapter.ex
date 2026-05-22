@@ -14,6 +14,7 @@ defmodule Summoner.Ports.Persistence.Plugins.Adapter do
   @callback list_enabled_by_capability(String.t(), String.t()) :: [struct()]
   @callback upsert_conversation(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback get_conversation_by_ref(String.t(), String.t()) :: struct() | nil
+  @callback get_conversation_by_id(String.t(), String.t()) :: struct() | nil
 
   # Plugin state
   @callback get_state(String.t(), String.t(), String.t()) :: struct() | nil
