@@ -6,6 +6,8 @@ defmodule Summoner.Services.RAG do
   and citation formatting for agent context injection.
   """
 
+  alias Summoner.Adapters.Workers.RAG.IngestionWorker
+  alias Summoner.Adapters.Workers.RAG.ReindexWorker
   alias Summoner.Domain.Policies.CitationFormatter
   alias Summoner.Ports.Persistence.KnowledgeBases
   alias Summoner.Ports.Persistence.KnowledgeChunks
@@ -66,7 +68,7 @@ defmodule Summoner.Services.RAG do
       filename: filename,
       content_type: content_type
     }
-    |> Summoner.Adapters.Workers.RAG.IngestionWorker.new()
+    |> IngestionWorker.new()
     |> Oban.insert()
   end
 
@@ -79,7 +81,7 @@ defmodule Summoner.Services.RAG do
       filename: filename,
       content_type: content_type
     }
-    |> Summoner.Adapters.Workers.RAG.ReindexWorker.new()
+    |> ReindexWorker.new()
     |> Oban.insert()
   end
 
@@ -90,7 +92,7 @@ defmodule Summoner.Services.RAG do
       knowledge_base_id: knowledge_base_id,
       mode: "full"
     }
-    |> Summoner.Adapters.Workers.RAG.ReindexWorker.new()
+    |> ReindexWorker.new()
     |> Oban.insert()
   end
 

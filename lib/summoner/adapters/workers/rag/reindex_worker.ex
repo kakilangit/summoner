@@ -69,66 +69,74 @@ defmodule Summoner.Adapters.Workers.RAG.ReindexWorker do
            Chunker.chunk(parsed.text, kb.chunk_strategy,
              chunk_size: kb.chunk_size,
              chunk_overlap: kb.chunk_overlap
-           ),
-         :ok <- embed_and_store(chunks, kb, workspace_id, filename, parsed.metadata) do
-      :ok
+           ) do
+      embed_and_store(chunks, kb, workspace_id, filename, parsed.metadata)
     end
   end
 
   defp reindex_all(kb, workspace_id) do
-    # Delete all chunks
     KnowledgeChunks.delete_by_knowledge_base(kb.id)
 
     upload_dir = upload_path(kb)
 
     if File.dir?(upload_dir) do
-      upload_dir
-      |> File.ls!()
-      |> Enum.reduce_while(:ok, fn filename, :ok ->
-        content_type = detect_content_type(filename)
-
-        case reindex_document(kb, workspace_id, filename, content_type) do
-          :ok -> {:cont, :ok}
-          error -> {:halt, error}
-        end
-      end)
+      reindex_files(kb, workspace_id, upload_dir)
     else
       :ok
     end
+  end
+
+  defp reindex_files(kb, workspace_id, upload_dir) do
+    upload_dir
+    |> File.ls!()
+    |> Enum.reduce_while(:ok, fn filename, :ok ->
+      content_type = detect_content_type(filename)
+
+      case reindex_document(kb, workspace_id, filename, content_type) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp embed_and_store(chunks, kb, workspace_id, filename, doc_metadata) do
     chunks
     |> Enum.chunk_every(@batch_size)
     |> Enum.reduce_while(:ok, fn batch, :ok ->
-      texts = Enum.map(batch, & &1.content)
+      embed_and_insert_batch(batch, kb, workspace_id, filename, doc_metadata)
+    end)
+  end
 
-      case Embedding.embed_batch(workspace_id, texts) do
-        {:ok, embeddings} ->
-          now = DateTime.utc_now()
+  defp embed_and_insert_batch(batch, kb, workspace_id, filename, doc_metadata) do
+    texts = Enum.map(batch, & &1.content)
 
-          rows =
-            Enum.zip(batch, embeddings)
-            |> Enum.map(fn {chunk, embedding} ->
-              %{
-                id: Nulid.Ecto.autogenerate(),
-                content: chunk.content,
-                embedding: embedding,
-                metadata: Map.merge(chunk.metadata, doc_metadata),
-                document_name: filename,
-                knowledge_base_id: kb.id,
-                workspace_id: workspace_id,
-                inserted_at: now,
-                updated_at: now
-              }
-            end)
+    case Embedding.embed_batch(workspace_id, texts) do
+      {:ok, embeddings} ->
+        rows = build_chunk_rows(batch, embeddings, kb, workspace_id, filename, doc_metadata)
+        KnowledgeChunks.bulk_insert(rows)
+        {:cont, :ok}
 
-          KnowledgeChunks.bulk_insert(rows)
-          {:cont, :ok}
+      {:error, reason} ->
+        {:halt, {:error, reason}}
+    end
+  end
 
-        {:error, reason} ->
-          {:halt, {:error, reason}}
-      end
+  defp build_chunk_rows(batch, embeddings, kb, workspace_id, filename, doc_metadata) do
+    now = DateTime.utc_now()
+
+    Enum.zip(batch, embeddings)
+    |> Enum.map(fn {chunk, embedding} ->
+      %{
+        id: Nulid.Ecto.autogenerate(),
+        content: chunk.content,
+        embedding: embedding,
+        metadata: Map.merge(chunk.metadata, doc_metadata),
+        document_name: filename,
+        knowledge_base_id: kb.id,
+        workspace_id: workspace_id,
+        inserted_at: now,
+        updated_at: now
+      }
     end)
   end
 

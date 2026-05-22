@@ -168,6 +168,10 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/plugins", PluginLive.Index, :index
       live "/workspaces/:workspace_id/plugins/install", PluginLive.Install, :install
       live "/workspaces/:workspace_id/plugins/:id", PluginLive.Show, :show
+      live "/workspaces/:workspace_id/knowledge-bases", KnowledgeBaseLive.Index, :index
+      live "/workspaces/:workspace_id/knowledge-bases/new", KnowledgeBaseLive.Form, :new
+      live "/workspaces/:workspace_id/knowledge-bases/:id", KnowledgeBaseLive.Show, :show
+      live "/workspaces/:workspace_id/knowledge-bases/:id/edit", KnowledgeBaseLive.Form, :edit
     end
   end
 

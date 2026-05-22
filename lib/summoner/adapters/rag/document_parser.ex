@@ -128,31 +128,27 @@ defmodule Summoner.Adapters.RAG.DocumentParser do
   end
 
   defp parse_docx(binary) do
-    case :zip.unzip(binary, [:memory]) do
-      {:ok, files} ->
-        case Enum.find(files, fn {name, _} ->
-               to_string(name) == "word/document.xml"
-             end) do
-          {_, xml_binary} ->
-            text =
-              xml_binary
-              |> to_string()
-              # paragraph breaks
-              |> String.replace(~r/<w:p[^>]*>/, "\n")
-              |> String.replace(~r/<w:tab\/>/, "\t")
-              # strip all XML tags
-              |> String.replace(~r/<[^>]+>/, "")
-              |> String.replace(~r/\n{3,}/, "\n\n")
-              |> String.trim()
+    with {:ok, files} <- :zip.unzip(binary, [:memory]),
+         {_, xml_binary} <- find_document_xml(files) do
+      text =
+        xml_binary
+        |> to_string()
+        # paragraph breaks
+        |> String.replace(~r/<w:p[^>]*>/, "\n")
+        |> String.replace(~r/<w:tab\/>/, "\t")
+        # strip all XML tags
+        |> String.replace(~r/<[^>]+>/, "")
+        |> String.replace(~r/\n{3,}/, "\n\n")
+        |> String.trim()
 
-            {:ok, %{text: text, metadata: %{}}}
-
-          nil ->
-            {:error, "no document.xml found in DOCX archive"}
-        end
-
-      {:error, reason} ->
-        {:error, "failed to unzip DOCX: #{inspect(reason)}"}
+      {:ok, %{text: text, metadata: %{}}}
+    else
+      nil -> {:error, "no document.xml found in DOCX archive"}
+      {:error, reason} -> {:error, "failed to unzip DOCX: #{inspect(reason)}"}
     end
+  end
+
+  defp find_document_xml(files) do
+    Enum.find(files, fn {name, _} -> to_string(name) == "word/document.xml" end)
   end
 end
