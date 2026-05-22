@@ -345,7 +345,8 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
           name: "__create_artifact__",
           description:
             "Create a persistent artifact (document, code, report) that outlives this conversation. " <>
-              "Use this when the user asks you to produce a document, write code to a file, or generate a report.",
+              "Use this when your task calls for producing a document, code file, report, or other structured output " <>
+              "— whether requested by the user directly or as part of a pipeline/swarm directive.",
           parameters: %{
             "type" => "object",
             "properties" => %{
@@ -376,7 +377,7 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
           name: "__update_artifact__",
           description:
             "Update an existing artifact by creating a new version. The old version is preserved. " <>
-              "Use this when the user asks to revise or update a previously created artifact.",
+              "Use this when revising or updating a previously created artifact.",
           parameters: %{
             "type" => "object",
             "properties" => %{

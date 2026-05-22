@@ -24,12 +24,12 @@ defmodule Summoner.Services.Swarms.SwarmCoordinator do
 
   The `opts` keyword list supports:
   - `:min_agents` — minimum distinct agents that must respond before
-    `__done__` is accepted (default: `min(2, length(members))`)
+    `__done__` is accepted (default: `length(members)`, i.e. all members)
   """
   def route(%Swarm{mode: :directed} = swarm, conversation, members, opts \\ []) do
     coordinator = Agents.get_agent_with_provider!(swarm.coordinator_agent_id)
     responded = agents_responded(conversation, members)
-    min_agents = Keyword.get(opts, :min_agents, min(2, length(members)))
+    min_agents = Keyword.get(opts, :min_agents, length(members))
 
     system_prompt = build_meta_prompt(members, responded, min_agents)
     messages = build_context_messages(conversation, members)
