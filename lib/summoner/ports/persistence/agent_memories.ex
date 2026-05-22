@@ -19,4 +19,5 @@ defmodule Summoner.Ports.Persistence.AgentMemories do
   defdelegate count_by_agent(agent_id), to: @adapter
   defdelegate list_agent_ids_with_memories(), to: @adapter
   defdelegate prune_excess(agent_id, max_count), to: @adapter
+  defdelegate list_memories_paginated(agent_id, opts \\ []), to: @adapter
 end

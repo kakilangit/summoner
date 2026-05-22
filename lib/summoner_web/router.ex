@@ -109,6 +109,7 @@ defmodule SummonerWeb.Router do
       live "/workspaces/:workspace_id/agents/:id/edit", AgentLive.Form, :edit
       live "/workspaces/:workspace_id/agents/:id/mcp-servers", AgentLive.Tools, :tools
       live "/workspaces/:workspace_id/agents/:id/skills", AgentLive.Skills, :skills
+      live "/workspaces/:workspace_id/agents/:id/memories", AgentLive.Memories, :memories
       live "/workspaces/:workspace_id/conversations", ConversationLive.Index, :index
 
       live "/workspaces/:workspace_id/conversations/:conversation_id",

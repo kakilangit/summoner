@@ -9,6 +9,7 @@ defmodule Summoner.Adapters.Persistence.AgentMemories do
   import Ecto.Query, warn: false
 
   alias Summoner.Domain.Schemas.AgentMemory
+  alias Summoner.Ports.Persistence.Pagination
   alias Summoner.Repo
 
   @behaviour Summoner.Ports.Persistence.AgentMemories.Adapter
@@ -156,4 +157,13 @@ defmodule Summoner.Adapters.Persistence.AgentMemories do
 
   defp maybe_limit(query, nil), do: query
   defp maybe_limit(query, limit), do: limit(query, ^limit)
+
+  @doc "Lists memories for an agent with pagination, sorting, and filtering."
+  @impl true
+  def list_memories_paginated(agent_id, opts \\ []) do
+    AgentMemory
+    |> where([m], m.agent_id == ^agent_id)
+    |> maybe_filter_type(Keyword.get(opts, :type))
+    |> Pagination.paginate(opts)
+  end
 end

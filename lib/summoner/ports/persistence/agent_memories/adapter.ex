@@ -13,4 +13,5 @@ defmodule Summoner.Ports.Persistence.AgentMemories.Adapter do
   @callback count_by_agent(String.t()) :: integer()
   @callback list_agent_ids_with_memories() :: [String.t()]
   @callback prune_excess(String.t(), non_neg_integer()) :: {integer(), nil}
+  @callback list_memories_paginated(String.t(), keyword()) :: struct()
 end
