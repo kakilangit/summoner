@@ -26,14 +26,14 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
   end
 
   def execute_action(plugin, workspace_id, %{"type" => "invoke_agent"} = action) do
-    callname = action["agent"]
+    agent_ref = action["agent"]
     message = action["message"] || ""
     external_ref = action["external_ref"]
     scope = plugin_scope()
 
-    case Agents.get_agent_by_callname(scope, workspace_id, callname) do
+    case resolve_agent(scope, workspace_id, agent_ref) do
       nil ->
-        Logger.warning("Plugin #{plugin.name} tried to invoke unknown agent: #{callname}")
+        Logger.warning("Plugin #{plugin.name} tried to invoke unknown agent: #{agent_ref}")
         {:error, :agent_not_found}
 
       agent ->
@@ -78,6 +78,36 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
     {:ok, :logged}
   end
 
+  def execute_action(plugin, workspace_id, %{"type" => "get_state"} = action) do
+    key = action["key"]
+
+    case Plugins.get_state(workspace_id, plugin.id, key) do
+      %{value: value} -> {:ok, %{key: key, value: value}}
+      nil -> {:ok, %{key: key, value: nil}}
+    end
+  end
+
+  def execute_action(plugin, workspace_id, %{"type" => "set_state"} = action) do
+    key = action["key"]
+    value = action["value"]
+
+    case Plugins.set_state(%{
+           workspace_id: workspace_id,
+           plugin_id: plugin.id,
+           key: key,
+           value: value
+         }) do
+      {:ok, _state} -> {:ok, :stored}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  def execute_action(plugin, workspace_id, %{"type" => "delete_state"} = action) do
+    key = action["key"]
+    Plugins.delete_state(workspace_id, plugin.id, key)
+    {:ok, :deleted}
+  end
+
   def execute_action(plugin, _workspace_id, %{"type" => type}) do
     Logger.warning("Plugin #{plugin.name} sent unsupported action type: #{type}")
     {:error, :unsupported_action}
@@ -99,7 +129,7 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
           {:ok, conv} =
             Conversations.create_conversation(scope, %{
               workspace_id: workspace_id,
-              agent_id: agent.id,
+              primary_agent_id: agent.id,
               title: "Plugin: #{plugin.name}"
             })
 
@@ -115,7 +145,7 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
       {:ok, conv} =
         Conversations.create_conversation(scope, %{
           workspace_id: workspace_id,
-          agent_id: agent.id,
+          primary_agent_id: agent.id,
           title: "Plugin: #{plugin.name}"
         })
 
@@ -127,5 +157,14 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
   # Use a nil-user scope (system scope).
   defp plugin_scope do
     %Scope{user: nil}
+  end
+
+  defp resolve_agent(scope, workspace_id, ref) do
+    Agents.get_agent_by_callname(scope, workspace_id, ref) ||
+      try do
+        Agents.get_agent!(scope, workspace_id, ref)
+      rescue
+        Ecto.NoResultsError -> nil
+      end
   end
 end

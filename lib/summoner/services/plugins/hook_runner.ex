@@ -12,8 +12,11 @@ defmodule Summoner.Services.Plugins.HookRunner do
   - `{:halt, reason}` — stop execution
   """
 
+  alias Summoner.Adapters.Workers.PluginContainerManager
   alias Summoner.Ports.Persistence.Plugins
-  alias Summoner.Services.Plugins.ProtocolHandler
+  alias Summoner.Services.Plugins, as: PluginsService
+  alias Summoner.Services.Plugins.PluginClient
+  alias Summoner.Services.Plugins.TrustVerifier
 
   require Logger
 
@@ -51,12 +54,15 @@ defmodule Summoner.Services.Plugins.HookRunner do
   end
 
   defp run_single_hook(plugin, point, context) do
+    timeout = get_hook_timeout(plugin)
+
     task =
       Task.async(fn ->
-        ProtocolHandler.send_hook(plugin, to_string(point), context)
+        with {:ok, container} <- get_container_for_plugin(plugin),
+             ctx <- PluginsService.build_context(plugin, container) do
+          PluginClient.send_hook(container, ctx, to_string(point), context, timeout)
+        end
       end)
-
-    timeout = get_hook_timeout(plugin)
 
     case Task.yield(task, timeout) || Task.shutdown(task) do
       {:ok, result} -> result
@@ -64,11 +70,17 @@ defmodule Summoner.Services.Plugins.HookRunner do
     end
   end
 
+  defp get_container_for_plugin(plugin) do
+    isolation =
+      TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+    PluginContainerManager.get_container(plugin.digest, tenant_id)
+  end
+
   defp handle_hook_failure(plugin, point, reason) do
     Logger.warning("Plugin #{plugin.name} hook #{point} failed: #{inspect(reason)}")
 
-    # Simple circuit breaker: track failures in plugin error_message metadata
-    # In a full implementation, this would use a separate counter in the DB
     current_failures = count_failures(plugin)
 
     if current_failures + 1 >= @max_failures do

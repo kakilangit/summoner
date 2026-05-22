@@ -7,6 +7,7 @@ defmodule Summoner.Application do
 
   alias Summoner.Adapters.Persistence.Themes
   alias Summoner.Services.Inference.Discovery
+  alias Summoner.Services.Plugins
 
   @impl true
   def start(_type, _args) do
@@ -22,8 +23,7 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
         {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
-        {Registry, keys: :unique, name: Summoner.PluginRegistry},
-        {DynamicSupervisor, name: Summoner.PluginSupervisor, strategy: :one_for_one},
+        Summoner.Adapters.Workers.PluginContainerManager,
         {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
         {DynamicSupervisor,
          name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
@@ -44,7 +44,7 @@ defmodule Summoner.Application do
           SummonerWeb.Endpoint,
           # Boot enabled plugins after everything is ready
           Supervisor.child_spec(
-            {Task, &Summoner.Services.Plugins.start_enabled_plugins/0},
+            {Task, &Plugins.start_enabled_plugins/0},
             id: :plugin_boot
           )
         ]

@@ -1,64 +1,70 @@
 defmodule Summoner.Adapters.Workers.PluginContainerManager do
   @moduledoc """
-  GenServer managing the lifecycle of a single plugin container.
+  GenServer managing plugin containers by digest.
 
-  Started under `Summoner.PluginSupervisor` (DynamicSupervisor) when a
-  plugin is enabled. Handles:
+  Containers are shared across plugin installations with the same image
+  digest (unless tenant-isolated). Whether a container is still needed
+  is derived by querying enabled installations — no mutable ref-counting.
 
-  - Container creation and startup via ContainerRuntime port
-  - MCP client connection via Anubis.Client (stdio transport)
-  - Periodic health check (30s interval)
-  - Auto-restart on crash (max 3 restarts, then transition to :error status)
-  - Clean shutdown on disable/uninstall
+  Started as a singleton under the application supervision tree.
   """
 
   use GenServer
 
+  alias Summoner.Domain.Schemas.PluginContainer
   alias Summoner.Ports.ContainerRuntime
-  alias Summoner.Ports.Persistence.Plugins
+  alias Summoner.Ports.Persistence.Plugins, as: Persistence
+  alias Summoner.Repo
 
   require Logger
 
+  import Ecto.Query
+
   @health_interval :timer.seconds(30)
   @max_restarts 3
+  @grace_period :timer.seconds(30)
+  @plugin_network "summoner-plugins"
 
-  defstruct [
-    :plugin,
-    :container_id,
-    :client_pid,
-    restart_count: 0,
-    status: :starting
-  ]
+  defstruct restart_counts: %{}, pending_stops: %{}
 
   # -------------------------------------------------------------------
   # Public API
   # -------------------------------------------------------------------
 
-  def start_link(plugin) do
-    GenServer.start_link(__MODULE__, plugin, name: via(plugin.id))
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def stop_plugin(plugin_id) do
-    case Registry.lookup(Summoner.PluginRegistry, plugin_id) do
-      [{pid, _}] -> GenServer.call(pid, :stop_plugin, 30_000)
-      [] -> :ok
+  @doc """
+  Ensure a container is running for the given image/digest.
+
+  Returns existing container or starts a new one.
+  """
+  def ensure_container(image, digest, isolation, tenant_id) do
+    GenServer.call(__MODULE__, {:ensure_container, image, digest, isolation, tenant_id}, 60_000)
+  end
+
+  @doc """
+  Signal that a plugin no longer needs a container.
+
+  Checks enabled installations count; if zero, schedules stop after grace period.
+  """
+  def release_container(digest, tenant_id) do
+    GenServer.cast(__MODULE__, {:release_container, digest, tenant_id})
+  end
+
+  @doc "Get the container record for a plugin installation."
+  def get_container(digest, tenant_id) do
+    case lookup(digest, tenant_id) do
+      %{status: :running} = container -> {:ok, container}
+      %{} -> {:error, :not_running}
+      nil -> {:error, :not_found}
     end
   end
 
-  def get_client(plugin_id) do
-    name = client_name(plugin_id)
-
-    case Registry.lookup(Summoner.PluginRegistry, {:client, plugin_id}) do
-      [{_pid, _}] -> {:ok, name}
-      [] -> {:error, :not_running}
-    end
-  end
-
-  def get_status(plugin_id) do
-    case Registry.lookup(Summoner.PluginRegistry, plugin_id) do
-      [{pid, _}] -> GenServer.call(pid, :get_status)
-      [] -> {:error, :not_running}
-    end
+  @doc "Stop and remove a specific container by its record."
+  def stop_container(container_id) do
+    GenServer.call(__MODULE__, {:stop_container, container_id}, 30_000)
   end
 
   # -------------------------------------------------------------------
@@ -66,248 +72,299 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   # -------------------------------------------------------------------
 
   @impl true
-  def init(plugin) do
-    state = %__MODULE__{plugin: plugin}
-    {:ok, state, {:continue, :start_container}}
+  def init(_opts) do
+    ensure_plugin_network()
+    schedule_health_check()
+    {:ok, %__MODULE__{}}
   end
 
   @impl true
-  def handle_continue(:start_container, state) do
-    case start_container(state.plugin) do
-      {:ok, container_id, client_ref} ->
-        state = %{state | container_id: container_id, client_pid: client_ref, status: :running}
-        schedule_health_check()
+  def handle_call({:ensure_container, image, digest, isolation, tenant_id}, _from, state) do
+    tid = if isolation == :tenant, do: tenant_id, else: nil
 
-        Logger.info("Plugin #{state.plugin.name} container started: #{container_id}")
-        {:noreply, state}
+    case lookup(digest, tid) do
+      %{status: :running} = container ->
+        {:reply, {:ok, container}, cancel_pending_stop(state, {digest, tid})}
 
-      {:error, reason} ->
-        Logger.error("Plugin #{state.plugin.name} container failed to start: #{inspect(reason)}")
+      %{status: :error} = container ->
+        cleanup_container(container)
+        {reply, state} = start_new_container(image, digest, tid, state)
+        {:reply, reply, state}
 
-        transition_to_error(state, "Container start failed: #{inspect(reason)}")
+      nil ->
+        {reply, state} = start_new_container(image, digest, tid, state)
+        {:reply, reply, state}
+    end
+  end
+
+  def handle_call({:stop_container, container_id}, _from, state) do
+    case Repo.get(PluginContainer, container_id) do
+      nil ->
+        {:reply, :ok, state}
+
+      container ->
+        cleanup_container(container)
+        {:reply, :ok, state}
     end
   end
 
   @impl true
-  def handle_call(:stop_plugin, _from, state) do
-    cleanup(state)
-    {:stop, :normal, :ok, state}
-  end
+  def handle_cast({:release_container, digest, tenant_id}, state) do
+    case lookup(digest, tenant_id) do
+      %{} = container ->
+        if still_needed?(container.digest) do
+          {:noreply, state}
+        else
+          Logger.info("No enabled installs for #{container.container_name}, scheduling stop")
+          {:noreply, schedule_grace_stop(state, {digest, tenant_id})}
+        end
 
-  def handle_call(:get_client, _from, state) do
-    {:reply, {:ok, state.client_pid}, state}
-  end
-
-  def handle_call(:get_status, _from, state) do
-    {:reply, {:ok, state.status}, state}
+      nil ->
+        {:noreply, state}
+    end
   end
 
   @impl true
   def handle_info(:health_check, state) do
-    case check_health(state) do
-      :ok ->
-        schedule_health_check()
-        {:noreply, state}
-
-      :unhealthy ->
-        handle_unhealthy(state)
-    end
+    check_all_containers(state)
+    schedule_health_check()
+    {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, reason}, %{client_pid: pid} = state) do
-    Logger.warning("Plugin #{state.plugin.name} MCP client died: #{inspect(reason)}")
-    handle_unhealthy(state)
+  def handle_info({:grace_stop, key}, state) do
+    {digest, tenant_id} = key
+
+    state =
+      case lookup(digest, tenant_id) do
+        %{} = container ->
+          if still_needed?(container.digest) do
+            Logger.info("Container #{container.container_name} needed again, skipping stop")
+            state
+          else
+            Logger.info("Grace period expired, stopping container #{container.container_name}")
+            cleanup_container(container)
+            clear_restart_count(state, key)
+          end
+
+        nil ->
+          state
+      end
+
+    %{state | pending_stops: Map.delete(state.pending_stops, key)}
+    |> then(&{:noreply, &1})
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
 
-  @impl true
-  def terminate(_reason, state) do
-    cleanup(state)
-  end
-
   # -------------------------------------------------------------------
-  # Container lifecycle (single path)
+  # Container lifecycle
   # -------------------------------------------------------------------
 
-  defp start_container(plugin) do
-    container_name = container_name(plugin)
+  defp start_new_container(image, digest, tenant_id, state) do
+    container_name = PluginContainer.container_name_from_image(image)
+    callback_token = generate_callback_token(container_name)
+    host_mode? = Application.get_env(:summoner, :plugin_host_mode) == :host
+    container_port = 9999
 
-    # Clean up any stale resources from previous runs
-    cleanup_mcp_client(plugin.id)
     ContainerRuntime.remove(container_name)
 
-    opts = container_opts(plugin, container_name)
+    opts = %{
+      image: image,
+      name: container_name,
+      network_name: if(host_mode?, do: "bridge", else: @plugin_network),
+      env: %{"PLUGIN_PORT" => to_string(container_port)},
+      port: container_port,
+      publish_port: host_mode?,
+      cpu: "0.5",
+      memory: "256m"
+    }
 
-    with :ok <- ContainerRuntime.pull(opts.image) do
-      start_mcp_client(plugin.id, opts)
-    end
-  end
+    case ContainerRuntime.run_detached(opts) do
+      {:ok, docker_container_id} ->
+        {host, port} =
+          resolve_container_address(
+            host_mode?,
+            docker_container_id,
+            container_name,
+            container_port
+          )
 
-  defp cleanup(state) do
-    cleanup_mcp_client(state.plugin.id)
-    ContainerRuntime.remove(container_name(state.plugin))
-  end
+        attrs = %{
+          image: image,
+          digest: digest,
+          container_id: docker_container_id,
+          container_name: container_name,
+          host: host,
+          port: port,
+          status: :running,
+          callback_token: callback_token,
+          tenant_id: tenant_id
+        }
 
-  # -------------------------------------------------------------------
-  # MCP client lifecycle
-  # -------------------------------------------------------------------
+        case %PluginContainer{} |> PluginContainer.changeset(attrs) |> Repo.insert() do
+          {:ok, container} ->
+            Logger.info(
+              "Started plugin container #{container_name} (digest: #{String.slice(digest, 0, 16)})"
+            )
 
-  defp start_mcp_client(plugin_id, opts) do
-    {command, args} = ContainerRuntime.stdio_transport_args(opts)
+            {{:ok, container}, state}
 
-    anubis_opts = [
-      name: client_name(plugin_id),
-      transport_name: transport_name(plugin_id),
-      client_info: %{"name" => "Summoner", "version" => "0.1.0"},
-      capabilities: %{},
-      transport: {:stdio, command: command, args: args, env: %{}}
-    ]
-
-    case DynamicSupervisor.start_child(
-           Summoner.McpSupervisor,
-           {Anubis.Client.Supervisor, anubis_opts}
-         ) do
-      {:ok, _sup_pid} ->
-        client = client_name(plugin_id)
-
-        case Anubis.Client.await_ready(client, timeout: 30_000) do
-          :ok -> {:ok, opts.name, client}
-          {:error, reason} -> {:error, {:mcp_handshake_failed, reason}}
+          {:error, changeset} ->
+            ContainerRuntime.remove(container_name)
+            {{:error, {:db_error, changeset}}, state}
         end
 
       {:error, reason} ->
-        {:error, reason}
+        handle_start_failure(state, {digest, tenant_id}, container_name, reason)
     end
   end
 
-  defp cleanup_mcp_client(plugin_id) do
-    case Registry.lookup(Summoner.PluginRegistry, {:client, plugin_id}) do
-      [{pid, _}] ->
-        for {_id, child, _type, _mods} <- DynamicSupervisor.which_children(Summoner.McpSupervisor),
-            is_pid(child),
-            descendant?(child, pid) do
-          DynamicSupervisor.terminate_child(Summoner.McpSupervisor, child)
-        end
+  defp handle_start_failure(state, key, container_name, reason) do
+    count = Map.get(state.restart_counts, key, 0)
 
-        :ok
-
-      [] ->
-        :ok
-    end
-  end
-
-  defp descendant?(sup, target) do
-    case Supervisor.which_children(sup) do
-      children when is_list(children) ->
-        Enum.any?(children, fn
-          {_, ^target, _, _} -> true
-          {_, child, :supervisor, _} when is_pid(child) -> descendant?(child, target)
-          _ -> false
-        end)
-
-      _ ->
-        false
-    end
-  rescue
-    _ -> false
-  end
-
-  # -------------------------------------------------------------------
-  # Health & restart
-  # -------------------------------------------------------------------
-
-  defp check_health(state) do
-    if state.container_id && ContainerRuntime.running?(state.container_id) do
-      :ok
-    else
-      :unhealthy
-    end
-  end
-
-  defp handle_unhealthy(state) do
-    if state.restart_count < @max_restarts do
+    if count < @max_restarts do
       Logger.warning(
-        "Plugin #{state.plugin.name} unhealthy, restarting " <>
-          "(#{state.restart_count + 1}/#{@max_restarts})"
+        "Container #{container_name} failed to start (#{count + 1}/#{@max_restarts}): #{inspect(reason)}"
       )
 
-      cleanup(state)
+      state = %{state | restart_counts: Map.put(state.restart_counts, key, count + 1)}
+      {{:error, reason}, state}
+    else
+      Logger.error("Container #{container_name} exceeded max restarts")
+      {{:error, :max_restarts_exceeded}, state}
+    end
+  end
 
-      state = %{
+  defp cleanup_container(container) do
+    ContainerRuntime.remove(container.container_name)
+    Repo.delete(container)
+  rescue
+    Ecto.StaleEntryError -> :ok
+  end
+
+  # -------------------------------------------------------------------
+  # Derived state
+  # -------------------------------------------------------------------
+
+  defp still_needed?(digest) do
+    Persistence.enabled_count_by_digest(digest) > 0
+  end
+
+  # -------------------------------------------------------------------
+  # Health check
+  # -------------------------------------------------------------------
+
+  defp check_all_containers(state) do
+    PluginContainer
+    |> where([c], c.status == :running)
+    |> Repo.all()
+    |> Enum.each(&check_single_container(&1, state))
+  end
+
+  defp check_single_container(container, state) do
+    if ContainerRuntime.running?(container.container_name) do
+      :ok
+    else
+      Logger.warning("Container #{container.container_name} is no longer running")
+      handle_container_down(container, state)
+    end
+  end
+
+  defp handle_container_down(container, state) do
+    key = {container.digest, container.tenant_id}
+    count = Map.get(state.restart_counts, key, 0)
+
+    if count < @max_restarts and still_needed?(container.digest) do
+      Logger.info("Restarting container #{container.container_name}")
+      cleanup_container(container)
+      start_new_container(container.image, container.digest, container.tenant_id, state)
+    else
+      container
+      |> PluginContainer.status_changeset(:error)
+      |> Repo.update()
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # Grace period
+  # -------------------------------------------------------------------
+
+  defp schedule_grace_stop(state, key) do
+    state = cancel_pending_stop(state, key)
+    ref = Process.send_after(self(), {:grace_stop, key}, @grace_period)
+    %{state | pending_stops: Map.put(state.pending_stops, key, ref)}
+  end
+
+  defp cancel_pending_stop(state, key) do
+    case Map.get(state.pending_stops, key) do
+      nil ->
         state
-        | restart_count: state.restart_count + 1,
-          container_id: nil,
-          client_pid: nil
-      }
 
-      {:noreply, state, {:continue, :start_container}}
-    else
-      Logger.error("Plugin #{state.plugin.name} exceeded max restarts, transitioning to error")
-      transition_to_error(state, "Exceeded maximum restart attempts (#{@max_restarts})")
+      ref ->
+        Process.cancel_timer(ref)
+        %{state | pending_stops: Map.delete(state.pending_stops, key)}
     end
   end
 
-  defp transition_to_error(state, message) do
-    Plugins.update_status(state.plugin, :error, message)
-    cleanup(state)
-    {:stop, :normal, state}
+  defp clear_restart_count(state, key) do
+    %{state | restart_counts: Map.delete(state.restart_counts, key)}
   end
 
   # -------------------------------------------------------------------
-  # Config resolution
+  # Lookup
   # -------------------------------------------------------------------
 
-  defp container_opts(plugin, container_name) do
-    manifest = plugin.manifest
-
-    %{
-      image: manifest["image"],
-      name: container_name,
-      env: build_env(plugin),
-      network: Map.get(manifest, "network", false),
-      cpu: get_in(manifest, ["resources", "cpu"]) || "0.5",
-      memory: get_in(manifest, ["resources", "memory"]) || "256Mi"
-    }
+  defp lookup(digest, nil) do
+    PluginContainer
+    |> where([c], c.digest == ^digest and is_nil(c.tenant_id))
+    |> Repo.one()
   end
 
-  defp build_env(plugin) do
-    config_schema = get_in(plugin.manifest, ["config_schema", "properties"]) || %{}
-
-    plugin.config
-    |> Enum.reduce(%{}, fn {k, v}, acc ->
-      resolved_value = resolve_config_value(config_schema, k, v)
-      Map.put(acc, "PLUGIN_#{String.upcase(k)}", to_string(resolved_value))
-    end)
+  defp lookup(digest, tenant_id) do
+    Repo.get_by(PluginContainer, digest: digest, tenant_id: tenant_id)
   end
 
-  defp resolve_config_value(config_schema, key, value) do
-    if get_in(config_schema, [key, "src"]) == "secret" do
-      case Summoner.Repo.get(Summoner.Domain.Schemas.Secret, value) do
-        %{encrypted_value: decrypted} -> decrypted
-        nil -> value
-      end
-    else
-      value
+  defp resolve_container_address(true, container_id, fallback_name, container_port) do
+    case ContainerRuntime.host_port(container_id, container_port) do
+      {:ok, mapped_port} -> {"localhost", mapped_port}
+      {:error, _} -> {fallback_name, container_port}
     end
   end
 
+  defp resolve_container_address(false, _container_id, container_name, container_port) do
+    {container_name, container_port}
+  end
+
   # -------------------------------------------------------------------
-  # Naming
+  # Auth
   # -------------------------------------------------------------------
 
-  defp container_name(plugin), do: "summoner-plugin-#{plugin.id}"
+  defp generate_callback_token(container_name) do
+    secret = Application.get_env(:summoner, :plugin_callback_secret, "summoner-plugin-secret")
 
-  defp client_name(plugin_id),
-    do: {:via, Registry, {Summoner.PluginRegistry, {:client, plugin_id}}}
+    :crypto.mac(:hmac, :sha256, secret, container_name)
+    |> Base.encode16(case: :lower)
+  end
 
-  defp transport_name(plugin_id),
-    do: {:via, Registry, {Summoner.PluginRegistry, {:transport, plugin_id}}}
-
-  defp via(plugin_id),
-    do: {:via, Registry, {Summoner.PluginRegistry, plugin_id}}
+  # -------------------------------------------------------------------
+  # Scheduling
+  # -------------------------------------------------------------------
 
   defp schedule_health_check do
     Process.send_after(self(), :health_check, @health_interval)
+  end
+
+  defp ensure_plugin_network do
+    if Application.get_env(:summoner, :plugin_host_mode) == :host do
+      Logger.debug("host mode: skipping plugin network creation")
+    else
+      case ContainerRuntime.ensure_network(@plugin_network) do
+        :ok ->
+          Logger.info("plugin network '#{@plugin_network}' ready")
+
+        {:error, reason} ->
+          Logger.error("failed to create plugin network: #{inspect(reason)}")
+      end
+    end
   end
 end

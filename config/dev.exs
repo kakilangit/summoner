@@ -109,3 +109,7 @@ config :summoner, Summoner.Adapters.Crypto.Vault,
   ]
 
 config :summoner, :local_mode, true
+
+# In dev, Summoner runs on the host (not in Docker), so plugin containers
+# must publish their port and be reached via localhost instead of Docker DNS.
+config :summoner, :plugin_host_mode, :host

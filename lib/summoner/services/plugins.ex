@@ -3,8 +3,7 @@ defmodule Summoner.Services.Plugins do
   Service layer for plugin lifecycle management (Grimoires).
 
   Orchestrates install, enable, disable, configure, upgrade, uninstall
-  flows. Coordinates ContainerRuntime port, persistence port, and MCP
-  connection.
+  flows. Uses digest-based shared containers and HTTP PluginClient.
   """
 
   alias Summoner.Adapters.Workers.PluginContainerManager
@@ -13,7 +12,8 @@ defmodule Summoner.Services.Plugins do
   alias Summoner.Ports.ContainerRuntime
   alias Summoner.Ports.Persistence.Plugins, as: Persistence
   alias Summoner.Repo
-  alias Summoner.Services.Plugins.ProtocolHandler
+  alias Summoner.Services.Plugins.PluginClient
+  alias Summoner.Services.Plugins.TrustVerifier
 
   require Logger
 
@@ -33,8 +33,8 @@ defmodule Summoner.Services.Plugins do
     for plugin <- plugins do
       Logger.info("Booting enabled plugin: #{plugin.name} (#{plugin.ref})")
 
-      case start_plugin_container(plugin) do
-        :ok ->
+      case ensure_plugin_container(plugin) do
+        {:ok, _container} ->
           Logger.info("Plugin #{plugin.name} started successfully")
 
         {:error, reason} ->
@@ -68,13 +68,16 @@ defmodule Summoner.Services.Plugins do
   Install a plugin from an OCI image reference.
 
   Pulls the image, extracts grimoire.json manifest, validates it,
-  creates the plugin_installations record (status: installed).
+  resolves digest, determines trust, creates the record (status: installed).
   """
   def install(workspace_id, image_ref) do
     with :ok <- ContainerRuntime.pull(image_ref),
          {:ok, manifest_json} <- extract_manifest(image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
-         {:ok, _validated} <- ManifestValidator.validate(manifest) do
+         {:ok, _validated} <- ManifestValidator.validate(manifest),
+         {:ok, digest} <- ContainerRuntime.resolve_digest(image_ref) do
+      trusted = TrustVerifier.trusted_image?(image_ref)
+
       attrs = %{
         name: manifest["name"],
         ref: PluginInstallation.compute_ref(image_ref),
@@ -82,7 +85,9 @@ defmodule Summoner.Services.Plugins do
         capabilities: manifest["capabilities"],
         manifest: manifest,
         config: %{},
-        status: :installed
+        status: :installed,
+        digest: digest,
+        trusted: trusted
       }
 
       Persistence.create_plugin(workspace_id, attrs)
@@ -90,15 +95,14 @@ defmodule Summoner.Services.Plugins do
   end
 
   @doc """
-  Enable a plugin: start container, connect MCP, validate capabilities,
-  register resources.
+  Enable a plugin: ensure shared container is running, register.
   """
   def enable(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
     if plugin.status in [:installed, :disabled, :error] do
-      case start_plugin_container(plugin) do
-        :ok ->
+      case ensure_plugin_container(plugin) do
+        {:ok, _container} ->
           Persistence.update_status(plugin, :enabled)
 
         {:error, reason} ->
@@ -110,30 +114,22 @@ defmodule Summoner.Services.Plugins do
     end
   end
 
-  @doc "Disable a plugin: stop container, unregister resources."
+  @doc "Disable a plugin: release container reference."
   def disable(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
     if plugin.status == :enabled do
-      PluginContainerManager.stop_plugin(plugin.id)
+      release_plugin_container(plugin)
       Persistence.update_status(plugin, :disabled)
     else
       {:error, :not_enabled}
     end
   end
 
-  @doc "Update plugin configuration. Restarts if enabled."
+  @doc "Update plugin configuration. No restart needed — config is per-request."
   def configure(workspace_id, plugin_id, config) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
-
-    with {:ok, plugin} <- Persistence.update_plugin(plugin, %{config: config}) do
-      if plugin.status == :enabled do
-        PluginContainerManager.stop_plugin(plugin.id)
-        start_plugin_container(plugin)
-      end
-
-      {:ok, plugin}
-    end
+    Persistence.update_plugin(plugin, %{config: config})
   end
 
   @doc "Upgrade plugin to new image version."
@@ -141,22 +137,28 @@ defmodule Summoner.Services.Plugins do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
     was_enabled = plugin.status == :enabled
 
-    # Disable if running
+    # Release old container reference if enabled
     if was_enabled do
-      PluginContainerManager.stop_plugin(plugin.id)
+      release_plugin_container(plugin)
     end
 
     with :ok <- ContainerRuntime.pull(new_image_ref),
          {:ok, manifest_json} <- extract_manifest(new_image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
          {:ok, _validated} <- ManifestValidator.validate(manifest),
-         {:ok, plugin} <-
-           Persistence.update_plugin(plugin, %{
-             version: manifest["version"],
-             manifest: manifest,
-             status: :installed,
-             error_message: nil
-           }) do
+         {:ok, digest} <- ContainerRuntime.resolve_digest(new_image_ref) do
+      trusted = TrustVerifier.trusted_image?(new_image_ref)
+
+      {:ok, plugin} =
+        Persistence.update_plugin(plugin, %{
+          version: manifest["version"],
+          manifest: manifest,
+          status: :installed,
+          error_message: nil,
+          digest: digest,
+          trusted: trusted
+        })
+
       if was_enabled do
         enable(workspace_id, plugin.id)
       else
@@ -167,12 +169,6 @@ defmodule Summoner.Services.Plugins do
 
   @doc """
   Check if a newer version is available for a plugin.
-
-  Pulls the :latest tag of the plugin image, extracts its manifest,
-  and compares versions. Returns {:ok, new_manifest} if update available,
-  :up_to_date if current, or {:error, reason}.
-
-  Reusable by periodic checks and on-demand UI checks.
   """
   def check_for_update(plugin) do
     latest_ref = latest_image_ref(plugin.manifest["image"])
@@ -189,8 +185,7 @@ defmodule Summoner.Services.Plugins do
   end
 
   @doc """
-  Check and apply update in one step. Returns {:ok, plugin} if updated,
-  :up_to_date, or {:error, reason}.
+  Check and apply update in one step.
   """
   def update(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
@@ -211,9 +206,8 @@ defmodule Summoner.Services.Plugins do
   def uninstall(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
-    # Stop container if running
-    if plugin.status == :enabled do
-      PluginContainerManager.stop_plugin(plugin.id)
+    if plugin.digest do
+      release_plugin_container(plugin)
     end
 
     Persistence.delete_plugin(plugin)
@@ -233,15 +227,36 @@ defmodule Summoner.Services.Plugins do
         {:error, :plugin_not_enabled}
 
       plugin ->
-        ProtocolHandler.send_webhook(plugin, route, headers, body)
+        with {:ok, container} <- get_plugin_container(plugin),
+             context <- build_context(plugin, container) do
+          PluginClient.send_webhook(container, context, route, headers, body)
+        end
     end
   end
 
   @doc "Get logs from a plugin container."
   def get_logs(workspace_id, plugin_id, opts \\ []) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
-    container_name = "summoner-plugin-#{plugin.id}"
-    ContainerRuntime.logs(container_name, opts)
+
+    case get_plugin_container(plugin) do
+      {:ok, container} -> ContainerRuntime.logs(container.container_name, opts)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # Context (per-request config)
+  # -------------------------------------------------------------------
+
+  @doc "Build per-request context for a plugin."
+  def build_context(plugin, container) do
+    %{
+      workspace_id: plugin.workspace_id,
+      plugin_id: plugin.id,
+      config: resolve_config(plugin),
+      callback_url: internal_callback_url(),
+      callback_token: container.callback_token
+    }
   end
 
   # -------------------------------------------------------------------
@@ -255,14 +270,57 @@ defmodule Summoner.Services.Plugins do
     end
   end
 
-  defp start_plugin_container(plugin) do
-    case DynamicSupervisor.start_child(
-           Summoner.PluginSupervisor,
-           {PluginContainerManager, plugin}
-         ) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-      {:error, reason} -> {:error, reason}
+  defp ensure_plugin_container(plugin) do
+    image = plugin.manifest["image"]
+    digest = plugin.digest
+
+    isolation =
+      TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+
+    PluginContainerManager.ensure_container(image, digest, isolation, tenant_id)
+  end
+
+  defp release_plugin_container(plugin) do
+    digest = plugin.digest
+
+    isolation =
+      TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+
+    PluginContainerManager.release_container(digest, tenant_id)
+  end
+
+  defp get_plugin_container(plugin) do
+    digest = plugin.digest
+
+    isolation =
+      TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+
+    PluginContainerManager.get_container(digest, tenant_id)
+  end
+
+  defp resolve_config(plugin) do
+    config_schema = get_in(plugin.manifest, ["config_schema", "properties"]) || %{}
+
+    plugin.config
+    |> Enum.into(%{}, fn {k, v} ->
+      {k, resolve_config_value(config_schema, k, v)}
+    end)
+  end
+
+  defp resolve_config_value(config_schema, key, value) do
+    if get_in(config_schema, [key, "src"]) == "secret" do
+      case Repo.get(Summoner.Domain.Schemas.Secret, value) do
+        %{encrypted_value: decrypted} -> decrypted
+        nil -> value
+      end
+    else
+      value
     end
   end
 
@@ -284,8 +342,12 @@ defmodule Summoner.Services.Plugins do
   end
 
   defp latest_image_ref(image) do
-    # Strip version tag, replace with :latest
-    # "docker.io/kakilangit/grimoire-slack:0.1.1" -> "docker.io/kakilangit/grimoire-slack:latest"
     image |> String.replace(~r/:[^\/]+$/, ":latest")
+  end
+
+  defp internal_callback_url do
+    host = Application.get_env(:summoner, :plugin_callback_host, "host.docker.internal")
+    port = System.get_env("PORT", "4000")
+    "http://#{host}:#{port}/api/internal/plugins/callback"
   end
 end
