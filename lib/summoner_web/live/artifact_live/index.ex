@@ -124,11 +124,40 @@ defmodule SummonerWeb.ArtifactLive.Index do
               <span class="badge badge-ghost badge-xs">v{artifact.version}</span>
               <span :if={artifact.pinned} class="badge badge-warning badge-xs">pinned</span>
             </div>
-            <div class="text-sm text-base-content/60">
-              {artifact.content_type} · Updated {Calendar.strftime(
-                artifact.updated_at,
-                "%Y-%m-%d %H:%M"
-              )}
+            <div class="text-sm text-base-content/60 flex items-center gap-2">
+              <.link
+                :if={artifact.agent}
+                navigate={
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents/#{artifact.agent_id}"
+                }
+                class="hover:underline"
+              >
+                {artifact.agent.name}
+              </.link>
+              <.link
+                :if={artifact.conversation && artifact.conversation.swarm}
+                navigate={
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms/#{artifact.conversation.swarm.id}/conversations/#{artifact.conversation_id}"
+                }
+                class="hover:underline"
+              >
+                · {artifact.conversation.swarm.name}
+              </.link>
+              <.link
+                :if={artifact.conversation && is_nil(artifact.conversation.swarm)}
+                navigate={
+                  ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/conversations/#{artifact.conversation_id}"
+                }
+                class="hover:underline"
+              >
+                · Channel
+              </.link>
+              <span>
+                · {artifact.content_type} · {Calendar.strftime(
+                  artifact.updated_at,
+                  "%Y-%m-%d %H:%M"
+                )}
+              </span>
             </div>
           </div>
           <div class="flex gap-2 flex-shrink-0">

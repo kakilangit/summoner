@@ -134,70 +134,56 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
     end
   end
 
-  defp execute_artifact_tool("__create_artifact__", tool_call, context) do
+  defp execute_artifact_tool(action, tool_call, context)
+       when action in ~w(__create_artifact__ __update_artifact__) do
     with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
-      attrs = %{
-        name: args["name"],
-        type: args["type"],
-        content: args["content"],
-        content_type: args["content_type"] || "text/markdown",
-        workspace_id: context.workspace_id,
-        agent_id: context.agent_id,
-        conversation_id: context[:conversation_id]
-      }
-
-      scope = %{user: nil}
-
-      case Artifacts.create_artifact(scope, attrs) do
-        {:ok, artifact} ->
-          {:ok, "Artifact '#{artifact.name}' created (v#{artifact.version}, ID: #{artifact.id})."}
-
-        {:error, changeset} ->
-          {:error, "Failed to create artifact: #{inspect(changeset.errors)}"}
-      end
-    end
-  end
-
-  defp execute_artifact_tool("__update_artifact__", tool_call, context) do
-    with {:ok, args} <- parse_arguments(tool_call.function.arguments),
-         existing when not is_nil(existing) <-
-           Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
-      attrs = %{
-        name: existing.name,
-        type: existing.type,
-        content: args["content"],
-        content_type: existing.content_type,
-        version: existing.version + 1,
-        parent_id: existing.id,
-        workspace_id: context.workspace_id,
-        agent_id: context.agent_id,
-        conversation_id: context[:conversation_id]
-      }
-
-      case Artifacts.create_artifact(%{user: nil}, attrs) do
-        {:ok, artifact} ->
-          {:ok,
-           "Artifact '#{artifact.name}' updated to v#{artifact.version} (ID: #{artifact.id})."}
-
-        {:error, changeset} ->
-          {:error, "Failed to update artifact: #{inspect(changeset.errors)}"}
-      end
-    else
-      nil -> {:error, "Artifact not found."}
-      error -> error
+      existing = lookup_artifact(context[:conversation_id], args["name"])
+      attrs = build_artifact_attrs(args, existing, context)
+      upsert_artifact(attrs, existing)
     end
   end
 
   defp execute_artifact_tool("__read_artifact__", tool_call, context) do
     with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
-      case Artifacts.get_artifact_by_name(context.workspace_id, args["name"]) do
-        nil ->
-          {:error, "Artifact '#{args["name"]}' not found."}
-
-        artifact ->
-          {:ok,
-           "# #{artifact.name} (v#{artifact.version}, #{artifact.type})\n\n#{artifact.content || ""}"}
+      case lookup_artifact(context[:conversation_id], args["name"]) do
+        nil -> {:error, "Artifact '#{args["name"]}' not found."}
+        a -> {:ok, "# #{a.name} (v#{a.version}, #{a.type})\n\n#{a.content || ""}"}
       end
+    end
+  end
+
+  defp upsert_artifact(attrs, existing) do
+    case Artifacts.create_artifact(%{user: nil}, attrs) do
+      {:ok, artifact} ->
+        verb = if existing, do: "updated to", else: "created"
+        {:ok, "Artifact '#{artifact.name}' #{verb} v#{artifact.version} (ID: #{artifact.id})."}
+
+      {:error, changeset} ->
+        {:error, "Failed to create artifact: #{inspect(changeset.errors)}"}
+    end
+  end
+
+  defp lookup_artifact(nil, _name), do: nil
+
+  defp lookup_artifact(conversation_id, name),
+    do: Artifacts.get_artifact_by_name(conversation_id, name)
+
+  defp build_artifact_attrs(args, existing, context) do
+    base = %{
+      name: args["name"],
+      type: args["type"] || (existing && existing.type) || "document",
+      content: args["content"],
+      content_type:
+        args["content_type"] || (existing && existing.content_type) || "text/markdown",
+      workspace_id: context.workspace_id,
+      agent_id: context.agent_id,
+      conversation_id: context[:conversation_id]
+    }
+
+    if existing do
+      Map.merge(base, %{version: existing.version + 1, parent_id: existing.id})
+    else
+      base
     end
   end
 
