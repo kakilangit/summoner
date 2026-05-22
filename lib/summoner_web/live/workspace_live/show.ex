@@ -216,6 +216,18 @@ defmodule SummonerWeb.WorkspaceLive.Show do
                 <p class="text-sm text-base-content/60">Install and manage plugins</p>
               </div>
             </.link>
+
+            <.link
+              navigate={
+                ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/knowledge-bases"
+              }
+              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div class="card-body">
+                <h2 class="card-title">Codex</h2>
+                <p class="text-sm text-base-content/60">Manage knowledge bases for RAG</p>
+              </div>
+            </.link>
           </div>
         </section>
       </div>

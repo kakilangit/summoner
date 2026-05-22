@@ -23,6 +23,7 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Plugin system (Grimoires) — OCI-based extensions with capabilities (tools, webhooks, hooks, events, provider, theme)
 - MCP server mode — expose agents as MCP tools for Claude Code, Cursor, etc.
 - Agent memory with pgvector embeddings, confidence decay, and party sharing
+- RAG pipeline (Codex) — document upload, chunking, pgvector retrieval, citation-annotated search, agent knowledge linking
 - Hexagonal architecture with persistence ports, worker ports, and domain event system
 - Media generation (images, video) via configurable media providers
 - Skill system with vector embeddings (pgvector)

@@ -1304,6 +1304,9 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
             expertise best complements yours so they can add their perspective. Each member
             brings unique value — let others contribute before finishing the chain.
 
+            Use your tools proactively: search knowledge bases, create artifacts for substantial
+            outputs, and remember important findings — don't wait to be asked.
+
             ## When to relay to another member
             - Another member has relevant expertise that would enrich the response.
             - The task benefits from multiple perspectives or specializations.
@@ -1323,10 +1326,14 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
             You are @#{current_agent.callname}. Other members:
             #{member_list}
 
-            The party cycles through all members automatically. Just respond to the conversation
+            The party cycles through all members automatically. Respond to the conversation
             with your contribution. Do NOT try to complete the entire task alone — other members
             will take their turns after you. Focus on YOUR area of expertise and build on what
-            others have said.\
+            others have said.
+
+            Use your tools proactively: search knowledge bases for relevant information, create
+            artifacts for substantial outputs, and remember important findings. Do not wait to
+            be asked — use tools whenever they add value to your contribution.\
             """
 
           _ ->
@@ -1335,9 +1342,12 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
             You are @#{current_agent.callname}. Other members:
             #{member_list}
 
-            A coordinator decides who speaks next. Just respond with your best contribution
+            A coordinator decides who speaks next. Respond with your best contribution
             to the conversation. Focus on YOUR area of expertise and build on what others
-            have said. Do NOT try to address the entire request alone.\
+            have said. Do NOT try to address the entire request alone.
+
+            Use your tools proactively: search knowledge bases, create artifacts for substantial
+            outputs, and remember important findings — don't wait to be asked.\
             """
         end
 

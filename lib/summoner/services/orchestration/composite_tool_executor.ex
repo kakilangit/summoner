@@ -22,6 +22,7 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
   alias Summoner.Services.Embedding
   alias Summoner.Services.Memory.PartySharing
   alias Summoner.Services.Orchestration.{BuiltinTools, McpToolExecutor}
+  alias Summoner.Services.RAG
 
   @impl true
   def execute(tool_call, %{agent_id: _agent_id, workspace_id: workspace_id} = context) do
@@ -39,6 +40,9 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
       tool_name == "__remember__" ->
         execute_remember(tool_call, context)
+
+      tool_name == "__search_knowledge__" ->
+        execute_search_knowledge(tool_call, context)
 
       BuiltinTools.builtin?(tool_name) ->
         execute_builtin(tool_call, workspace_id)
@@ -232,6 +236,24 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
     case Embedding.embed(workspace_id, attrs.content) do
       {:ok, vector} -> Map.put(attrs, :embedding, vector)
       _ -> attrs
+    end
+  end
+
+  defp execute_search_knowledge(tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments) do
+      limit = args["limit"] || 5
+
+      case RAG.search(context.agent_id, context.workspace_id, args["query"], limit: limit) do
+        {:ok, []} ->
+          {:ok, "No relevant knowledge found for this query."}
+
+        {:ok, chunks} ->
+          formatted = RAG.format_for_prompt(chunks)
+          {:ok, formatted}
+
+        {:error, reason} ->
+          {:error, "Knowledge search failed: #{inspect(reason)}"}
+      end
     end
   end
 
