@@ -41,7 +41,8 @@ defmodule Summoner.Services.Plugins.EventSerializer do
        "event_type" => "invocation.started",
        "workspace_id" => e.workspace_id,
        "agent_id" => e.agent_id,
-       "invocation_id" => e.invocation_id
+       "invocation_id" => e.invocation_id,
+       "conversation_id" => e.conversation_id
      }}
   end
 
@@ -52,6 +53,7 @@ defmodule Summoner.Services.Plugins.EventSerializer do
        "workspace_id" => e.workspace_id,
        "agent_id" => e.agent_id,
        "invocation_id" => e.invocation_id,
+       "conversation_id" => e.conversation_id,
        "response" => get_in(e.output || %{}, ["response"])
      }}
   end
@@ -63,6 +65,7 @@ defmodule Summoner.Services.Plugins.EventSerializer do
        "workspace_id" => e.workspace_id,
        "agent_id" => e.agent_id,
        "invocation_id" => e.invocation_id,
+       "conversation_id" => e.conversation_id,
        "error" => get_in(e.output || %{}, ["error"])
      }}
   end
