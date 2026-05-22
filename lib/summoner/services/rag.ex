@@ -57,4 +57,56 @@ defmodule Summoner.Services.RAG do
     #{formatted}
     """
   end
+
+  @doc "Triggers ingestion of a document into a knowledge base."
+  def ingest_document(workspace_id, knowledge_base_id, filename, content_type) do
+    %{
+      workspace_id: workspace_id,
+      knowledge_base_id: knowledge_base_id,
+      filename: filename,
+      content_type: content_type
+    }
+    |> Summoner.Adapters.Workers.RAG.IngestionWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc "Triggers re-indexing of a single document."
+  def reindex_document(workspace_id, knowledge_base_id, filename, content_type) do
+    %{
+      workspace_id: workspace_id,
+      knowledge_base_id: knowledge_base_id,
+      mode: "incremental",
+      filename: filename,
+      content_type: content_type
+    }
+    |> Summoner.Adapters.Workers.RAG.ReindexWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc "Triggers full re-indexing of all documents in a knowledge base."
+  def reindex_all(workspace_id, knowledge_base_id) do
+    %{
+      workspace_id: workspace_id,
+      knowledge_base_id: knowledge_base_id,
+      mode: "full"
+    }
+    |> Summoner.Adapters.Workers.RAG.ReindexWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+  Checks if a document has changed by comparing SHA-256 hashes.
+
+  Returns `:changed`, `:unchanged`, or `:new`.
+  """
+  def check_document_change(kb, filename, binary) do
+    current_hash = :crypto.hash(:sha256, binary) |> Base.encode16(case: :lower)
+    stored_hash = get_in(kb.file_hashes || %{}, [filename])
+
+    cond do
+      is_nil(stored_hash) -> :new
+      stored_hash == current_hash -> :unchanged
+      true -> :changed
+    end
+  end
 end
