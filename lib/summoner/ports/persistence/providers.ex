@@ -32,4 +32,7 @@ defmodule Summoner.Ports.Persistence.Providers do
   defdelegate list_tenant_providers_paginated(tenant_id), to: @adapter
   defdelegate list_tenant_providers_paginated(tenant_id, opts), to: @adapter
   defdelegate get_tenant_provider!(tenant_id, id), to: @adapter
+
+  # Embedding
+  defdelegate find_embedding_provider(workspace_id), to: @adapter
 end

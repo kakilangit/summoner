@@ -250,7 +250,8 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
                    "__generate_video__",
                    "__create_artifact__",
                    "__update_artifact__",
-                   "__read_artifact__"
+                   "__read_artifact__",
+                   "__remember__"
                  ])
 
   @generate_image_def %{
@@ -400,6 +401,40 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
               "name" => %{"type" => "string", "description" => "Name of the artifact to read"}
             },
             "required" => ["name"],
+            "additionalProperties" => false
+          }
+        }
+      }
+    ]
+  end
+
+  @doc "Returns the memory tool definitions (injected conditionally)."
+  def memory_tool_definitions do
+    [
+      %{
+        type: "function",
+        function: %{
+          name: "__remember__",
+          description:
+            "Store a fact, preference, procedure, or correction to long-term memory. " <>
+              "Use this when the user tells you something you should remember, " <>
+              "corrects you, or when you learn something important. " <>
+              "Memories persist across conversations.",
+          parameters: %{
+            "type" => "object",
+            "properties" => %{
+              "content" => %{
+                "type" => "string",
+                "description" => "The information to remember"
+              },
+              "type" => %{
+                "type" => "string",
+                "enum" => ["fact", "preference", "procedure", "correction"],
+                "description" =>
+                  "Memory type: fact (learned info), preference (user preference), procedure (how to do something), correction (corrected info)"
+              }
+            },
+            "required" => ["content", "type"],
             "additionalProperties" => false
           }
         }

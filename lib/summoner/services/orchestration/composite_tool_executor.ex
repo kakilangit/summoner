@@ -12,12 +12,15 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
   @behaviour Summoner.Services.Orchestration.ToolExecutor
 
+  alias Summoner.Ports.Persistence.AgentMemories
   alias Summoner.Ports.Persistence.Agents
   alias Summoner.Ports.Persistence.Artifacts
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.MediaProviders
   alias Summoner.Ports.Persistence.Workspaces
   alias Summoner.Ports.Workers
+  alias Summoner.Services.Embedding
+  alias Summoner.Services.Memory.PartySharing
   alias Summoner.Services.Orchestration.{BuiltinTools, McpToolExecutor}
 
   @impl true
@@ -33,6 +36,9 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
 
       tool_name in ~w(__create_artifact__ __update_artifact__ __read_artifact__) ->
         execute_artifact_tool(tool_name, tool_call, context)
+
+      tool_name == "__remember__" ->
+        execute_remember(tool_call, context)
 
       BuiltinTools.builtin?(tool_name) ->
         execute_builtin(tool_call, workspace_id)
@@ -192,6 +198,54 @@ defmodule Summoner.Services.Orchestration.CompositeToolExecutor do
           {:ok,
            "# #{artifact.name} (v#{artifact.version}, #{artifact.type})\n\n#{artifact.content || ""}"}
       end
+    end
+  end
+
+  defp execute_remember(tool_call, context) do
+    with {:ok, args} <- parse_arguments(tool_call.function.arguments),
+         {:ok, attrs} <- build_memory_attrs(args, context),
+         attrs = maybe_embed_memory(attrs, context.workspace_id),
+         {:ok, memory} <- AgentMemories.create_memory(attrs) do
+      Task.start(fn -> PartySharing.share_memory(memory) end)
+      {:ok, "Remembered #{memory.type}: #{String.slice(memory.content, 0..50)}..."}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, "Failed to store memory: #{inspect(changeset.errors)}"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @memory_types %{
+    "fact" => :fact,
+    "preference" => :preference,
+    "procedure" => :procedure,
+    "correction" => :correction
+  }
+
+  defp build_memory_attrs(args, context) do
+    case Map.fetch(@memory_types, args["type"]) do
+      {:ok, type} ->
+        {:ok,
+         %{
+           content: args["content"],
+           type: type,
+           agent_id: context.agent_id,
+           workspace_id: context.workspace_id,
+           source_conversation_id: context[:conversation_id]
+         }}
+
+      :error ->
+        {:error,
+         "Invalid memory type: #{inspect(args["type"])}. Must be one of: fact, preference, procedure, correction"}
+    end
+  end
+
+  defp maybe_embed_memory(attrs, workspace_id) do
+    case Embedding.embed(workspace_id, attrs.content) do
+      {:ok, vector} -> Map.put(attrs, :embedding, vector)
+      _ -> attrs
     end
   end
 

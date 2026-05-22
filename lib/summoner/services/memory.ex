@@ -16,9 +16,11 @@ defmodule Summoner.Services.Memory do
   alias Summoner.Domain.Schemas.Message
   alias Summoner.Domain.Types.Content
   alias Summoner.Domain.Types.Presets
+  alias Summoner.Ports.Persistence.AgentMemories
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Media
   alias Summoner.Ports.Persistence.Workspaces
+  alias Summoner.Services.Embedding
   alias Summoner.Services.GitContext
 
   @doc """
@@ -43,11 +45,13 @@ defmodule Summoner.Services.Memory do
     skills = Keyword.get(opts, :skills, [])
     tools = Keyword.get(opts, :tools, [])
     workspace_id = Keyword.get(opts, :workspace_id)
+    agent_id = Keyword.get(opts, :agent_id)
     harness = Keyword.get(opts, :harness)
     swarm_members = Keyword.get(opts, :swarm_members, [])
 
     system_prompt = build_system_prompt(agent, workspace_id, harness: harness)
     skill_messages = build_skill_messages(skills)
+    memory_messages = build_memory_messages(agent_id, workspace_id, new_message)
     tool_messages = build_tool_messages(tools)
     history = load_history(conversation_id, context_window, agent.id, swarm_members)
 
@@ -65,7 +69,7 @@ defmodule Summoner.Services.Memory do
         []
       end
 
-    [system_prompt] ++ skill_messages ++ tool_messages ++ history ++ tail
+    [system_prompt] ++ skill_messages ++ memory_messages ++ tool_messages ++ history ++ tail
   end
 
   @doc """
@@ -133,6 +137,32 @@ defmodule Summoner.Services.Memory do
   defp git_context_block(workspace_id) do
     dir = Workspaces.workspace_dir(workspace_id)
     GitContext.build(dir)
+  end
+
+  defp build_memory_messages(nil, _workspace_id, _message), do: []
+  defp build_memory_messages(_agent_id, _workspace_id, nil), do: []
+  defp build_memory_messages(_agent_id, nil, _message), do: []
+
+  defp build_memory_messages(agent_id, workspace_id, message) do
+    text = if is_list(message), do: Content.text_only(message), else: message
+
+    case Embedding.embed(workspace_id, text) do
+      {:ok, embedding} ->
+        agent_id
+        |> AgentMemories.cosine_search(embedding, limit: 5, min_confidence: 0.2)
+        |> tap(fn memories -> Enum.each(memories, &AgentMemories.update_access/1) end)
+        |> format_memory_messages()
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp format_memory_messages([]), do: []
+
+  defp format_memory_messages(memories) do
+    formatted = Enum.map_join(memories, "\n", fn m -> "- [#{m.type}] #{m.content}" end)
+    [%{role: :system, content: Intent.text("## Agent Memories\n\n#{formatted}")}]
   end
 
   defp build_skill_messages([]), do: []

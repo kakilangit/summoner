@@ -22,6 +22,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Creates a provider within a workspace or tenant.
   """
+  @impl true
   def create_provider(%{user: _user}, attrs) do
     %Provider{}
     |> Provider.changeset(attrs)
@@ -31,6 +32,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Lists all providers for a workspace and its tenant.
   """
+  @impl true
   def list_providers(%{user: _user}, workspace_id, tenant_id) do
     Provider
     |> where_scope(workspace_id, tenant_id)
@@ -42,6 +44,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Lists providers for a workspace and its tenant with pagination.
   """
+  @impl true
   def list_providers_paginated(%{user: _user}, workspace_id, tenant_id, opts \\ []) do
     page =
       Provider
@@ -56,6 +59,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
 
   Raises `Ecto.NoResultsError` if not found.
   """
+  @impl true
   def get_provider!(%{user: _user}, workspace_id, tenant_id, provider_id) do
     Provider
     |> where_scope(workspace_id, tenant_id)
@@ -66,6 +70,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Updates a provider.
   """
+  @impl true
   def update_provider(%{user: _user}, %Provider{} = provider, attrs) do
     provider
     |> Provider.changeset(attrs)
@@ -75,6 +80,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Deletes a provider.
   """
+  @impl true
   def delete_provider(%{user: _user}, %Provider{} = provider) do
     provider
     |> Ecto.Changeset.change()
@@ -88,6 +94,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking provider changes.
   """
+  @impl true
   def change_provider(%Provider{} = provider, attrs \\ %{}) do
     Provider.changeset(provider, attrs)
   end
@@ -101,6 +108,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
 
   Intended for infrastructure use (e.g. Discovery probing).
   """
+  @impl true
   def list_all_providers do
     Provider
     |> order_by([p], asc: p.name)
@@ -113,6 +121,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
 
   Intended for infrastructure use (e.g. Discovery probing).
   """
+  @impl true
   def update_status(%Provider{} = provider, status)
       when status in [:online, :offline, :unknown] do
     provider
@@ -123,6 +132,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Updates the cached models list for a provider.
   """
+  @impl true
   def update_cached_models(%Provider{} = provider, models) when is_list(models) do
     provider
     |> Ecto.Changeset.change(cached_models: models)
@@ -135,6 +145,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   Attempts a live fetch via the inference adapter. On success, caches
   the result in the provider row. On failure, returns the cached models.
   """
+  @impl true
   def available_models(%{user: _user}, %Provider{} = provider) do
     case Inference.Gateway.list_models(provider) do
       {:ok, models} ->
@@ -154,6 +165,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   - `:image` — models with `supports_image_generation: true`
   - `:video` — models with `supports_video_generation: true`
   """
+  @impl true
   @spec filter_models_by_capability([String.t()], String.t(), atom()) :: [String.t()]
   def filter_models_by_capability(models, provider_kind, capability) do
     Enum.filter(models, fn model ->
@@ -180,6 +192,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   for display, and enqueues a `CopilotPoller` Oban job to poll for
   the token in the background.
   """
+  @impl true
   def start_copilot_connect(%Provider{kind: "github-copilot"} = provider) do
     if Application.get_env(:arcanum, :copilot_client_id) do
       case CopilotAuth.start_device_flow() do
@@ -215,6 +228,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Lists providers scoped to a tenant only.
   """
+  @impl true
   def list_tenant_providers(tenant_id) do
     Provider
     |> where([p], p.tenant_id == ^tenant_id)
@@ -226,6 +240,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Lists tenant-scoped providers with pagination.
   """
+  @impl true
   def list_tenant_providers_paginated(tenant_id, opts \\ []) do
     page =
       Provider
@@ -238,11 +253,61 @@ defmodule Summoner.Adapters.Persistence.Providers do
   @doc """
   Gets a tenant-scoped provider by ID.
   """
+  @impl true
   def get_tenant_provider!(tenant_id, id) do
     Provider
     |> where([p], p.tenant_id == ^tenant_id)
     |> Repo.get!(id)
     |> Repo.preload(:api_key_secret)
+  end
+
+  # -------------------------------------------------------------------
+  # Embedding provider resolution
+  # -------------------------------------------------------------------
+
+  @embedding_models %{
+    "openai" => "text-embedding-3-small",
+    "deepseek" => "text-embedding-3-small",
+    "xai" => "text-embedding-3-small",
+    "openrouter" => "text-embedding-3-small",
+    "github_copilot" => "text-embedding-3-small",
+    "zai" => "text-embedding-3-small",
+    "ollama" => "nomic-embed-text",
+    "custom" => "text-embedding-3-small"
+  }
+
+  @doc """
+  Finds the first online provider with embedding support for a workspace.
+
+  Looks at workspace-scoped providers first, then tenant-scoped.
+  Returns `{:ok, provider, model}` or `{:error, :no_embedding_provider}`.
+  """
+  @impl true
+  def find_embedding_provider(workspace_id) do
+    case Repo.get(Summoner.Domain.Schemas.Workspace, workspace_id) do
+      nil ->
+        {:error, :no_embedding_provider}
+
+      workspace ->
+        Provider
+        |> where(
+          [p],
+          p.workspace_id == ^workspace_id or p.tenant_id == ^workspace.tenant_id
+        )
+        |> where([p], p.status == :online)
+        |> where([p], p.api_format in [:openai, :custom])
+        |> order_by([p], asc: p.name)
+        |> Repo.all()
+        |> Repo.preload(:api_key_secret)
+        |> pick_embedding_provider()
+    end
+  end
+
+  defp pick_embedding_provider([]), do: {:error, :no_embedding_provider}
+
+  defp pick_embedding_provider([provider | _]) do
+    model = Map.get(@embedding_models, provider.kind, "text-embedding-3-small")
+    {:ok, provider, model}
   end
 
   defp where_scope(query, workspace_id, tenant_id) do
