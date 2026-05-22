@@ -129,7 +129,7 @@ defmodule SummonerWeb.ArtifactLive.Show do
             <span class="hero-clipboard-document size-4"></span>
           </button>
         </div>
-        <div class="prose prose-sm max-w-none" data-raw={@artifact.content}>
+        <div class="prose prose-sm max-w-none relic-prose" data-raw={@artifact.content}>
           <pre :if={code_type?(@artifact.content_type)}><code>{@artifact.content}</code></pre>
           <div :if={markdown_type?(@artifact.content_type)} class="break-words">
             {markdown(@artifact.content)}
