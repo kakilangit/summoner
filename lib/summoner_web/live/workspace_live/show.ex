@@ -18,6 +18,24 @@ defmodule SummonerWeb.WorkspaceLive.Show do
     {:ok, socket}
   end
 
+  defp dashboard_card(assigns) do
+    ~H"""
+    <.link navigate={@navigate} class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
+      <div class="card-body">
+        <div class="flex items-center gap-3">
+          <div class="rounded-lg bg-primary/10 p-2">
+            <.icon name={@icon} class="size-5 text-primary" />
+          </div>
+          <div>
+            <h2 class="card-title text-base">{@title}</h2>
+            <p class="text-sm text-base-content/60">{@description}</p>
+          </div>
+        </div>
+      </div>
+    </.link>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -29,13 +47,13 @@ defmodule SummonerWeb.WorkspaceLive.Show do
             navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/settings"}
             class="btn btn-ghost btn-sm"
           >
-            Settings
+            <.icon name="hero-cog-6-tooth" class="size-4" /> Settings
           </.link>
           <.link
             navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/members"}
             class="btn btn-ghost btn-sm"
           >
-            Members
+            <.icon name="hero-user-group" class="size-4" /> Members
           </.link>
         </div>
       </div>
@@ -45,49 +63,34 @@ defmodule SummonerWeb.WorkspaceLive.Show do
         <section>
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Quests</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <.link
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/conversations"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Channels</h2>
-                <p class="text-sm text-base-content/60">Chat with your Summons</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-chat-bubble-left-right"
+              title="Channels"
+              description="Chat with your Summons"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/pipelines"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Quests</h2>
-                <p class="text-sm text-base-content/60">Chain summons in sequence</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-arrow-right-circle"
+              title="Quests"
+              description="Chain summons in sequence"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/artifacts"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Relics</h2>
-                <p class="text-sm text-base-content/60">Persistent agent outputs</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-archive-box"
+              title="Relics"
+              description="Persistent agent outputs"
+            />
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/approval-rules"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Rites</h2>
-                <p class="text-sm text-base-content/60">Approval rules for agent actions</p>
-              </div>
-            </.link>
+              icon="hero-shield-check"
+              title="Rites"
+              description="Approval rules for agent actions"
+            />
           </div>
         </section>
 
@@ -95,57 +98,38 @@ defmodule SummonerWeb.WorkspaceLive.Show do
         <section>
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Realm Foundations</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <.link
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/providers"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Gateways</h2>
-                <p class="text-sm text-base-content/60">Manage LLM providers</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-server-stack"
+              title="Gateways"
+              description="Manage LLM providers"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/agents"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Summons</h2>
-                <p class="text-sm text-base-content/60">Manage your AI agents</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-sparkles"
+              title="Summons"
+              description="Manage your AI agents"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/mcp-servers"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Runes</h2>
-                <p class="text-sm text-base-content/60">Manage tool servers</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-command-line"
+              title="Runes"
+              description="Manage tool servers"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/secrets"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Seals</h2>
-                <p class="text-sm text-base-content/60">Manage encrypted secrets</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-lock-closed"
+              title="Seals"
+              description="Manage encrypted secrets"
+            />
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/media-providers"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Forges</h2>
-                <p class="text-sm text-base-content/60">Media generation providers</p>
-              </div>
-            </.link>
+              icon="hero-paint-brush"
+              title="Forges"
+              description="Media generation providers"
+            />
           </div>
         </section>
 
@@ -153,81 +137,54 @@ defmodule SummonerWeb.WorkspaceLive.Show do
         <section>
           <h2 class="text-lg font-semibold mb-3 text-base-content/80">Arcana</h2>
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <.link
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/skills"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Spellbook</h2>
-                <p class="text-sm text-base-content/60">Knowledge and skills for summons</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-book-open"
+              title="Spellbook"
+              description="Knowledge and skills for summons"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/swarms"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Partys</h2>
-                <p class="text-sm text-base-content/60">Group summons into swarms</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-user-group"
+              title="Parties"
+              description="Multi-agent collaboration swarms"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/files"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Scrolls</h2>
-                <p class="text-sm text-base-content/60">Browse and manage workspace files</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-document-text"
+              title="Scrolls"
+              description="Browse and manage workspace files"
+            />
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/remote-agents"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Envoys</h2>
-                <p class="text-sm text-base-content/60">Connect remote A2A agents</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-globe-alt"
+              title="Envoys"
+              description="Connect remote A2A agents"
+            />
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/access-tokens"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Wards</h2>
-                <p class="text-sm text-base-content/60">Manage scoped access tokens</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-key"
+              title="Wards"
+              description="Manage scoped access tokens"
+            />
+            <.dashboard_card
               navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/plugins"}
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Grimoires</h2>
-                <p class="text-sm text-base-content/60">Install and manage plugins</p>
-              </div>
-            </.link>
-
-            <.link
+              icon="hero-puzzle-piece"
+              title="Grimoires"
+              description="Install and manage plugins"
+            />
+            <.dashboard_card
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/knowledge-bases"
               }
-              class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div class="card-body">
-                <h2 class="card-title">Codex</h2>
-                <p class="text-sm text-base-content/60">Manage knowledge bases for RAG</p>
-              </div>
-            </.link>
+              icon="hero-academic-cap"
+              title="Codex"
+              description="Manage knowledge bases for RAG"
+            />
           </div>
         </section>
       </div>
