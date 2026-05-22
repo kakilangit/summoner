@@ -22,6 +22,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   # Swarms
   # -------------------------------------------------------------------
 
+  @impl true
   def create_swarm(%{user: _user}, attrs) do
     %Swarm{}
     |> Swarm.changeset(attrs)
@@ -29,6 +30,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     |> Repo.insert()
   end
 
+  @impl true
   def update_swarm(%{user: _user}, %Swarm{} = swarm, attrs) do
     changeset = Swarm.changeset(swarm, attrs)
 
@@ -38,6 +40,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     |> Repo.update()
   end
 
+  @impl true
   def list_swarms(%{user: _user}, workspace_id) do
     Swarm
     |> Workspaces.where_workspace(workspace_id)
@@ -49,6 +52,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   @doc """
   Lists swarms for a workspace with pagination.
   """
+  @impl true
   def list_swarms_paginated(%{user: _user}, workspace_id, opts \\ []) do
     page =
       Swarm
@@ -58,6 +62,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     %{page | entries: Repo.preload(page.entries, members: [agent: [local_agent: :provider]])}
   end
 
+  @impl true
   def get_swarm!(%{user: _user}, workspace_id, swarm_id) do
     Swarm
     |> Workspaces.where_workspace(workspace_id)
@@ -65,6 +70,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     |> Repo.preload([{:coordinator_agent, [local_agent: :provider]}, members: member_query()])
   end
 
+  @impl true
   def delete_swarm(%{user: _user}, %Swarm{} = swarm) do
     Repo.delete(swarm)
   end
@@ -76,6 +82,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   @doc """
   Adds an agent as a member at the end of the swarm's member list.
   """
+  @impl true
   def add_member(%{user: _user}, attrs) do
     swarm_id = attrs[:swarm_id] || attrs["swarm_id"]
     agent_id = attrs[:agent_id] || attrs["agent_id"]
@@ -126,10 +133,12 @@ defmodule Summoner.Adapters.Persistence.Swarms do
     end
   end
 
+  @impl true
   def remove_member(%{user: _user}, %SwarmMember{} = member) do
     Repo.delete(member)
   end
 
+  @impl true
   def list_members(swarm_id) do
     SwarmMember
     |> where([m], m.swarm_id == ^swarm_id)
@@ -142,6 +151,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   Reorders members by a list of member IDs in the desired order.
   Updates position for each member in a single transaction.
   """
+  @impl true
   def reorder_members(%{user: _user}, swarm_id, member_ids) when is_list(member_ids) do
     Repo.transact(fn ->
       member_ids
@@ -260,11 +270,31 @@ defmodule Summoner.Adapters.Persistence.Swarms do
 
   Returns the swarm with members preloaded (each member's agent is loaded).
   """
+  @impl true
   def preload_members(%Swarm{} = swarm) do
     Repo.preload(swarm, members: member_query())
   end
 
+  @doc """
+  Returns agent IDs of all agents that share a swarm (party) with the given agent,
+  excluding the agent itself.
+  """
+  @impl true
+  def list_peer_agent_ids(agent_id) do
+    swarm_ids_subquery =
+      SwarmMember
+      |> where([m], m.agent_id == ^agent_id)
+      |> select([m], m.swarm_id)
+
+    SwarmMember
+    |> where([m], m.swarm_id in subquery(swarm_ids_subquery) and m.agent_id != ^agent_id)
+    |> select([m], m.agent_id)
+    |> distinct(true)
+    |> Repo.all()
+  end
+
   @doc false
+  @impl true
   def member_query do
     from(m in SwarmMember,
       order_by: [asc: m.position],
@@ -279,6 +309,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   @doc """
   Lists conversations for a swarm with pagination.
   """
+  @impl true
   def list_swarm_conversations_paginated(%{user: _user}, swarm_id, opts \\ []) do
     Conversation
     |> where([c], c.kind == :swarm and c.swarm_id == ^swarm_id)
@@ -291,6 +322,7 @@ defmodule Summoner.Adapters.Persistence.Swarms do
   Auto-adds all swarm members as conversation participants.
   The first member becomes the primary agent.
   """
+  @impl true
   def create_conversation(%{user: _user} = scope, %Swarm{} = swarm) do
     members = list_members(swarm.id)
 

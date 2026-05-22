@@ -8,7 +8,9 @@ defmodule Summoner.Ports.Persistence.AgentMemories.Adapter do
   @callback delete_memory(struct()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
   @callback cosine_search(String.t(), list(), keyword()) :: [struct()]
   @callback update_access(struct()) :: {:ok, struct()}
-  @callback decay_batch(DateTime.t(), float()) :: {integer(), nil}
+  @callback decay_batch(DateTime.t(), float(), non_neg_integer()) :: {integer(), nil}
   @callback prune_below(String.t(), float()) :: {integer(), nil}
   @callback count_by_agent(String.t()) :: integer()
+  @callback list_agent_ids_with_memories() :: [String.t()]
+  @callback prune_excess(String.t(), non_neg_integer()) :: {integer(), nil}
 end

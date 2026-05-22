@@ -83,12 +83,26 @@ defmodule Summoner.Adapters.Persistence.AgentMemories do
     {:ok, Repo.get!(AgentMemory, memory.id)}
   end
 
-  @doc "Decays confidence for memories not accessed since cutoff."
+  @doc """
+  Decays confidence for memories not accessed since cutoff.
+
+  Computes the number of decay intervals per row based on days since
+  last access, then applies `confidence * factor^intervals`.
+  """
   @impl true
-  def decay_batch(%DateTime{} = cutoff, decay_factor) do
+  def decay_batch(%DateTime{} = cutoff, decay_factor, interval_days) do
     from(m in AgentMemory,
       where: m.last_accessed_at < ^cutoff,
-      update: [set: [confidence: fragment("confidence * ?", ^decay_factor)]]
+      update: [
+        set: [
+          confidence:
+            fragment(
+              "confidence * power(?, floor(extract(epoch from now() - last_accessed_at) / 86400 / ?)::int)",
+              ^decay_factor,
+              ^interval_days
+            )
+        ]
+      ]
     )
     |> Repo.update_all([])
   end
@@ -107,6 +121,34 @@ defmodule Summoner.Adapters.Persistence.AgentMemories do
     AgentMemory
     |> where([m], m.agent_id == ^agent_id)
     |> Repo.aggregate(:count)
+  end
+
+  @doc "Returns distinct agent IDs that have at least one memory."
+  @impl true
+  def list_agent_ids_with_memories do
+    AgentMemory
+    |> select([m], m.agent_id)
+    |> distinct(true)
+    |> Repo.all()
+  end
+
+  @doc """
+  Prunes excess memories for an agent, keeping only the top `max_count`
+  by confidence (highest kept). Deletes the rest.
+  """
+  @impl true
+  def prune_excess(agent_id, max_count) do
+    keep_ids =
+      AgentMemory
+      |> where([m], m.agent_id == ^agent_id)
+      |> order_by([m], desc: m.confidence, desc: m.last_accessed_at)
+      |> limit(^max_count)
+      |> select([m], m.id)
+      |> Repo.all()
+
+    AgentMemory
+    |> where([m], m.agent_id == ^agent_id and m.id not in ^keep_ids)
+    |> Repo.delete_all()
   end
 
   defp maybe_filter_type(query, nil), do: query

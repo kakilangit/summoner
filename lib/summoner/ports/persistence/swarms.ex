@@ -23,6 +23,7 @@ defmodule Summoner.Ports.Persistence.Swarms do
   defdelegate reorder_members(scope, swarm_id, member_ids), to: @adapter
   defdelegate member_query(), to: @adapter
   defdelegate preload_members(swarm), to: @adapter
+  defdelegate list_peer_agent_ids(agent_id), to: @adapter
 
   # Conversations
   defdelegate list_swarm_conversations_paginated(scope, swarm_id), to: @adapter
