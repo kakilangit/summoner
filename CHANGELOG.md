@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.10] - 2026-05-22
+
+### Added
+
+- **Agent Memory**
+  - `agent_memories` table with pgvector embeddings and IVFFlat cosine index
+  - `AgentMemory` schema with type enum (fact, preference, procedure, correction), confidence, access tracking
+  - `__remember__` builtin tool for agents to store memories during conversations
+  - Shared embedding service resolves provider/model via `find_embedding_provider/1`
+  - Memory context injected into agent system prompt before invocation
+  - `MemoryDecay` policy — pure domain logic for interval-based exponential confidence decay
+  - `MemoryDeduplication` policy — Jaro-Winkler string similarity + cosine vector dedup
+  - `MemoryDecayWorker` — daily Oban cron (3:30 AM) applies decay, prunes below threshold, caps at 500/agent
+  - `PartySharing` service — replicates fact/procedure memories to swarm peers at 0.7x confidence
+  - Memory management LiveView at `/agents/:id/memories` with paginated list, type filter, sort, text search
+  - Edit modal with content textarea and confidence slider; re-embeds async on content change
+  - Bulk prune action to delete memories below a confidence threshold
+  - Semantic search panel — embeds query and shows cosine similarity ranked results
+  - `list_memories_paginated/2`, `update_embedding/2` port/adapter functions
+  - 40 new tests: domain policies, decay worker, party sharing, LiveView
+
+- **Artifact Markdown Rendering**
+  - `text/markdown` artifacts rendered via Earmark instead of raw text
+  - `relic-prose` CSS class for spacious document-style typography
+  - Copy-to-clipboard button on artifact content (reuses CopyMessage hook)
+
+### Fixed
+
+- Footer version now reads from `Application.spec(:summoner, :vsn)` instead of hardcoded string
+
 ## [0.1.9] - 2026-05-22
 
 ### Added
@@ -295,6 +325,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.10]: https://github.com/kakilangit/summoner/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/kakilangit/summoner/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/kakilangit/summoner/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/kakilangit/summoner/compare/v0.1.6...v0.1.7
