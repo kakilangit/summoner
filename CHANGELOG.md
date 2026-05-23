@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.22] - 2026-05-24
+
+### Fixed
+
+- Plugin callback host now configurable via `PLUGIN_CALLBACK_HOST` env var — fixes callback failure on Linux where `host.docker.internal` does not resolve
+- Plugin callback secret configurable via `PLUGIN_CALLBACK_SECRET` env var
+- Added logging to plugin event forwarder to trace event delivery to plugins
+
 ## [0.1.20] - 2026-05-24
 
 ### Added
@@ -489,6 +497,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.22]: https://github.com/kakilangit/summoner/compare/v0.1.20...v0.1.22
 [0.1.20]: https://github.com/kakilangit/summoner/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/kakilangit/summoner/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/kakilangit/summoner/compare/v0.1.17...v0.1.18
