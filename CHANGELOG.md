@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.16] - 2026-05-23
+
+### Fixed
+
+- Plugin container start crash when image not yet pulled — `run_detached` output contained pull progress instead of container ID
+- Explicit `pull` before `docker run -d --pull never` ensures clean container ID output
+
 ## [0.1.15] - 2026-05-23
 
 ### Fixed
@@ -424,6 +431,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.16]: https://github.com/kakilangit/summoner/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/kakilangit/summoner/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/kakilangit/summoner/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/kakilangit/summoner/compare/v0.1.12...v0.1.13
