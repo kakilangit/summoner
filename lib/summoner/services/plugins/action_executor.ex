@@ -130,7 +130,8 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
             Conversations.create_conversation(scope, %{
               workspace_id: workspace_id,
               primary_agent_id: agent.id,
-              title: "Plugin: #{plugin.name}"
+              title: "Plugin: #{plugin.name}",
+              kind: :plugin
             })
 
           Plugins.upsert_conversation(%{
@@ -146,7 +147,8 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
         Conversations.create_conversation(scope, %{
           workspace_id: workspace_id,
           primary_agent_id: agent.id,
-          title: "Plugin: #{plugin.name}"
+          title: "Plugin: #{plugin.name}",
+          kind: :plugin
         })
 
       conv

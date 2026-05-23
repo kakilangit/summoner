@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.23] - 2026-05-24
+
+### Changed
+
+- Plugin-created conversations now use `kind: :plugin`, hiding them from the conversations list view
+
 ## [0.1.22] - 2026-05-24
 
 ### Fixed
@@ -497,6 +503,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.23]: https://github.com/kakilangit/summoner/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/kakilangit/summoner/compare/v0.1.20...v0.1.22
 [0.1.20]: https://github.com/kakilangit/summoner/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/kakilangit/summoner/compare/v0.1.18...v0.1.19
