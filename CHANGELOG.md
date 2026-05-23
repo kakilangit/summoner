@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.20] - 2026-05-24
+
+### Added
+
+- Structured JSON logging via `logger_json` — enabled in prod by default, opt-in in dev/test via `LOG_FORMAT=json`
+- Distributed tracing via OpenTelemetry — Bandit, Phoenix, and Ecto instrumented
+- Trace context (`trace_id`, `span_id`) included in logger metadata
+- OTLP export enabled when `OTEL_EXPORTER_OTLP_ENDPOINT` env var is set
+
 ## [0.1.19] - 2026-05-23
 
 ### Fixed
@@ -480,6 +489,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.20]: https://github.com/kakilangit/summoner/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/kakilangit/summoner/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/kakilangit/summoner/compare/v0.1.17...v0.1.18
 [0.1.16]: https://github.com/kakilangit/summoner/compare/v0.1.15...v0.1.16
