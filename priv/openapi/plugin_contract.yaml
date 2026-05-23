@@ -113,6 +113,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/GrimoireManifest"
 
+  /models:
+    get:
+      operationId: pluginModels
+      summary: List models provided by this plugin (provider capability)
+      parameters:
+        - name: X-Plugin-Context
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Base64-encoded JSON context (workspace_id, plugin_id, config, callback_url, callback_token)
+      responses:
+        "200":
+          description: List of available models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelsResponse"
+
+  /chat:
+    post:
+      operationId: pluginChat
+      summary: Chat completion (provider capability)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Chat completion response (non-streaming)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/ChatChunk"
+
   # ── Plugin → Summoner (Callback API) ──────────────────────────────
 
   /api/internal/plugins/callback:
@@ -715,7 +755,7 @@ components:
         point:
           $ref: "#/components/schemas/HookPoint"
         data:
-          description: Hook-specific data (shape varies by hook point)
+          $ref: "#/components/schemas/HookData"
 
     HookPoint:
       type: string
@@ -725,6 +765,71 @@ components:
         - on_tool_call
         - on_error
 
+    HookData:
+      oneOf:
+        - $ref: "#/components/schemas/BeforeInvocationData"
+        - $ref: "#/components/schemas/AfterInvocationData"
+        - $ref: "#/components/schemas/OnToolCallData"
+        - $ref: "#/components/schemas/OnErrorData"
+      discriminator:
+        propertyName: _hook_point
+
+    BeforeInvocationData:
+      type: object
+      required: [agent_id, agent_name, conversation_id, messages]
+      properties:
+        agent_id:
+          type: string
+        agent_name:
+          type: string
+        conversation_id:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+
+    AfterInvocationData:
+      type: object
+      required: [agent_id, conversation_id, output]
+      properties:
+        agent_id:
+          type: string
+        conversation_id:
+          type: string
+        output:
+          type: string
+        usage:
+          $ref: "#/components/schemas/Usage"
+
+    OnToolCallData:
+      type: object
+      required: [agent_id, conversation_id, tool_name, arguments]
+      properties:
+        agent_id:
+          type: string
+        conversation_id:
+          type: string
+        tool_name:
+          type: string
+        arguments:
+          description: Tool arguments as JSON object
+
+    OnErrorData:
+      type: object
+      required: [agent_id, conversation_id, error, message]
+      properties:
+        agent_id:
+          type: string
+        conversation_id:
+          type: string
+        error:
+          type: string
+          description: Error type (e.g. inference_timeout, tool_error)
+        message:
+          type: string
+          description: Human-readable error message
+
     HookResponse:
       type: object
       required: [action]
@@ -732,8 +837,11 @@ components:
         action:
           type: string
           enum: [proceed, modify, halt]
-        context:
-          description: Modified context (present when action=modify)
+        data:
+          description: |
+            Modified data (present when action=modify).
+            For before_invocation: { "messages": [...] }
+            For on_tool_call: { "arguments": {...} }
         reason:
           type: string
           description: Halt reason (present when action=halt)
@@ -892,3 +1000,181 @@ components:
           type: string
         value:
           description: State value (any JSON value, null if key not found)
+
+    # ────────────────────────────────────────────────────────────────
+    # Summoner → Plugin: Provider
+    # ────────────────────────────────────────────────────────────────
+
+    ModelsResponse:
+      type: object
+      required: [models]
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+
+    Model:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          description: Model identifier used in chat requests
+        name:
+          type: string
+          description: Human-readable model name
+        context_length:
+          type: integer
+          description: Maximum context window in tokens
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum: [chat, tools, vision]
+          description: What the model supports
+
+    ChatRequest:
+      type: object
+      required: [context, model, messages]
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        model:
+          type: string
+          description: Model ID from /models response
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolDefinition"
+          description: Available tools (OpenAI format)
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+        max_tokens:
+          type: integer
+          minimum: 1
+        stream:
+          type: boolean
+          default: false
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant, tool]
+        content:
+          type: ["string", "null"]
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCall"
+          description: Present when assistant requests tool use
+        tool_call_id:
+          type: string
+          description: Present when role=tool (references the tool_call)
+
+    ToolDefinition:
+      type: object
+      required: [type, function]
+      properties:
+        type:
+          type: string
+          const: function
+        function:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            parameters:
+              description: JSON Schema for function parameters
+
+    ToolCall:
+      type: object
+      required: [id, type, function]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          const: function
+        function:
+          type: object
+          required: [name, arguments]
+          properties:
+            name:
+              type: string
+            arguments:
+              type: string
+              description: JSON-encoded arguments
+
+    ChatResponse:
+      type: object
+      required: [message, finish_reason]
+      properties:
+        message:
+          $ref: "#/components/schemas/ChatMessage"
+        usage:
+          $ref: "#/components/schemas/Usage"
+        finish_reason:
+          type: string
+          enum: [stop, tool_calls, length]
+
+    ChatChunk:
+      type: object
+      required: [delta]
+      properties:
+        delta:
+          type: object
+          properties:
+            content:
+              type: ["string", "null"]
+            tool_calls:
+              type: array
+              items:
+                $ref: "#/components/schemas/ToolCallDelta"
+        finish_reason:
+          type: ["string", "null"]
+          enum: [stop, tool_calls, length, null]
+        usage:
+          $ref: "#/components/schemas/Usage"
+          description: Present only in final chunk
+
+    ToolCallDelta:
+      type: object
+      required: [index]
+      properties:
+        index:
+          type: integer
+        id:
+          type: string
+          description: Present only in first chunk for this tool call
+        function:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Present only in first chunk for this tool call
+            arguments:
+              type: string
+              description: Partial JSON arguments (concatenate across chunks)
+
+    Usage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer

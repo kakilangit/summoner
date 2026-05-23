@@ -35,4 +35,8 @@ defmodule Summoner.Ports.Persistence.Providers do
 
   # Embedding
   defdelegate find_embedding_provider(workspace_id), to: @adapter
+
+  # Grimoire
+  defdelegate find_by_plugin_installation(plugin_installation_id), to: @adapter
+  defdelegate create_grimoire_provider(attrs), to: @adapter
 end

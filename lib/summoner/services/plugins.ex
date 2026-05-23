@@ -11,7 +11,9 @@ defmodule Summoner.Services.Plugins do
   alias Summoner.Domain.Schemas.PluginInstallation
   alias Summoner.Ports.ContainerRuntime
   alias Summoner.Ports.Persistence.Plugins, as: Persistence
+  alias Summoner.Ports.Persistence.Providers
   alias Summoner.Repo
+  alias Summoner.Services.Inference
   alias Summoner.Services.Plugins.PluginClient
   alias Summoner.Services.Plugins.TrustVerifier
 
@@ -104,6 +106,8 @@ defmodule Summoner.Services.Plugins do
       case ensure_plugin_container(plugin) do
         {:ok, _container} ->
           Persistence.update_status(plugin, :enabled)
+          maybe_register_provider(plugin)
+          {:ok, plugin}
 
         {:error, reason} ->
           Persistence.update_status(plugin, :error, "Enable failed: #{inspect(reason)}")
@@ -120,6 +124,8 @@ defmodule Summoner.Services.Plugins do
 
     if plugin.status == :enabled do
       Persistence.update_status(plugin, :disabled)
+      maybe_deactivate_provider(plugin)
+      {:ok, plugin}
     else
       {:error, :not_enabled}
     end
@@ -327,5 +333,66 @@ defmodule Summoner.Services.Plugins do
     host = Application.get_env(:summoner, :plugin_callback_host, "host.docker.internal")
     port = System.get_env("PORT", "4000")
     "http://#{host}:#{port}/api/internal/plugins/callback"
+  end
+
+  # -------------------------------------------------------------------
+  # Provider auto-registration
+  # -------------------------------------------------------------------
+
+  @doc false
+  def maybe_register_provider(%PluginInstallation{} = plugin) do
+    if "provider" in (plugin.capabilities || []) do
+      do_register_provider(plugin)
+    end
+  end
+
+  defp do_register_provider(plugin) do
+    provider_name = "grimoire:#{plugin.name}"
+
+    provider =
+      case Providers.find_by_plugin_installation(plugin.id) do
+        nil ->
+          create_grimoire_provider(provider_name, plugin)
+
+        existing ->
+          Providers.update_status(existing, :online)
+          existing
+      end
+
+    if provider, do: cache_grimoire_models(provider, plugin)
+  end
+
+  defp create_grimoire_provider(name, plugin) do
+    case Providers.create_grimoire_provider(%{
+           name: name,
+           workspace_id: plugin.workspace_id,
+           plugin_installation_id: plugin.id
+         }) do
+      {:ok, p} -> p
+      _ -> nil
+    end
+  end
+
+  @doc false
+  def maybe_deactivate_provider(%PluginInstallation{} = plugin) do
+    if "provider" in (plugin.capabilities || []) do
+      case Providers.find_by_plugin_installation(plugin.id) do
+        nil -> :ok
+        provider -> Providers.update_status(provider, :offline)
+      end
+    end
+  end
+
+  defp cache_grimoire_models(provider, plugin) do
+    # Enrich with plugin_installation for container resolution
+    provider = %{provider | plugin_installation: plugin}
+
+    case Inference.Gateway.list_models(provider) do
+      {:ok, models} ->
+        Providers.update_cached_models(provider, models)
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch models from grimoire:#{plugin.name}: #{inspect(reason)}")
+    end
   end
 end

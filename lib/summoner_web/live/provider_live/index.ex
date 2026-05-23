@@ -115,6 +115,9 @@ defmodule SummonerWeb.ProviderLive.Index do
                 {provider.status}
               </span>
               <span :if={provider.tenant_id} class="badge badge-ghost badge-xs">Realm</span>
+              <span :if={provider.kind == "grimoire"} class="badge badge-primary badge-xs">
+                Plugin
+              </span>
             </div>
             <div class="text-sm text-base-content/60">
               {provider_kind_label(provider.kind)} · {provider.type} · {provider.base_url}
@@ -122,7 +125,7 @@ defmodule SummonerWeb.ProviderLive.Index do
           </div>
           <div class="flex gap-2 flex-shrink-0">
             <.link
-              :if={@can?.(:configure) and is_nil(provider.tenant_id)}
+              :if={@can?.(:configure) and is_nil(provider.tenant_id) and provider.kind != "grimoire"}
               navigate={
                 ~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/providers/#{provider.id}/edit"
               }
@@ -131,14 +134,14 @@ defmodule SummonerWeb.ProviderLive.Index do
               Edit
             </.link>
             <button
-              :if={@can?.(:configure) and is_nil(provider.tenant_id)}
+              :if={@can?.(:configure) and is_nil(provider.tenant_id) and provider.kind != "grimoire"}
               phx-click={show_confirm("#delete-provider-#{provider.id}")}
               class="btn btn-error btn-sm btn-outline"
             >
               Delete
             </button>
             <.confirm_modal
-              :if={@can?.(:configure) and is_nil(provider.tenant_id)}
+              :if={@can?.(:configure) and is_nil(provider.tenant_id) and provider.kind != "grimoire"}
               id={"delete-provider-#{provider.id}"}
               title="Delete gateway?"
               message="This gateway will be permanently removed. Summons bound to it will need a new gateway."

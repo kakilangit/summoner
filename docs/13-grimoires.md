@@ -9,7 +9,7 @@ Grimoires extend Summoner with external capabilities packaged as OCI container i
 | **Grimoire** | A plugin — an OCI container image with a `grimoire.json` manifest |
 | **Manifest** | `grimoire.json` inside the container, declaring capabilities, config, and resource requirements |
 | **Ref** | First 12 characters of the SHA-256 hash of the image path (without tag) |
-| **Capability** | What the plugin can do: `tools`, `webhooks`, `hooks`, `events`, `provider`, `theme` |
+| **Capability** | What the plugin can do: `tools`, `webhooks`, `hooks`, `events`, `provider` |
 
 ## Architecture
 
@@ -76,13 +76,40 @@ The plugin provides MCP tools to agents. Expected tools are declared in the mani
 
 Lifecycle hooks execute at specific points in the invocation pipeline: `before_invocation`, `after_invocation`, `on_tool_call`, `on_error`. A circuit breaker protects against failing hooks.
 
-### `provider` (not yet tested)
+### `provider` (tested with grimoire-ollama)
 
-The plugin acts as an LLM provider, exposing `/models` and `/chat` endpoints.
+The plugin acts as an LLM inference provider, exposing models and chat completions to Summoner agents.
 
-### `theme` (not yet tested)
+When a grimoire with `provider` capability is enabled:
 
-The plugin provides a custom UI theme.
+1. Summoner auto-creates a Provider record (`kind: "grimoire"`, `api_format: :grimoire`)
+2. Models are fetched from the plugin's `GET /models` endpoint and cached
+3. The provider appears in the gateway list with a "Plugin" badge
+4. Agents can select the provider and its models like any other gateway
+
+When disabled, the provider is marked offline (not deleted — agents may reference it).
+
+Provider gateways are system-managed: hidden from the manual creation dropdown, and edit/delete buttons are not shown. The plugin lifecycle controls the provider.
+
+**Inference flow**: Agent invocation → `Arcanum.Adapters.Grimoire` → `POST {container_url}/chat` with context and messages → SSE streaming or JSON response.
+
+Context (workspace ID, plugin ID, config) is sent via `X-Plugin-Context` header (base64-encoded JSON) for `GET /models`, and in the request body for `POST /chat`.
+
+```json
+{
+  "capabilities": ["provider"],
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "ollama_url": {
+        "type": "string",
+        "description": "Ollama API base URL"
+      }
+    },
+    "required": ["ollama_url"]
+  }
+}
+```
 
 ## Manifest (`grimoire.json`)
 
@@ -191,7 +218,9 @@ printf '%s' "ghcr.io/kakilangit/grimoire-slack" | shasum -a 256 | cut -c1-12
 - **Orphan sweep**: Containers whose image digest has no enabled installations are automatically removed.
 - **Version-less naming**: Container names strip the tag, so image upgrades naturally replace existing containers.
 - **Host mode (dev)**: `plugin_host_mode: :host` publishes a random port and uses `localhost`.
-- **Docker mode (prod)**: Containers communicate via Docker DNS.
+- **Docker mode (prod)**: Containers communicate via Docker DNS. Requires docker socket mount and `DOCKER_GID` set to the host's docker socket group ID.
+- **Explicit pull**: Images are pulled before `docker run -d --pull never` to ensure clean container ID output.
+- **Graceful fallback**: If docker CLI is unavailable, the container manager logs an error and continues without crashing.
 
 ## Developing a Plugin
 

@@ -75,6 +75,9 @@ config :summoner, SummonerWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :summoner, dev_routes: true
 
+# Serve generated HTML docs at /docs
+config :summoner, serve_docs: true
+
 # Swoosh mailbox server on port 4101
 config :swoosh, serve_mailbox: true, preview_port: 4101
 

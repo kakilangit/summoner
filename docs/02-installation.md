@@ -90,7 +90,7 @@ The application is available at [http://localhost:4200](http://localhost:4200).
 | `make db.setup` | Create and migrate database |
 | `make db.reset` | Drop, create, migrate, and seed database |
 | `make db.migrate` | Run pending migrations |
-| `make docs` | Generate HTML documentation from markdown |
+| `make docs` | Generate HTML documentation to `priv/static/docs/` |
 
 ## Production
 

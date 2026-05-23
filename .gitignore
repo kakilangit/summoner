@@ -51,7 +51,7 @@ priv/static/uploads/
 AGENTS.md
 
 # Generated docs
-docs/_site/
+priv/static/docs/
 
 # Rust CLI build artifacts
 /cli/target/
