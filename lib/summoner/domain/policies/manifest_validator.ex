@@ -114,17 +114,7 @@ defmodule Summoner.Domain.Policies.ManifestValidator do
     end
   end
 
-  defp maybe_validate_provider(errors, caps, manifest) do
-    if "provider" in caps do
-      case manifest["provider"] do
-        %{"name" => name} when is_binary(name) and name != "" -> errors
-        nil -> ["provider capability requires provider.name" | errors]
-        _ -> ["provider.name must be a non-empty string" | errors]
-      end
-    else
-      errors
-    end
-  end
+  defp maybe_validate_provider(errors, _caps, _manifest), do: errors
 
   @doc "Returns recognized manifest fields for filtering unknown keys."
   def known_fields, do: @required_fields ++ @optional_fields

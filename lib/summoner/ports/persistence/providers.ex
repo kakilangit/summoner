@@ -38,5 +38,5 @@ defmodule Summoner.Ports.Persistence.Providers do
 
   # Grimoire
   defdelegate find_by_plugin_installation(plugin_installation_id), to: @adapter
-  defdelegate create_grimoire_provider(attrs), to: @adapter
+  defdelegate upsert_grimoire_provider(attrs), to: @adapter
 end

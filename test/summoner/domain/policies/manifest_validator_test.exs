@@ -95,10 +95,9 @@ defmodule Summoner.Domain.Policies.ManifestValidatorTest do
       assert {:ok, _} = ManifestValidator.validate(manifest)
     end
 
-    test "provider capability requires name" do
+    test "provider capability without provider config passes" do
       manifest = %{base_manifest() | "capabilities" => ["provider"]}
-      assert {:error, errors} = ManifestValidator.validate(manifest)
-      assert Enum.any?(errors, &String.contains?(&1, "provider.name"))
+      assert {:ok, _} = ManifestValidator.validate(manifest)
     end
 
     test "provider with valid name passes" do

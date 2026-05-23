@@ -324,9 +324,8 @@ defmodule Summoner.Adapters.Persistence.Providers do
     |> Repo.one()
   end
 
-  def create_grimoire_provider(attrs) do
-    %Provider{}
-    |> Provider.changeset(
+  def upsert_grimoire_provider(attrs) do
+    grimoire_attrs =
       Map.merge(attrs, %{
         kind: "grimoire",
         api_format: :grimoire,
@@ -334,7 +333,14 @@ defmodule Summoner.Adapters.Persistence.Providers do
         base_url: nil,
         status: :online
       })
+
+    %Provider{}
+    |> Provider.changeset(grimoire_attrs)
+    |> Repo.insert(
+      conflict_target:
+        {:unsafe_fragment, ~s|("workspace_id", "name") WHERE "workspace_id" IS NOT NULL|},
+      on_conflict: {:replace, [:plugin_installation_id, :status, :updated_at]},
+      returning: true
     )
-    |> Repo.insert()
   end
 end

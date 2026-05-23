@@ -92,7 +92,7 @@ defmodule Summoner.Services.Inference.GrimoireIntegrationTest do
       })
 
     {:ok, provider} =
-      Providers.create_grimoire_provider(%{
+      Providers.upsert_grimoire_provider(%{
         name: "grimoire:mock-provider",
         workspace_id: workspace.id,
         plugin_installation_id: plugin.id
