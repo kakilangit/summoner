@@ -8,17 +8,25 @@ defmodule Summoner.Adapters.Mailer.UserNotifier do
   alias Summoner.Adapters.Mailer
   alias Summoner.Domain.Schemas.User
 
+  require Logger
+
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
       |> to(recipient)
-      |> from({"Summoner", "contact@example.com"})
+      |> from({"Summoner", Application.get_env(:summoner, :mailer_from, "noreply@example.com")})
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
+    case Mailer.deliver(email) do
+      {:ok, _metadata} ->
+        Logger.info("Email sent to #{recipient}: #{subject}")
+        {:ok, email}
+
+      {:error, reason} = error ->
+        Logger.error("Email delivery failed to #{recipient}: #{inspect(reason)}")
+        error
     end
   end
 

@@ -52,14 +52,13 @@
                   </span>
                 </li>
                 <li>
-                  <form method="post" action={~p"/users/log-out"}>
-                    <input type="hidden" name="_method" value="delete" />
-                    <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-                    <button type="submit" class="w-full text-left flex items-center gap-2">
-                      <span class="hero-arrow-right-start-on-rectangle-micro size-4"></span>
-                      Log out
-                    </button>
-                  </form>
+                  <.link
+                    href={~p"/users/log-out"}
+                    method="delete"
+                    class="w-full text-left flex items-center gap-2"
+                  >
+                    <span class="hero-arrow-right-start-on-rectangle-micro size-4"></span> Log out
+                  </.link>
                 </li>
               </ul>
             </div>
@@ -97,11 +96,9 @@
                 <span class="text-xs text-base-content/50">{@current_scope.user.email}</span>
               </li>
               <li>
-                <form method="post" action={~p"/users/log-out"}>
-                  <input type="hidden" name="_method" value="delete" />
-                  <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-                  <button type="submit" class="w-full text-left">Log out</button>
-                </form>
+                <.link href={~p"/users/log-out"} method="delete" class="w-full text-left">
+                  Log out
+                </.link>
               </li>
             <% else %>
               <li><.link href={~p"/users/log-in"}>Log in</.link></li>
