@@ -32,11 +32,11 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 
 ## Documentation
 
-See the [`docs/`](docs/) directory for full documentation, or generate a standalone HTML site:
+See the [`docs/`](docs/) directory for full documentation. In development, docs are auto-generated on server start and served at `/docs`. You can also generate manually:
 
 ```sh
 make docs
-# Output: docs/_site/index.html
+# Output: priv/static/docs/index.html
 ```
 
 ## Requirements
@@ -81,7 +81,7 @@ make ci             # lint + test
 make db.setup       # create + migrate + seed
 make db.migrate     # run pending migrations
 
-make docs           # generate HTML docs from docs/*.md
+make docs           # generate HTML docs to priv/static/docs/
 
 make release        # build production release
 ```

@@ -121,7 +121,7 @@ build.seed:
 
 build: build.builder build.base build.app build.seed
 
-## Documentation
+## Documentation (auto-generated on dev server start, or manually)
 
 docs:
-	mix run --no-start docs/generate.exs
+	mix eval "Summoner.Docs.generate()"

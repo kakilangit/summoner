@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.17] - 2026-05-24
+
+### Added
+
+- **Grimoire provider capability** — plugins can act as LLM inference providers
+  - Auto-register Provider record when grimoire with `provider` capability is enabled
+  - Auto-deactivate provider when grimoire is disabled (preserves agent references)
+  - Inference routing via `Arcanum.Adapters.Grimoire` with SSE streaming support
+  - Dynamic container URL resolution at call time via `PluginContainerManager`
+  - Provider schema: `:grimoire` api_format, `plugin_installation_id` FK
+  - "Plugin" badge on grimoire providers in list, edit/delete hidden for system-managed providers
+  - Grimoire kind hidden from manual provider creation dropdown
+- **Docs generation as module** — `Summoner.Docs.generate/0` replaces standalone script
+  - Auto-generated on dev server start
+  - Served at `/docs` when `config :summoner, serve_docs: true` (enabled in dev, opt-in for prod)
+  - Docs styled to match Summoner's dark theme
+- Provider preloads `:plugin_installation` on all queries
+- Integration test with Bandit mock server for grimoire provider flow
+
+### Changed
+
+- Arcanum dependency switched from path to hex: `{:arcanum, "~> 0.1.4"}`
+- `plugin_contract.yaml` expanded with `/models`, `/chat`, typed hook data schemas
+- Documentation pages: added Event Rules and Grimoires sections
+
+### Removed
+
+- `docs/generate.exs` standalone script (replaced by `Summoner.Docs` module)
+
 ## [0.1.16] - 2026-05-23
 
 ### Fixed

@@ -76,9 +76,40 @@ The plugin provides MCP tools to agents. Expected tools are declared in the mani
 
 Lifecycle hooks execute at specific points in the invocation pipeline: `before_invocation`, `after_invocation`, `on_tool_call`, `on_error`. A circuit breaker protects against failing hooks.
 
-### `provider` (not yet tested)
+### `provider` (tested with grimoire-ollama)
 
-The plugin acts as an LLM provider, exposing `/models` and `/chat` endpoints.
+The plugin acts as an LLM inference provider, exposing models and chat completions to Summoner agents.
+
+When a grimoire with `provider` capability is enabled:
+
+1. Summoner auto-creates a Provider record (`kind: "grimoire"`, `api_format: :grimoire`)
+2. Models are fetched from the plugin's `GET /models` endpoint and cached
+3. The provider appears in the gateway list with a "Plugin" badge
+4. Agents can select the provider and its models like any other gateway
+
+When disabled, the provider is marked offline (not deleted — agents may reference it).
+
+Provider gateways are system-managed: hidden from the manual creation dropdown, and edit/delete buttons are not shown. The plugin lifecycle controls the provider.
+
+**Inference flow**: Agent invocation → `Arcanum.Adapters.Grimoire` → `POST {container_url}/chat` with context and messages → SSE streaming or JSON response.
+
+Context (workspace ID, plugin ID, config) is sent via `X-Plugin-Context` header (base64-encoded JSON) for `GET /models`, and in the request body for `POST /chat`.
+
+```json
+{
+  "capabilities": ["provider"],
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "ollama_url": {
+        "type": "string",
+        "description": "Ollama API base URL"
+      }
+    },
+    "required": ["ollama_url"]
+  }
+}
+```
 
 ## Manifest (`grimoire.json`)
 

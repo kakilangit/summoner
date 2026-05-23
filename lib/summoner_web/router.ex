@@ -306,6 +306,14 @@ defmodule SummonerWeb.Router do
     end
   end
 
+  if Application.compile_env(:summoner, :serve_docs) do
+    scope "/docs", SummonerWeb do
+      pipe_through :browser
+
+      get "/", DocsController, :index
+    end
+  end
+
   ## Authentication routes
 
   scope "/", SummonerWeb do

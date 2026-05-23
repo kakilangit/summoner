@@ -41,6 +41,7 @@ defmodule Summoner.Application do
         maybe_discovery() ++
         maybe_theme_init() ++
         maybe_mcp_server() ++
+        maybe_docs_generation() ++
         [
           # Start to serve requests, typically the last entry
           SummonerWeb.Endpoint,
@@ -116,6 +117,21 @@ defmodule Summoner.Application do
   defp maybe_plugin_container_manager do
     if Application.get_env(:summoner, :start_plugin_container_manager, true) do
       [Summoner.Adapters.Workers.PluginContainerManager]
+    else
+      []
+    end
+  end
+
+  @serve_docs Application.compile_env(:summoner, :serve_docs, false)
+
+  defp maybe_docs_generation do
+    if @serve_docs do
+      [
+        Supervisor.child_spec(
+          {Task, &Summoner.Docs.generate/0},
+          id: :docs_generation
+        )
+      ]
     else
       []
     end
