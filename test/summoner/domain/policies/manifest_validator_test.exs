@@ -120,8 +120,8 @@ defmodule Summoner.Domain.Policies.ManifestValidatorTest do
       assert {:ok, _} = ManifestValidator.validate(manifest)
     end
 
-    test "tools and theme require no extra config" do
-      manifest = %{base_manifest() | "capabilities" => ["tools", "theme"]}
+    test "tools require no extra config" do
+      manifest = %{base_manifest() | "capabilities" => ["tools"]}
       assert {:ok, _} = ManifestValidator.validate(manifest)
     end
   end

@@ -9,7 +9,7 @@ Grimoires extend Summoner with external capabilities packaged as OCI container i
 | **Grimoire** | A plugin — an OCI container image with a `grimoire.json` manifest |
 | **Manifest** | `grimoire.json` inside the container, declaring capabilities, config, and resource requirements |
 | **Ref** | First 12 characters of the SHA-256 hash of the image path (without tag) |
-| **Capability** | What the plugin can do: `tools`, `webhooks`, `hooks`, `events`, `provider`, `theme` |
+| **Capability** | What the plugin can do: `tools`, `webhooks`, `hooks`, `events`, `provider` |
 
 ## Architecture
 
@@ -79,10 +79,6 @@ Lifecycle hooks execute at specific points in the invocation pipeline: `before_i
 ### `provider` (not yet tested)
 
 The plugin acts as an LLM provider, exposing `/models` and `/chat` endpoints.
-
-### `theme` (not yet tested)
-
-The plugin provides a custom UI theme.
 
 ## Manifest (`grimoire.json`)
 

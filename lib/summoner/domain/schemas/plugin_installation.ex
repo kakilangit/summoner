@@ -17,7 +17,7 @@ defmodule Summoner.Domain.Schemas.PluginInstallation do
 
   alias Summoner.Domain.Schemas.{McpServer, Provider, Workspace}
 
-  @capabilities ~w(tools webhooks hooks events provider theme)
+  @capabilities ~w(tools webhooks hooks events provider)
   @statuses ~w(installed enabled disabled error)a
 
   schema "plugin_installations" do
