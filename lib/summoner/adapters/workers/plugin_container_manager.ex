@@ -121,6 +121,7 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
 
     ContainerRuntime.remove(container_name)
     delete_stale_containers(container_name)
+    ContainerRuntime.pull(image)
 
     opts = %{
       image: image,

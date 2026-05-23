@@ -119,7 +119,7 @@ defmodule Summoner.Adapters.ContainerRuntime.Docker do
       if opts[:publish_port], do: ["-p", "0:#{port}"], else: []
 
     args =
-      ["run", "-d", "--name", opts.name, "--network", opts.network_name] ++
+      ["run", "-d", "--pull", "never", "--name", opts.name, "--network", opts.network_name] ++
         publish_args ++
         env_args(opts[:env] || %{}) ++
         resource_args(opts) ++
