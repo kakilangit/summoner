@@ -313,4 +313,28 @@ defmodule Summoner.Adapters.Persistence.Providers do
   defp where_scope(query, workspace_id, tenant_id) do
     where(query, [p], p.workspace_id == ^workspace_id or p.tenant_id == ^tenant_id)
   end
+
+  # -------------------------------------------------------------------
+  # Grimoire providers
+  # -------------------------------------------------------------------
+
+  def find_by_plugin_installation(plugin_installation_id) do
+    Provider
+    |> where([p], p.plugin_installation_id == ^plugin_installation_id)
+    |> Repo.one()
+  end
+
+  def create_grimoire_provider(attrs) do
+    %Provider{}
+    |> Provider.changeset(
+      Map.merge(attrs, %{
+        kind: "grimoire",
+        api_format: :grimoire,
+        type: :local,
+        base_url: nil,
+        status: :online
+      })
+    )
+    |> Repo.insert()
+  end
 end

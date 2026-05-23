@@ -318,7 +318,10 @@ defmodule Summoner.Adapters.Persistence.Agents do
     Agent
     |> where([a], a.id == ^agent_id and is_nil(a.deleted_at))
     |> Repo.one!()
-    |> Repo.preload([:failover_chain, local_agent: [provider: :api_key_secret]])
+    |> Repo.preload([
+      :failover_chain,
+      local_agent: [provider: [:api_key_secret, :plugin_installation]]
+    ])
   end
 
   @doc "Returns the display name for an agent, or a fallback if not found."

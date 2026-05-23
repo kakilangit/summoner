@@ -13,12 +13,13 @@ defmodule Summoner.Domain.Schemas.Provider do
 
   import Ecto.Changeset
 
+  alias Summoner.Domain.Schemas.PluginInstallation
   alias Summoner.Domain.Schemas.Secret
   alias Summoner.Domain.Schemas.Tenant
   alias Summoner.Domain.Schemas.Workspace
   alias Summoner.Domain.Types.Presets
 
-  @api_formats ~w(openai anthropic custom)a
+  @api_formats ~w(openai anthropic grimoire custom)a
   @types ~w(local cloud)a
   @statuses ~w(online offline unknown)a
 
@@ -34,6 +35,7 @@ defmodule Summoner.Domain.Schemas.Provider do
     belongs_to :workspace, Workspace
     belongs_to :tenant, Tenant
     belongs_to :api_key_secret, Secret
+    belongs_to :plugin_installation, PluginInstallation
 
     timestamps()
   end
@@ -71,11 +73,13 @@ defmodule Summoner.Domain.Schemas.Provider do
       :type,
       :base_url,
       :api_key_secret_id,
+      :plugin_installation_id,
       :status,
       :workspace_id,
       :tenant_id
     ])
-    |> validate_required([:name, :kind, :api_format, :type, :base_url])
+    |> validate_required([:name, :kind, :api_format, :type])
+    |> validate_base_url_required()
     |> validate_inclusion(:kind, kinds())
     |> validate_length(:name, min: 1, max: 100)
     |> validate_url(:base_url)
@@ -85,6 +89,13 @@ defmodule Summoner.Domain.Schemas.Provider do
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:tenant_id)
     |> foreign_key_constraint(:api_key_secret_id)
+  end
+
+  defp validate_base_url_required(changeset) do
+    case get_field(changeset, :api_format) do
+      :grimoire -> changeset
+      _ -> validate_required(changeset, [:base_url])
+    end
   end
 
   defp validate_scope(changeset) do
