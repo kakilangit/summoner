@@ -101,6 +101,8 @@ defmodule Summoner.Domain.Types.Presets do
     is_nil(Application.get_env(:arcanum, :copilot_client_id))
   end
 
+  defp disabled_provider?("grimoire"), do: true
+
   defp disabled_provider?(_), do: false
 
   # -------------------------------------------------------------------
