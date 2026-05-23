@@ -191,7 +191,9 @@ printf '%s' "ghcr.io/kakilangit/grimoire-slack" | shasum -a 256 | cut -c1-12
 - **Orphan sweep**: Containers whose image digest has no enabled installations are automatically removed.
 - **Version-less naming**: Container names strip the tag, so image upgrades naturally replace existing containers.
 - **Host mode (dev)**: `plugin_host_mode: :host` publishes a random port and uses `localhost`.
-- **Docker mode (prod)**: Containers communicate via Docker DNS.
+- **Docker mode (prod)**: Containers communicate via Docker DNS. Requires docker socket mount and `DOCKER_GID` set to the host's docker socket group ID.
+- **Explicit pull**: Images are pulled before `docker run -d --pull never` to ensure clean container ID output.
+- **Graceful fallback**: If docker CLI is unavailable, the container manager logs an error and continues without crashing.
 
 ## Developing a Plugin
 
