@@ -88,10 +88,15 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT", "4000"))
   scheme = System.get_env("PHX_SCHEME", "https")
 
+  url_port =
+    String.to_integer(
+      System.get_env("PHX_URL_PORT", if(scheme == "https", do: "443", else: "80"))
+    )
+
   config :summoner, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :summoner, SummonerWeb.Endpoint,
-    url: [host: host, port: port, scheme: scheme],
+    url: [host: host, port: url_port, scheme: scheme],
     http: [
       port: port,
       # Enable IPv6 and bind on all interfaces.
