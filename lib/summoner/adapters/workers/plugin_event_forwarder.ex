@@ -33,13 +33,15 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
   def handle_info(event, state) when is_struct(event) do
     case resolve_event(event) do
       {event_type, workspace_id, event_data} when is_binary(workspace_id) ->
+        Logger.info("PluginEventForwarder received #{event_type} for workspace #{workspace_id}")
+
         Task.Supervisor.start_child(
           Summoner.TaskSupervisor,
           fn -> forward_to_plugins(workspace_id, event_type, event_data) end
         )
 
-      _ ->
-        :ok
+      other ->
+        Logger.debug("PluginEventForwarder skipped event: #{inspect(other)}")
     end
 
     {:noreply, state}
@@ -54,20 +56,28 @@ defmodule Summoner.Adapters.Workers.PluginEventForwarder do
   defp forward_to_plugins(workspace_id, event_type, event_data) do
     plugins = Plugins.list_enabled_by_capability(workspace_id, "events")
 
-    plugins
-    |> Enum.filter(&event_subscribed?(&1, event_type))
-    |> Enum.each(&forward_single_event(&1, event_type, event_data))
+    subscribed = Enum.filter(plugins, &event_subscribed?(&1, event_type))
+
+    Logger.info(
+      "Forwarding #{event_type} to #{length(subscribed)}/#{length(plugins)} plugin(s) in workspace #{workspace_id}"
+    )
+
+    Enum.each(subscribed, &forward_single_event(&1, event_type, event_data))
   end
 
   defp forward_single_event(plugin, event_type, event_data) do
     conversation_id = Map.get(event_data, "conversation_id")
     external_ref = resolve_external_ref(plugin, conversation_id)
 
+    Logger.info(
+      "Forwarding #{event_type} to plugin #{plugin.name} (external_ref: #{inspect(external_ref)})"
+    )
+
     with {:ok, container} <- get_container_for_plugin(plugin),
          context <- PluginsService.build_context(plugin, container) do
       case PluginClient.send_event(container, context, event_type, event_data, external_ref) do
         {:ok, _} ->
-          :ok
+          Logger.info("Event #{event_type} delivered to plugin #{plugin.name}")
 
         {:error, reason} ->
           Logger.warning("Plugin #{plugin.name} event forward failed: #{inspect(reason)}")
