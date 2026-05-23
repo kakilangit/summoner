@@ -182,6 +182,17 @@ if smtp_host do
   config :summoner, :smtp_configured?, true
 end
 
+# Plugin callback — how grimoire containers reach summoner.
+# Defaults to "host.docker.internal" which only works on Docker Desktop.
+# In production (Linux), set to the summoner container name on the shared network.
+if plugin_callback_host = System.get_env("PLUGIN_CALLBACK_HOST") do
+  config :summoner, :plugin_callback_host, plugin_callback_host
+end
+
+if plugin_callback_secret = System.get_env("PLUGIN_CALLBACK_SECRET") do
+  config :summoner, :plugin_callback_secret, plugin_callback_secret
+end
+
 if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
   config :arcanum, copilot_client_id: copilot_client_id
 end
