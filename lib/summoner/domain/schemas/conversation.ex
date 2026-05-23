@@ -20,7 +20,7 @@ defmodule Summoner.Domain.Schemas.Conversation do
 
   schema "conversations" do
     field :title, :string
-    field :kind, Ecto.Enum, values: [:chat, :swarm, :pipeline, :a2a], default: :chat
+    field :kind, Ecto.Enum, values: [:chat, :swarm, :pipeline, :a2a, :plugin], default: :chat
     field :provider_name, :string
     field :model_name, :string
 
