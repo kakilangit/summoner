@@ -79,7 +79,7 @@ defmodule Summoner.MixProject do
 
       # Domain
       {:a2a, "~> 0.2.0"},
-      {:arcanum, "~> 0.1.4"},
+      {:arcanum, "~> 0.1.5"},
       {:anubis_mcp, "~> 1.3"},
       {:nulid, "~> 0.2"},
       {:oban, "~> 2.19"},
