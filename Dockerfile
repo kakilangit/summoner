@@ -45,16 +45,19 @@ FROM ${BASE_IMAGE}
 
 WORKDIR /app
 
-RUN chown nobody /app
+# Create app user with docker group access for plugin container management
+RUN groupadd -f docker && \
+    useradd -r -g docker -d /app -s /bin/sh app && \
+    chown app:docker /app
 
 # Copy the release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/prod/rel/summoner ./
+COPY --from=builder --chown=app:docker /app/_build/prod/rel/summoner ./
 
 # Copy entrypoint script
-COPY --chown=nobody:root entrypoint.sh ./
+COPY --chown=app:docker entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-USER nobody
+USER app
 
 ENV HOME=/app
 ENV MIX_ENV=prod

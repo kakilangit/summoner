@@ -207,6 +207,12 @@ defmodule Summoner.Adapters.ContainerRuntime.Docker do
   defp docker(args) do
     Logger.debug("docker #{Enum.join(args, " ")}")
     System.cmd(@docker_cmd, args, stderr_to_stdout: true)
+  rescue
+    e in ErlangError ->
+      case e.original do
+        :enoent -> {"docker: command not found", 127}
+        _ -> reraise e, __STACKTRACE__
+      end
   end
 
   defp env_args(env) when map_size(env) == 0, do: []

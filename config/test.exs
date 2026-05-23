@@ -76,6 +76,7 @@ config :summoner, :start_mcp_server, false
 # Disable event workers in tests (subscribe to global PubSub, spawn tasks without sandbox ownership)
 config :summoner, :start_event_rule_evaluator, false
 config :summoner, :start_plugin_event_forwarder, false
+config :summoner, :start_plugin_container_manager, false
 
 # Use a temporary directory for workspace data in tests
 config :summoner, :data_dir, Path.join(System.tmp_dir!(), "summoner_test")
