@@ -349,28 +349,26 @@ defmodule Summoner.Services.Plugins do
   defp do_register_provider(plugin) do
     provider_name = "grimoire:#{plugin.name}"
 
-    provider =
-      case Providers.find_by_plugin_installation(plugin.id) do
-        nil ->
-          create_grimoire_provider(provider_name, plugin)
+    attrs = %{
+      name: provider_name,
+      workspace_id: plugin.workspace_id,
+      plugin_installation_id: plugin.id
+    }
 
-        existing ->
-          Providers.update_status(existing, :online)
-          existing
+    provider =
+      case Providers.upsert_grimoire_provider(attrs) do
+        {:ok, p} ->
+          p
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to register grimoire provider #{provider_name}: #{inspect(reason)}"
+          )
+
+          nil
       end
 
     if provider, do: cache_grimoire_models(provider, plugin)
-  end
-
-  defp create_grimoire_provider(name, plugin) do
-    case Providers.create_grimoire_provider(%{
-           name: name,
-           workspace_id: plugin.workspace_id,
-           plugin_installation_id: plugin.id
-         }) do
-      {:ok, p} -> p
-      _ -> nil
-    end
   end
 
   @doc false

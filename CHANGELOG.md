@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.18] - 2026-05-23
+
+### Fixed
+
+- Grimoire provider registration now uses upsert — re-enabling a plugin no longer fails on unique constraint conflict when an orphaned provider record exists
+- Grimoire provider context enriched with `callback_url` and `callback_token` for plugin callbacks
+- Manifest validator relaxed — provider capability no longer requires `provider.name` in manifest
+- Error logging added on plugin install failures
+
 ## [0.1.17] - 2026-05-24
 
 ### Added
@@ -460,6 +469,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.18]: https://github.com/kakilangit/summoner/compare/v0.1.17...v0.1.18
 [0.1.16]: https://github.com/kakilangit/summoner/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/kakilangit/summoner/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/kakilangit/summoner/compare/v0.1.13...v0.1.14

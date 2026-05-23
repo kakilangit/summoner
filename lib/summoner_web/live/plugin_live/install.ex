@@ -3,6 +3,8 @@ defmodule SummonerWeb.PluginLive.Install do
 
   import SummonerWeb.AuthorizeHelper
 
+  require Logger
+
   alias Summoner.Services.Plugins
 
   @impl true
@@ -51,11 +53,14 @@ defmodule SummonerWeb.PluginLive.Install do
 
         {:error, %Ecto.Changeset{} = changeset} ->
           message = format_changeset_errors(changeset)
+          Logger.error("Plugin install failed for #{image_ref}: #{message}")
 
           {:noreply,
            socket |> assign(installing: false) |> put_flash(:error, "Install failed: #{message}")}
 
         {:error, reason} ->
+          Logger.error("Plugin install failed for #{image_ref}: #{inspect(reason)}")
+
           {:noreply,
            socket
            |> assign(installing: false)

@@ -51,7 +51,9 @@ defmodule Summoner.Services.Inference do
 
     case PluginContainerManager.get_container(digest, tenant_id) do
       {:ok, container} ->
-        Map.put(provider, :base_url, "http://#{container.host}:#{container.port}")
+        provider
+        |> Map.put(:base_url, "http://#{container.host}:#{container.port}")
+        |> Map.put(:grimoire_container, container)
 
       {:error, _reason} ->
         provider
@@ -62,10 +64,15 @@ defmodule Summoner.Services.Inference do
 
   defp enrich_grimoire_context(%Provider{plugin_installation: plugin} = provider)
        when not is_nil(plugin) do
+    container = Map.get(provider, :grimoire_container)
+    endpoint = SummonerWeb.Endpoint.url()
+
     context = %{
       workspace_id: provider.workspace_id,
       plugin_id: plugin.id,
-      config: plugin.config || %{}
+      config: plugin.config || %{},
+      callback_url: "#{endpoint}/api/v1/plugins/callback",
+      callback_token: (container && container.callback_token) || ""
     }
 
     Map.put(provider, :grimoire_context, context)
