@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.15] - 2026-05-23
+
+### Fixed
+
+- Docker socket permission denied — added `group_add: ${DOCKER_GID:-0}` to bundled compose for host socket GID mapping
+
 ## [0.1.14] - 2026-05-23
 
 ### Fixed
@@ -418,6 +424,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.15]: https://github.com/kakilangit/summoner/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/kakilangit/summoner/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/kakilangit/summoner/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/kakilangit/summoner/compare/v0.1.11...v0.1.12

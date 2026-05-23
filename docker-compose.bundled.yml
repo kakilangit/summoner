@@ -63,6 +63,8 @@ services:
     image: ${SUMMONER_IMAGE:-ghcr.io/kakilangit/summoner:latest}
     pull_policy: ${SUMMONER_PULL_POLICY:-always}
     restart: unless-stopped
+    group_add:
+      - ${DOCKER_GID:-0}
     depends_on:
       db:
         condition: service_healthy
