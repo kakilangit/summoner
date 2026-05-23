@@ -340,21 +340,38 @@ defmodule Summoner.Services.Plugins do
   @doc false
   def maybe_register_provider(%PluginInstallation{} = plugin) do
     if "provider" in (plugin.capabilities || []) do
-      alias Summoner.Ports.Persistence.Providers
+      do_register_provider(plugin)
+    end
+  end
 
-      provider_name = "grimoire:#{plugin.name}"
+  defp do_register_provider(plugin) do
+    alias Summoner.Ports.Persistence.Providers
 
+    provider_name = "grimoire:#{plugin.name}"
+
+    provider =
       case Providers.find_by_plugin_installation(plugin.id) do
         nil ->
-          Providers.create_grimoire_provider(%{
-            name: provider_name,
-            workspace_id: plugin.workspace_id,
-            plugin_installation_id: plugin.id
-          })
+          create_grimoire_provider(provider_name, plugin)
 
         existing ->
           Providers.update_status(existing, :online)
+          existing
       end
+
+    if provider, do: cache_grimoire_models(provider, plugin)
+  end
+
+  defp create_grimoire_provider(name, plugin) do
+    alias Summoner.Ports.Persistence.Providers
+
+    case Providers.create_grimoire_provider(%{
+           name: name,
+           workspace_id: plugin.workspace_id,
+           plugin_installation_id: plugin.id
+         }) do
+      {:ok, p} -> p
+      _ -> nil
     end
   end
 
@@ -367,6 +384,22 @@ defmodule Summoner.Services.Plugins do
         nil -> :ok
         provider -> Providers.update_status(provider, :offline)
       end
+    end
+  end
+
+  defp cache_grimoire_models(provider, plugin) do
+    alias Summoner.Ports.Persistence.Providers
+    alias Summoner.Services.Inference
+
+    # Enrich with plugin_installation for container resolution
+    provider = %{provider | plugin_installation: plugin}
+
+    case Inference.Gateway.list_models(provider) do
+      {:ok, models} ->
+        Providers.update_cached_models(provider, models)
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch models from grimoire:#{plugin.name}: #{inspect(reason)}")
     end
   end
 end

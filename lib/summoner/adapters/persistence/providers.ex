@@ -64,7 +64,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
     Provider
     |> where_scope(workspace_id, tenant_id)
     |> Repo.get!(provider_id)
-    |> Repo.preload(:api_key_secret)
+    |> Repo.preload([:api_key_secret, :plugin_installation])
   end
 
   @doc """
@@ -113,7 +113,7 @@ defmodule Summoner.Adapters.Persistence.Providers do
     Provider
     |> order_by([p], asc: p.name)
     |> Repo.all()
-    |> Repo.preload(:api_key_secret)
+    |> Repo.preload([:api_key_secret, :plugin_installation])
   end
 
   @doc """
