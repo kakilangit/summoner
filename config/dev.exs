@@ -78,7 +78,7 @@ config :summoner, dev_routes: true
 # Serve generated HTML docs at /docs
 config :summoner, serve_docs: true
 
-# Swoosh mailbox server on port 4101
+# Swoosh mailbox — disabled at runtime when SMTP_HOST is set (see runtime.exs)
 config :swoosh, serve_mailbox: true, preview_port: 4101
 
 # Do not include metadata nor timestamps in development logs

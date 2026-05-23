@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.19] - 2026-05-23
+
+### Fixed
+
+- SMTP mailer config moved outside prod guard — dev/test environments now use real SMTP when `SMTP_HOST` is set, falling back to Swoosh local mailbox otherwise
+- SSL/TLS options for SMTP: load OS CA certs via `:public_key.cacerts_load()`, wildcard cert matching via `:https` match function
+- Swoosh local mailbox auto-disabled when SMTP is configured
+- Mailer `From` address reads from runtime config instead of hardcoded value
+- Logout button uses `<.link method="delete">` — no longer requires double-click in DaisyUI dropdowns
+- Email delivery errors now logged with recipient and reason
+
 ## [0.1.18] - 2026-05-23
 
 ### Fixed
@@ -469,6 +480,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.19]: https://github.com/kakilangit/summoner/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/kakilangit/summoner/compare/v0.1.17...v0.1.18
 [0.1.16]: https://github.com/kakilangit/summoner/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/kakilangit/summoner/compare/v0.1.14...v0.1.15

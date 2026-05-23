@@ -128,29 +128,48 @@ if config_env() == :prod do
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
+end
 
-  # ## Configuring the mailer
-  #
-  # SMTP mailer configuration from environment variables.
-  # All SMTP_* variables are required for email delivery in production.
-  smtp_host = System.get_env("SMTP_HOST")
+# SMTP mailer configuration — applies to all environments when SMTP_HOST is set.
+# In dev without SMTP_HOST, falls back to Swoosh.Adapters.Local (see config.exs).
+smtp_host = System.get_env("SMTP_HOST")
 
-  if smtp_host do
-    config :summoner, Summoner.Adapters.Mailer,
-      adapter: Swoosh.Adapters.SMTP,
-      relay: smtp_host,
-      port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
-      username: System.get_env("SMTP_USER") || "",
-      password: System.get_env("SMTP_PASSWORD") || "",
-      ssl: System.get_env("SMTP_SSL") == "true",
-      tls: :if_available,
-      auth: :if_available
+if smtp_host do
+  host = System.get_env("PHX_HOST") || "localhost"
 
-    smtp_from = System.get_env("SMTP_FROM") || "noreply@#{host}"
-    config :summoner, :mailer_from, smtp_from
-  end
+  :public_key.cacerts_load()
+  cacerts = :public_key.cacerts_get()
 
-  config :summoner, :smtp_configured?, !!smtp_host
+  ssl_opts = [
+    cacerts: cacerts,
+    verify: :verify_peer,
+    depth: 3,
+    server_name_indication: String.to_charlist(smtp_host),
+    customize_hostname_check: [
+      match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+    ]
+  ]
+
+  config :summoner, Summoner.Adapters.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: smtp_host,
+    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+    username: System.get_env("SMTP_USER") || "",
+    password: System.get_env("SMTP_PASSWORD") || "",
+    ssl: System.get_env("SMTP_SSL") == "true",
+    tls: :if_available,
+    auth: :if_available,
+    sockopts: ssl_opts,
+    ssl_options: ssl_opts,
+    tls_options: ssl_opts
+
+  smtp_from = System.get_env("SMTP_FROM") || "noreply@#{host}"
+  config :summoner, :mailer_from, smtp_from
+
+  # Disable Swoosh local mailbox when real SMTP is configured
+  config :swoosh, serve_mailbox: false
+
+  config :summoner, :smtp_configured?, true
 end
 
 if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
