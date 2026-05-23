@@ -87,11 +87,16 @@ defmodule Summoner.Adapters.Workers.EventRuleEvaluator do
     |> stringify_keys()
   end
 
+  defp stringify_keys(%{__struct__: _} = struct) do
+    struct |> Map.from_struct() |> Map.delete(:__meta__) |> stringify_keys()
+  end
+
   defp stringify_keys(map) when is_map(map) do
     Map.new(map, fn {k, v} -> {to_string(k), stringify_value(v)} end)
   end
 
   defp stringify_value(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+  defp stringify_value(%{__struct__: _} = struct), do: stringify_keys(struct)
   defp stringify_value(v) when is_atom(v), do: to_string(v)
   defp stringify_value(v) when is_map(v), do: stringify_keys(v)
   defp stringify_value(v) when is_list(v), do: Enum.map(v, &stringify_value/1)
