@@ -7,7 +7,9 @@ defmodule Summoner.Services.Inference do
   URL dynamically.
   """
 
+  alias Summoner.Adapters.Workers.PluginContainerManager
   alias Summoner.Domain.Schemas.Provider
+  alias Summoner.Services.Plugins.TrustVerifier
 
   @doc """
   Returns the adapter module for the given provider.
@@ -42,9 +44,6 @@ defmodule Summoner.Services.Inference do
   defp enrich_grimoire_base_url(
          %Provider{plugin_installation: %{digest: digest} = plugin} = provider
        ) do
-    alias Summoner.Adapters.Workers.PluginContainerManager
-    alias Summoner.Services.Plugins.TrustVerifier
-
     isolation =
       TrustVerifier.effective_isolation(plugin.trusted, get_in(plugin.manifest, ["isolation"]))
 

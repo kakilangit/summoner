@@ -11,7 +11,9 @@ defmodule Summoner.Services.Plugins do
   alias Summoner.Domain.Schemas.PluginInstallation
   alias Summoner.Ports.ContainerRuntime
   alias Summoner.Ports.Persistence.Plugins, as: Persistence
+  alias Summoner.Ports.Persistence.Providers
   alias Summoner.Repo
+  alias Summoner.Services.Inference
   alias Summoner.Services.Plugins.PluginClient
   alias Summoner.Services.Plugins.TrustVerifier
 
@@ -345,8 +347,6 @@ defmodule Summoner.Services.Plugins do
   end
 
   defp do_register_provider(plugin) do
-    alias Summoner.Ports.Persistence.Providers
-
     provider_name = "grimoire:#{plugin.name}"
 
     provider =
@@ -363,8 +363,6 @@ defmodule Summoner.Services.Plugins do
   end
 
   defp create_grimoire_provider(name, plugin) do
-    alias Summoner.Ports.Persistence.Providers
-
     case Providers.create_grimoire_provider(%{
            name: name,
            workspace_id: plugin.workspace_id,
@@ -378,8 +376,6 @@ defmodule Summoner.Services.Plugins do
   @doc false
   def maybe_deactivate_provider(%PluginInstallation{} = plugin) do
     if "provider" in (plugin.capabilities || []) do
-      alias Summoner.Ports.Persistence.Providers
-
       case Providers.find_by_plugin_installation(plugin.id) do
         nil -> :ok
         provider -> Providers.update_status(provider, :offline)
@@ -388,9 +384,6 @@ defmodule Summoner.Services.Plugins do
   end
 
   defp cache_grimoire_models(provider, plugin) do
-    alias Summoner.Ports.Persistence.Providers
-    alias Summoner.Services.Inference
-
     # Enrich with plugin_installation for container resolution
     provider = %{provider | plugin_installation: plugin}
 
