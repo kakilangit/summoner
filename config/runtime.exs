@@ -88,6 +88,7 @@ if config_env() == :prod do
   config :summoner, SummonerWeb.Endpoint,
     url: [host: host, port: port, scheme: scheme],
     http: [
+      port: port,
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0

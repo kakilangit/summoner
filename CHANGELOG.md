@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.14] - 2026-05-23
+
+### Fixed
+
+- Docker container crash when docker CLI not available — `docker()` helper now rescues `ErlangError` gracefully
+- `PluginContainerManager` made conditional via `:start_plugin_container_manager` config flag
+
+### Changed
+
+- Base image includes `docker-ce-cli` for plugin container management
+- App container runs as `app` user in `docker` group (replaces `nobody`) for socket access
+- Bundled compose mounts `/var/run/docker.sock` for plugin container management
+- Bundled compose image and pull_policy parameterized via `SUMMONER_IMAGE` / `SUMMONER_PULL_POLICY` env vars
+
 ## [0.1.13] - 2026-05-22
 
 ### Changed
@@ -404,6 +418,9 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.14]: https://github.com/kakilangit/summoner/compare/v0.1.13...v0.1.14
+[0.1.13]: https://github.com/kakilangit/summoner/compare/v0.1.12...v0.1.13
+[0.1.12]: https://github.com/kakilangit/summoner/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/kakilangit/summoner/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/kakilangit/summoner/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/kakilangit/summoner/compare/v0.1.8...v0.1.9

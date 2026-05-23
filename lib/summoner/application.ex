@@ -22,17 +22,19 @@ defmodule Summoner.Application do
         {Registry, keys: :unique, name: Summoner.AgentRegistry},
         {Registry, keys: :unique, name: Summoner.McpRegistry},
         {DynamicSupervisor, name: Summoner.AgentSupervisor, strategy: :one_for_one},
-        {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one},
-        Summoner.Adapters.Workers.PluginContainerManager,
-        {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
-        {DynamicSupervisor,
-         name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
-        {Task.Supervisor, name: Summoner.TaskSupervisor},
-        Summoner.Services.EventLog,
-        Summoner.Services.Agents.ProcessMonitor,
-        {Oban, Application.fetch_env!(:summoner, Oban)},
-        Summoner.Adapters.Crypto.Vault
+        {DynamicSupervisor, name: Summoner.McpSupervisor, strategy: :one_for_one}
       ] ++
+        maybe_plugin_container_manager() ++
+        [
+          {Registry, keys: :unique, name: Summoner.Adapters.Persistence.A2ARegistry},
+          {DynamicSupervisor,
+           name: Summoner.Adapters.Persistence.A2ASupervisor, strategy: :one_for_one},
+          {Task.Supervisor, name: Summoner.TaskSupervisor},
+          Summoner.Services.EventLog,
+          Summoner.Services.Agents.ProcessMonitor,
+          {Oban, Application.fetch_env!(:summoner, Oban)},
+          Summoner.Adapters.Crypto.Vault
+        ] ++
         maybe_event_rule_evaluator() ++
         maybe_plugin_event_forwarder() ++
         maybe_registry() ++
@@ -106,6 +108,14 @@ defmodule Summoner.Application do
   defp maybe_plugin_event_forwarder do
     if Application.get_env(:summoner, :start_plugin_event_forwarder, true) do
       [Summoner.Adapters.Workers.PluginEventForwarder]
+    else
+      []
+    end
+  end
+
+  defp maybe_plugin_container_manager do
+    if Application.get_env(:summoner, :start_plugin_container_manager, true) do
+      [Summoner.Adapters.Workers.PluginContainerManager]
     else
       []
     end
