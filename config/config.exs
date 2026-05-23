@@ -73,7 +73,7 @@ config :tailwind,
 # Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id, :trace_id, :span_id]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
@@ -94,6 +94,14 @@ config :summoner, Oban,
        {"30 3 * * *", Summoner.Adapters.Workers.MemoryDecayWorker}
      ]}
   ]
+
+# Configure OpenTelemetry
+config :opentelemetry,
+  span_processor: :batch,
+  traces_exporter: :none
+
+config :opentelemetry_exporter,
+  otlp_protocol: :http_protobuf
 
 config :summoner, :smtp_configured?, true
 

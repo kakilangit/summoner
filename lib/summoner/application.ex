@@ -13,6 +13,11 @@ defmodule Summoner.Application do
   def start(_type, _args) do
     Application.put_env(:summoner, :admin_email, System.get_env("ADMIN_EMAIL"))
 
+    # Attach OpenTelemetry instrumenters before supervision tree starts
+    OpentelemetryBandit.setup()
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+    OpentelemetryEcto.setup([:summoner, :repo])
+
     children =
       [
         SummonerWeb.Telemetry,

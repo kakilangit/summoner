@@ -20,6 +20,11 @@ if log_level = System.get_env("LOG_LEVEL") do
   config :logger, level: String.to_existing_atom(log_level)
 end
 
+# Structured JSON logging — enabled in prod or when LOG_FORMAT=json
+if config_env() == :prod or System.get_env("LOG_FORMAT") == "json" do
+  config :logger, :default_handler, formatter: LoggerJSON.Formatters.Basic.new(metadata: :all)
+end
+
 if System.get_env("PHX_SERVER") do
   config :summoner, SummonerWeb.Endpoint, server: true
 end
@@ -174,4 +179,12 @@ end
 
 if copilot_client_id = System.get_env("COPILOT_CLIENT_ID") do
   config :arcanum, copilot_client_id: copilot_client_id
+end
+
+# OpenTelemetry — enable trace export when OTEL endpoint is set
+if otel_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
+  config :opentelemetry, traces_exporter: :otlp
+
+  config :opentelemetry_exporter,
+    otlp_endpoint: otel_endpoint
 end
