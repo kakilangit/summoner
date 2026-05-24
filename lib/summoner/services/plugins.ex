@@ -102,10 +102,11 @@ defmodule Summoner.Services.Plugins do
   def enable(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
-    if plugin.status in [:installed, :disabled, :error] do
+    with :ok <- validate_plugin_config(plugin),
+         true <- plugin.status in [:installed, :disabled, :error] do
       case ensure_plugin_container(plugin) do
         {:ok, _container} ->
-          Persistence.update_status(plugin, :enabled)
+          {:ok, plugin} = Persistence.update_status(plugin, :enabled)
           maybe_register_provider(plugin)
           {:ok, plugin}
 
@@ -114,7 +115,8 @@ defmodule Summoner.Services.Plugins do
           {:error, reason}
       end
     else
-      {:error, :already_enabled}
+      false -> {:error, :already_enabled}
+      {:error, _} = error -> error
     end
   end
 
@@ -123,7 +125,7 @@ defmodule Summoner.Services.Plugins do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
     if plugin.status == :enabled do
-      Persistence.update_status(plugin, :disabled)
+      {:ok, plugin} = Persistence.update_status(plugin, :disabled)
       maybe_deactivate_provider(plugin)
       {:ok, plugin}
     else
@@ -134,7 +136,15 @@ defmodule Summoner.Services.Plugins do
   @doc "Update plugin configuration. No restart needed — config is per-request."
   def configure(workspace_id, plugin_id, config) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
-    Persistence.update_plugin(plugin, %{config: config})
+    schema = plugin.manifest["config_schema"]
+
+    case ManifestValidator.validate_config(config, schema) do
+      :ok ->
+        Persistence.update_plugin(plugin, %{config: config})
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   @doc "Upgrade plugin to new image version."
@@ -146,23 +156,20 @@ defmodule Summoner.Services.Plugins do
          {:ok, manifest_json} <- extract_manifest(new_image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
          {:ok, _validated} <- ManifestValidator.validate(manifest),
-         {:ok, digest} <- ContainerRuntime.resolve_digest(new_image_ref) do
+         {:ok, new_digest} <- ContainerRuntime.resolve_digest(new_image_ref) do
       trusted = TrustVerifier.trusted_image?(new_image_ref)
 
-      {:ok, plugin} =
+      if was_enabled do
+        upgrade_enabled_plugin(plugin, manifest, new_image_ref, new_digest, trusted)
+      else
         Persistence.update_plugin(plugin, %{
           version: manifest["version"],
           manifest: manifest,
           status: :installed,
           error_message: nil,
-          digest: digest,
+          digest: new_digest,
           trusted: trusted
         })
-
-      if was_enabled do
-        enable(workspace_id, plugin.id)
-      else
-        {:ok, plugin}
       end
     end
   end
@@ -265,6 +272,10 @@ defmodule Summoner.Services.Plugins do
     end
   end
 
+  defp validate_plugin_config(plugin) do
+    ManifestValidator.validate_config(plugin.config, plugin.manifest["config_schema"])
+  end
+
   defp ensure_plugin_container(plugin) do
     image = plugin.manifest["image"]
     digest = plugin.digest
@@ -275,6 +286,34 @@ defmodule Summoner.Services.Plugins do
     tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
 
     PluginContainerManager.ensure_container(image, digest, isolation, tenant_id)
+  end
+
+  defp upgrade_enabled_plugin(plugin, manifest, new_image, new_digest, trusted) do
+    isolation =
+      TrustVerifier.effective_isolation(trusted, get_in(manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+
+    with {:ok, _container} <-
+           PluginContainerManager.upgrade_container(
+             new_image,
+             new_digest,
+             isolation,
+             tenant_id
+           ) do
+      {:ok, plugin} =
+        Persistence.update_plugin(plugin, %{
+          version: manifest["version"],
+          manifest: manifest,
+          status: :enabled,
+          error_message: nil,
+          digest: new_digest,
+          trusted: trusted
+        })
+
+      maybe_register_provider(plugin)
+      {:ok, plugin}
+    end
   end
 
   defp get_plugin_container(plugin) do

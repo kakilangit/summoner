@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.30] - 2026-05-24
+
+### Added
+
+- Grimoire guardrails hooks — lifecycle hook points wired into ReAct loop
+- `before_invocation` and `on_tool_call` hooks with halt/rejection support
+- Hook rejection surfaces as assistant message in conversation
+- Zero-downtime plugin rolling restart — new container starts and health-checks before switching digest
+- Plugin config schema validation — checks required fields, types, and constraints at install and enable
+- SSE streaming for invoke_agent callback — plugins can receive tokens as they're generated via `ctx.invoke_agent_stream()`
+
+### Changed
+
+- `ContainerRuntime` port now includes `health_check/2` for HTTP `/health` probes on plugin containers
+- `PluginClient.health/1` delegates to `ContainerRuntime.health_check/2` (no longer service→service call)
+- `Plugins.upgrade/3` uses dual-container overlap for zero-downtime upgrades
+
+### Fixed
+
+- Plugin enable/disable returns updated struct (UI now reflects change without reload)
+- Hook halt end_reason uses valid `:completed` value
+
 ## [0.1.29] - 2026-05-24
 
 ### Fixed
@@ -551,6 +573,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.30]: https://github.com/kakilangit/summoner/compare/v0.1.29...v0.1.30
 [0.1.29]: https://github.com/kakilangit/summoner/compare/v0.1.28...v0.1.29
 [0.1.28]: https://github.com/kakilangit/summoner/compare/v0.1.27...v0.1.28
 [0.1.27]: https://github.com/kakilangit/summoner/compare/v0.1.26...v0.1.27

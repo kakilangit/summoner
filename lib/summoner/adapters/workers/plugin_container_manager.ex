@@ -22,14 +22,12 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   import Ecto.Query
 
   @health_interval :timer.seconds(30)
+  @health_poll_interval :timer.seconds(1)
+  @health_poll_timeout :timer.seconds(30)
   @max_restarts 3
   @plugin_network "grimoire"
 
   defstruct restart_counts: %{}
-
-  # -------------------------------------------------------------------
-  # Public API
-  # -------------------------------------------------------------------
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -58,9 +56,21 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     GenServer.call(__MODULE__, {:stop_container, container_id}, 30_000)
   end
 
-  # -------------------------------------------------------------------
-  # GenServer callbacks
-  # -------------------------------------------------------------------
+  @doc """
+  Upgrade a container with zero downtime.
+
+  Starts a new container alongside the old one, waits for it to pass
+  health check, then returns the new container record. The caller
+  updates the installation digest afterward. The old container is
+  cleaned up by the orphan sweep on the next health-check tick.
+  """
+  def upgrade_container(image, new_digest, isolation, tenant_id) do
+    GenServer.call(
+      __MODULE__,
+      {:upgrade_container, image, new_digest, isolation, tenant_id},
+      90_000
+    )
+  end
 
   @impl true
   def init(_opts) do
@@ -99,6 +109,24 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     end
   end
 
+  def handle_call(
+        {:upgrade_container, image, new_digest, isolation, tenant_id},
+        _from,
+        state
+      ) do
+    tid = if isolation == :tenant, do: tenant_id, else: nil
+
+    case lookup(new_digest, tid) do
+      %{status: :running} = container ->
+        {:reply, {:ok, container}, state}
+
+      _ ->
+        {reply, state} = start_upgrade_container(image, new_digest, tid, state)
+        result = verify_upgrade_health(reply)
+        {:reply, result, state}
+    end
+  end
+
   @impl true
   def handle_info(:health_check, state) do
     sweep_orphan_containers()
@@ -108,10 +136,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
-
-  # -------------------------------------------------------------------
-  # Container lifecycle
-  # -------------------------------------------------------------------
 
   defp start_new_container(image, digest, tenant_id, state) do
     container_name = PluginContainer.container_name_from_image(image)
@@ -174,6 +198,65 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     end
   end
 
+  defp start_upgrade_container(image, digest, tenant_id, state) do
+    base_name = PluginContainer.container_name_from_image(image)
+    short_digest = String.slice(digest, 0, 8)
+    container_name = "#{base_name}-#{short_digest}"
+    callback_token = generate_callback_token(container_name)
+    host_mode? = Application.get_env(:summoner, :plugin_host_mode) == :host
+    container_port = 9999
+
+    ContainerRuntime.pull(image)
+
+    opts = %{
+      image: image,
+      name: container_name,
+      network_name: if(host_mode?, do: "bridge", else: @plugin_network),
+      env: %{"PLUGIN_PORT" => to_string(container_port)},
+      port: container_port,
+      publish_port: host_mode?,
+      cpu: "0.5",
+      memory: "256m"
+    }
+
+    case ContainerRuntime.run_detached(opts) do
+      {:ok, docker_container_id} ->
+        {host, port} =
+          resolve_container_address(
+            host_mode?,
+            docker_container_id,
+            container_name,
+            container_port
+          )
+
+        attrs = %{
+          image: image,
+          digest: digest,
+          container_id: docker_container_id,
+          container_name: container_name,
+          host: host,
+          port: port,
+          status: :running,
+          callback_token: callback_token,
+          tenant_id: tenant_id
+        }
+
+        case %PluginContainer{} |> PluginContainer.changeset(attrs) |> Repo.insert() do
+          {:ok, container} ->
+            Logger.info("Started upgrade container #{container_name} (digest: #{short_digest})")
+
+            {{:ok, container}, state}
+
+          {:error, changeset} ->
+            ContainerRuntime.remove(container_name)
+            {{:error, {:db_error, changeset}}, state}
+        end
+
+      {:error, reason} ->
+        handle_start_failure(state, {digest, tenant_id}, container_name, reason)
+    end
+  end
+
   defp handle_start_failure(state, key, container_name, reason) do
     count = Map.get(state.restart_counts, key, 0)
 
@@ -190,6 +273,44 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     end
   end
 
+  defp wait_healthy(container) do
+    deadline = System.monotonic_time(:millisecond) + @health_poll_timeout
+
+    do_wait_healthy(container, deadline)
+  end
+
+  defp do_wait_healthy(container, deadline) do
+    if System.monotonic_time(:millisecond) > deadline do
+      {:error, :timeout}
+    else
+      case ContainerRuntime.health_check(container.host, container.port) do
+        :ok ->
+          :ok
+
+        {:error, _} ->
+          Process.sleep(@health_poll_interval)
+          do_wait_healthy(container, deadline)
+      end
+    end
+  end
+
+  defp verify_upgrade_health({:ok, container}) do
+    case wait_healthy(container) do
+      :ok ->
+        {:ok, container}
+
+      {:error, reason} ->
+        Logger.warning(
+          "New container #{container.container_name} failed health check: #{inspect(reason)}, keeping old"
+        )
+
+        cleanup_container(container)
+        {:error, {:health_check_failed, reason}}
+    end
+  end
+
+  defp verify_upgrade_health({:error, _} = error), do: error
+
   defp cleanup_container(container) do
     ContainerRuntime.remove(container.container_name)
     Repo.delete(container)
@@ -203,10 +324,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     |> Repo.delete_all()
   end
 
-  # -------------------------------------------------------------------
-  # Orphan sweep
-  # -------------------------------------------------------------------
-
   defp sweep_orphan_containers do
     enabled = Persistence.enabled_digests()
 
@@ -218,10 +335,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
       cleanup_container(container)
     end)
   end
-
-  # -------------------------------------------------------------------
-  # Health check
-  # -------------------------------------------------------------------
 
   defp check_all_containers(state) do
     PluginContainer
@@ -255,10 +368,6 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     end
   end
 
-  # -------------------------------------------------------------------
-  # Lookup
-  # -------------------------------------------------------------------
-
   defp lookup(digest, nil) do
     PluginContainer
     |> where([c], c.digest == ^digest and is_nil(c.tenant_id))
@@ -280,20 +389,12 @@ defmodule Summoner.Adapters.Workers.PluginContainerManager do
     {container_name, container_port}
   end
 
-  # -------------------------------------------------------------------
-  # Auth
-  # -------------------------------------------------------------------
-
   defp generate_callback_token(container_name) do
     secret = Application.get_env(:summoner, :plugin_callback_secret, "grimoire-secret")
 
     :crypto.mac(:hmac, :sha256, secret, container_name)
     |> Base.encode16(case: :lower)
   end
-
-  # -------------------------------------------------------------------
-  # Scheduling
-  # -------------------------------------------------------------------
 
   defp schedule_health_check do
     Process.send_after(self(), :health_check, @health_interval)

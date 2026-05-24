@@ -20,7 +20,7 @@ Built with Elixir 1.19 / Phoenix 1.8 (LiveView) / PostgreSQL 18 (pgvector) / Oba
 - Artifact system with conversation-scoped naming, append-only versioning, and agent tools
 - Approval flows with configurable triggers, timeout actions, and human-in-the-loop
 - Event rules with JSON condition DSL, cooldowns, rate limiting, and circuit breaker
-- Plugin system (Grimoires) — OCI-based extensions with capabilities (tools, webhooks, hooks, events, provider, theme)
+- Plugin system (Grimoires) — OCI-based extensions with capabilities (tools, webhooks, hooks, events, provider, theme), zero-downtime upgrades, config validation, and SSE streaming
 - MCP server mode — expose agents as MCP tools for Claude Code, Cursor, etc.
 - Agent memory with pgvector embeddings, confidence decay, and party sharing
 - RAG pipeline (Codex) — document upload, chunking, pgvector retrieval, citation-annotated search, agent knowledge linking

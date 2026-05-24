@@ -6,6 +6,8 @@ defmodule Summoner.Services.Plugins.PluginClient do
   to the plugin's axum HTTP server.
   """
 
+  alias Summoner.Ports.ContainerRuntime
+
   require Logger
 
   @default_timeout 30_000
@@ -43,13 +45,7 @@ defmodule Summoner.Services.Plugins.PluginClient do
 
   @doc "Health check the plugin container."
   def health(container) do
-    url = base_url(container) <> "/health"
-
-    case Req.get(url, receive_timeout: 5_000) do
-      {:ok, %{status: 200}} -> :ok
-      {:ok, %{status: status}} -> {:error, {:unhealthy, status}}
-      {:error, reason} -> {:error, reason}
-    end
+    ContainerRuntime.health_check(container.host, container.port)
   end
 
   # -------------------------------------------------------------------

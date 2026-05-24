@@ -113,6 +113,37 @@ defmodule Summoner.Services.Plugins.ActionExecutor do
     {:error, :unsupported_action}
   end
 
+  @doc """
+  Start an async invocation and return invocation context for SSE streaming.
+
+  Returns `{:ok, %{agent_id:, conversation_id:, workspace_id:}}` or `{:error, reason}`.
+  """
+  def start_streaming_invocation(plugin, workspace_id, action) do
+    agent_ref = action["agent"]
+    message = action["message"] || ""
+    external_ref = action["external_ref"]
+    scope = plugin_scope()
+
+    case resolve_agent(scope, workspace_id, agent_ref) do
+      nil ->
+        Logger.warning("Plugin #{plugin.name} tried to invoke unknown agent: #{agent_ref}")
+        {:error, :agent_not_found}
+
+      agent ->
+        conversation = find_or_create_conversation(plugin, workspace_id, agent, external_ref)
+        params = %{conversation_id: conversation.id, message: message, scope: scope}
+
+        :ok = AgentServer.invoke_async(workspace_id, agent.id, params)
+
+        {:ok,
+         %{
+           agent_id: agent.id,
+           conversation_id: conversation.id,
+           workspace_id: workspace_id
+         }}
+    end
+  end
+
   # -------------------------------------------------------------------
   # Private
   # -------------------------------------------------------------------
