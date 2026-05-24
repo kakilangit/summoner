@@ -184,6 +184,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
            "messages" => format_messages_for_hook(messages)
          }) do
       {:halt, reason} ->
+        write_hook_halt_message(state, reason)
         finish(state, :completed, :completed, %{
           "hook" => "guardrails",
           "reason" => reason
@@ -1792,6 +1793,23 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
 
   defp serialize_content(%{text: text}) when is_binary(text), do: text
   defp serialize_content(_), do: ""
+
+  defp write_hook_halt_message(state, reason) do
+    content = "Guardrails blocked this message: #{reason}"
+
+    if state.invocation.conversation_id do
+      Conversations.add_message(%{
+        conversation_id: state.invocation.conversation_id,
+        invocation_id: state.invocation.id,
+        agent_id: state.agent.id,
+        role: :assistant,
+        content: content,
+        visibility: :public,
+        provider_name: state.provider.name,
+        model_name: state.agent.local_agent.model
+      })
+    end
+  end
 
   defp maybe_add_thinking(map, nil), do: map
   defp maybe_add_thinking(map, ""), do: map
