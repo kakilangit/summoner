@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.26] - 2026-05-24
+
+### Added
+
+- Relics link in swarm session header (next to Browse)
+
+### Fixed
+
+- gpt-5-mini failing with `max_tokens` unsupported error (arcanum 0.1.7)
+
 ## [0.1.25] - 2026-05-24
 
 ### Fixed
@@ -516,6 +526,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.26]: https://github.com/kakilangit/summoner/compare/v0.1.25...v0.1.26
 [0.1.25]: https://github.com/kakilangit/summoner/compare/v0.1.24...v0.1.25
 [0.1.24]: https://github.com/kakilangit/summoner/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/kakilangit/summoner/compare/v0.1.22...v0.1.23

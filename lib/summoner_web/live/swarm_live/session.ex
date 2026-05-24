@@ -4,6 +4,7 @@ defmodule SummonerWeb.SwarmLive.Session do
   import SummonerWeb.AuthorizeHelper
   import SummonerWeb.SwarmLive.Helpers, only: [mode_label: 1, mode_badge_class: 1, mode_icon: 1]
 
+  alias Summoner.Ports.Persistence.Artifacts
   alias Summoner.Ports.Persistence.Conversations
   alias Summoner.Ports.Persistence.Orchestration
   alias Summoner.Ports.Persistence.Swarms
@@ -52,6 +53,7 @@ defmodule SummonerWeb.SwarmLive.Session do
       socket
       |> assign(page_title: "#{swarm.name} Channel - #{workspace.name}")
       |> assign(SH.base_assigns(conversation, messages))
+      |> assign(artifacts: Artifacts.list_conversation_artifacts(conversation_id))
       |> assign(processing: Orchestration.conversation_active?(conversation_id))
       |> assign(
         swarm: swarm,
@@ -382,6 +384,15 @@ defmodule SummonerWeb.SwarmLive.Session do
             >
               <span class="hero-folder size-4"></span>
               <span class="hidden sm:inline">Browse</span>
+            </.link>
+            <.link
+              :if={@artifacts != []}
+              navigate={~p"/tenants/#{@workspace.tenant_id}/workspaces/#{@workspace.id}/artifacts"}
+              class="btn btn-ghost btn-xs gap-1"
+              title={"#{length(@artifacts)} relic(s) in this channel"}
+            >
+              <span class="hero-document-text size-4"></span>
+              <span class="hidden sm:inline">Relics ({length(@artifacts)})</span>
             </.link>
             <button
               :if={@local_mode}
