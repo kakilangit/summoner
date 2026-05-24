@@ -5,6 +5,9 @@ defmodule SummonerWeb.API.Internal.PluginCallbackController do
   Dispatches actions (invoke_agent, invoke_agent_async, emit_event,
   get_state, set_state, delete_state, log) via ActionExecutor.
 
+  When `Accept: text/event-stream` is sent with `invoke_agent`, the
+  response streams tokens via SSE instead of blocking until completion.
+
   Authenticated via `PluginCallbackAuth` plug (X-Plugin-Token header).
 
   SDK sends:
@@ -16,6 +19,10 @@ defmodule SummonerWeb.API.Internal.PluginCallbackController do
 
   use SummonerWeb, :controller
 
+  alias Summoner.Domain.Events.ContentToken
+  alias Summoner.Domain.Events.InvocationCompleted
+  alias Summoner.Domain.Events.InvocationFailed
+  alias Summoner.Ports.Events
   alias Summoner.Ports.Persistence.Plugins
   alias Summoner.Services.Plugins.ActionExecutor
 
@@ -23,23 +30,125 @@ defmodule SummonerWeb.API.Internal.PluginCallbackController do
 
   action_fallback SummonerWeb.API.FallbackController
 
+  @stream_timeout :timer.minutes(5)
+
+  def callback(conn, %{"action" => "invoke_agent", "params" => params})
+      when is_map(params) do
+    if sse_requested?(conn) do
+      handle_streaming_callback(conn, params)
+    else
+      handle_sync_callback(conn, "invoke_agent", params)
+    end
+  end
+
   def callback(conn, %{"action" => action_type, "params" => params})
       when is_binary(action_type) and is_map(params) do
-    workspace_id = get_header(conn, "x-workspace-id")
-    plugin_id = get_header(conn, "x-plugin-id")
-
-    if is_binary(workspace_id) and is_binary(plugin_id) do
-      plugin = Plugins.get_plugin!(workspace_id, plugin_id)
-      action = Map.put(params, "type", action_type)
-      result = ActionExecutor.execute_action(plugin, workspace_id, action)
-      render_result(conn, result)
-    else
-      render_result(conn, {:error, :bad_request})
-    end
+    handle_sync_callback(conn, action_type, params)
   end
 
   def callback(conn, _params) do
     render_result(conn, {:error, :bad_request})
+  end
+
+  defp handle_sync_callback(conn, action_type, params) do
+    workspace_id = get_header(conn, "x-workspace-id")
+    plugin_id = get_header(conn, "x-plugin-id")
+
+    case resolve_plugin(workspace_id, plugin_id) do
+      {:ok, plugin} ->
+        action = Map.put(params, "type", action_type)
+        result = ActionExecutor.execute_action(plugin, workspace_id, action)
+        render_result(conn, result)
+
+      {:error, reason} ->
+        render_result(conn, {:error, reason})
+    end
+  end
+
+  defp handle_streaming_callback(conn, params) do
+    workspace_id = get_header(conn, "x-workspace-id")
+    plugin_id = get_header(conn, "x-plugin-id")
+
+    case resolve_plugin(workspace_id, plugin_id) do
+      {:ok, plugin} ->
+        action = Map.put(params, "type", "invoke_agent")
+
+        case ActionExecutor.start_streaming_invocation(plugin, workspace_id, action) do
+          {:ok, %{agent_id: agent_id, workspace_id: ws_id}} ->
+            Events.subscribe({:agent, ws_id, agent_id})
+
+            conn =
+              conn
+              |> put_resp_content_type("text/event-stream")
+              |> put_resp_header("cache-control", "no-cache")
+              |> put_resp_header("connection", "keep-alive")
+              |> put_resp_header("x-accel-buffering", "no")
+              |> send_chunked(200)
+
+            stream_invocation_events(conn, ws_id, agent_id)
+
+          {:error, reason} ->
+            render_result(conn, {:error, reason})
+        end
+
+      {:error, reason} ->
+        render_result(conn, {:error, reason})
+    end
+  end
+
+  defp resolve_plugin(workspace_id, plugin_id) do
+    if is_binary(workspace_id) and is_binary(plugin_id) do
+      {:ok, Plugins.get_plugin!(workspace_id, plugin_id)}
+    else
+      {:error, :bad_request}
+    end
+  end
+
+  defp stream_invocation_events(conn, workspace_id, agent_id) do
+    receive do
+      %ContentToken{workspace_id: ^workspace_id, agent_id: ^agent_id} = event ->
+        case send_sse(conn, "token", %{text: event.token}) do
+          {:ok, conn} -> stream_invocation_events(conn, workspace_id, agent_id)
+          {:error, _} -> cleanup_stream(workspace_id, agent_id)
+        end
+
+      %InvocationCompleted{workspace_id: ^workspace_id, agent_id: ^agent_id} = event ->
+        send_sse(conn, "done", %{
+          invocation_id: event.invocation_id,
+          output: event.output
+        })
+
+        cleanup_stream(workspace_id, agent_id)
+        conn
+
+      %InvocationFailed{workspace_id: ^workspace_id, agent_id: ^agent_id} = event ->
+        send_sse(conn, "error", %{message: inspect(event.output)})
+        cleanup_stream(workspace_id, agent_id)
+        conn
+
+      _other ->
+        stream_invocation_events(conn, workspace_id, agent_id)
+    after
+      @stream_timeout ->
+        send_sse(conn, "error", %{message: "Stream timed out"})
+        cleanup_stream(workspace_id, agent_id)
+        conn
+    end
+  end
+
+  defp cleanup_stream(workspace_id, agent_id) do
+    Events.unsubscribe({:agent, workspace_id, agent_id})
+  end
+
+  defp send_sse(conn, event_type, data) do
+    chunk(conn, "event: #{event_type}\ndata: #{Jason.encode!(data)}\n\n")
+  end
+
+  defp sse_requested?(conn) do
+    case get_req_header(conn, "accept") do
+      [accept] -> String.contains?(accept, "text/event-stream")
+      _ -> false
+    end
   end
 
   defp get_header(conn, name) do

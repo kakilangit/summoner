@@ -165,22 +165,27 @@ defmodule Summoner.Domain.Policies.ManifestValidator do
   end
 
   defp validate_type(errors, _key, value, "string") when is_binary(value), do: errors
+
   defp validate_type(errors, key, _value, "string"),
     do: [%{path: key, message: "expected string"} | errors]
 
   defp validate_type(errors, _key, value, "integer") when is_integer(value), do: errors
+
   defp validate_type(errors, key, _value, "integer"),
     do: [%{path: key, message: "expected integer"} | errors]
 
   defp validate_type(errors, _key, value, "number") when is_number(value), do: errors
+
   defp validate_type(errors, key, _value, "number"),
     do: [%{path: key, message: "expected number"} | errors]
 
   defp validate_type(errors, _key, value, "boolean") when is_boolean(value), do: errors
+
   defp validate_type(errors, key, _value, "boolean"),
     do: [%{path: key, message: "expected boolean"} | errors]
 
   defp validate_type(errors, _key, value, "array") when is_list(value), do: errors
+
   defp validate_type(errors, key, _value, "array"),
     do: [%{path: key, message: "expected array"} | errors]
 
