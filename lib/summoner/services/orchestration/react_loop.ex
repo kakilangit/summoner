@@ -39,6 +39,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   alias Summoner.Services.Orchestration.ApprovalGate
   alias Summoner.Services.Orchestration.BuiltinTools
   alias Summoner.Services.Orchestration.ToolCallRecovery
+  alias Summoner.Services.Plugins.HookRunner
 
   @doc """
   Runs the ReAct loop for an invocation.
@@ -176,6 +177,24 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
       context_length: state.agent.local_agent.context_length
     }
 
+    case run_hooks(state, :before_invocation, %{
+           "agent_id" => state.agent.id,
+           "agent_name" => state.agent.callname,
+           "conversation_id" => state.invocation.conversation_id,
+           "messages" => format_messages_for_hook(messages)
+         }) do
+      {:halt, reason} ->
+        finish(state, :completed, :hook_halted, %{
+          "hook" => "guardrails",
+          "reason" => reason
+        })
+
+      {:proceed, _ctx} ->
+        execute_inference(state, intent)
+    end
+  end
+
+  defp execute_inference(state, intent) do
     case call_inference_with_retries(state, intent) do
       {:ok, %Response{} = response} ->
         state = track_tokens(state, response)
@@ -1048,34 +1067,55 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
       tool_name: tool_name
     })
 
-    result = call_tool_with_timeout(state, tool_call)
-
-    case result do
-      {:ok, output} ->
+    case run_hooks(state, :on_tool_call, %{
+           "agent_id" => state.agent.id,
+           "conversation_id" => state.invocation.conversation_id,
+           "tool_name" => tool_name,
+           "arguments" => tool_call.function.arguments
+         }) do
+      {:halt, reason} ->
         {:ok, _} =
           Orchestration.add_event(%{
             invocation_id: state.invocation.id,
             workspace_id: state.invocation.workspace_id,
             agent_id: state.agent.id,
-            event_type: :tool_finished,
-            summary: "#{tool_name} completed",
-            payload: %{"tool_call_id" => tool_call.id}
+            event_type: :tool_blocked,
+            summary: "#{tool_name} blocked by guardrails: #{reason}",
+            payload: %{"tool_call_id" => tool_call.id, "reason" => reason}
           })
 
-        {:ok, tool_name, {:ok, output}}
+        {:error, tool_name, "blocked: #{reason}"}
 
-      {:error, error} ->
-        {:ok, _} =
-          Orchestration.add_event(%{
-            invocation_id: state.invocation.id,
-            workspace_id: state.invocation.workspace_id,
-            agent_id: state.agent.id,
-            event_type: :tool_failed,
-            summary: "#{tool_name} failed: #{stringify_error(error)}",
-            payload: %{"tool_call_id" => tool_call.id, "error" => stringify_error(error)}
-          })
+      {:proceed, _ctx} ->
+        result = call_tool_with_timeout(state, tool_call)
 
-        {:error, tool_name, error}
+        case result do
+          {:ok, output} ->
+            {:ok, _} =
+              Orchestration.add_event(%{
+                invocation_id: state.invocation.id,
+                workspace_id: state.invocation.workspace_id,
+                agent_id: state.agent.id,
+                event_type: :tool_finished,
+                summary: "#{tool_name} completed",
+                payload: %{"tool_call_id" => tool_call.id}
+              })
+
+            {:ok, tool_name, {:ok, output}}
+
+          {:error, error} ->
+            {:ok, _} =
+              Orchestration.add_event(%{
+                invocation_id: state.invocation.id,
+                workspace_id: state.invocation.workspace_id,
+                agent_id: state.agent.id,
+                event_type: :tool_failed,
+                summary: "#{tool_name} failed: #{stringify_error(error)}",
+                payload: %{"tool_call_id" => tool_call.id, "error" => stringify_error(error)}
+              })
+
+            {:error, tool_name, error}
+        end
     end
   end
 
@@ -1724,6 +1764,34 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
   defp format_error(:closed), do: "Connection closed by provider"
   defp format_error(reason) when is_atom(reason), do: "Network error: #{reason}"
   defp format_error(reason), do: inspect(reason)
+
+  # -------------------------------------------------------------------
+  # Hook helpers
+  # -------------------------------------------------------------------
+
+  defp run_hooks(state, point, data) do
+    HookRunner.run(state.invocation.workspace_id, point, data)
+  end
+
+  defp format_messages_for_hook(messages) do
+    Enum.map(messages, fn
+      %{role: role, content: content} ->
+        content_str =
+          cond do
+            is_binary(content) -> content
+            is_list(content) -> content |> Enum.map_join(" ", &serialize_content/1)
+            true -> ""
+          end
+
+        %{"role" => to_string(role), "content" => content_str}
+
+      other ->
+        %{"role" => "unknown", "content" => inspect(other)}
+    end)
+  end
+
+  defp serialize_content(%{text: text}) when is_binary(text), do: text
+  defp serialize_content(_), do: ""
 
   defp maybe_add_thinking(map, nil), do: map
   defp maybe_add_thinking(map, ""), do: map
