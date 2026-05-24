@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.27] - 2026-05-24
+
+### Changed
+
+- Arcanum 0.1.9 — temperature stripping for reasoning models, expanded model overlays
+
 ## [0.1.26] - 2026-05-24
 
 ### Added
@@ -526,6 +532,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.27]: https://github.com/kakilangit/summoner/compare/v0.1.26...v0.1.27
 [0.1.26]: https://github.com/kakilangit/summoner/compare/v0.1.25...v0.1.26
 [0.1.25]: https://github.com/kakilangit/summoner/compare/v0.1.24...v0.1.25
 [0.1.24]: https://github.com/kakilangit/summoner/compare/v0.1.23...v0.1.24
