@@ -169,6 +169,17 @@ defmodule Summoner.Adapters.ContainerRuntime.Docker do
   end
 
   @impl true
+  def health_check(host, port) do
+    url = "http://#{host}:#{port}/health"
+
+    case Req.get(url, receive_timeout: 5_000) do
+      {:ok, %{status: 200}} -> :ok
+      {:ok, %{status: status}} -> {:error, {:unhealthy, status}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl true
   def resolve_digest(image) do
     case docker(["inspect", "--format", "{{index .RepoDigests 0}}", image]) do
       {output, 0} ->

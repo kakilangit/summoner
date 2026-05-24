@@ -146,23 +146,20 @@ defmodule Summoner.Services.Plugins do
          {:ok, manifest_json} <- extract_manifest(new_image_ref),
          {:ok, manifest} <- Jason.decode(manifest_json),
          {:ok, _validated} <- ManifestValidator.validate(manifest),
-         {:ok, digest} <- ContainerRuntime.resolve_digest(new_image_ref) do
+         {:ok, new_digest} <- ContainerRuntime.resolve_digest(new_image_ref) do
       trusted = TrustVerifier.trusted_image?(new_image_ref)
 
-      {:ok, plugin} =
+      if was_enabled do
+        upgrade_enabled_plugin(plugin, manifest, new_image_ref, new_digest, trusted)
+      else
         Persistence.update_plugin(plugin, %{
           version: manifest["version"],
           manifest: manifest,
           status: :installed,
           error_message: nil,
-          digest: digest,
+          digest: new_digest,
           trusted: trusted
         })
-
-      if was_enabled do
-        enable(workspace_id, plugin.id)
-      else
-        {:ok, plugin}
       end
     end
   end
@@ -275,6 +272,34 @@ defmodule Summoner.Services.Plugins do
     tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
 
     PluginContainerManager.ensure_container(image, digest, isolation, tenant_id)
+  end
+
+  defp upgrade_enabled_plugin(plugin, manifest, new_image, new_digest, trusted) do
+    isolation =
+      TrustVerifier.effective_isolation(trusted, get_in(manifest, ["isolation"]))
+
+    tenant_id = if isolation == :tenant, do: plugin.workspace_id, else: nil
+
+    with {:ok, _container} <-
+           PluginContainerManager.upgrade_container(
+             new_image,
+             new_digest,
+             isolation,
+             tenant_id
+           ) do
+      {:ok, plugin} =
+        Persistence.update_plugin(plugin, %{
+          version: manifest["version"],
+          manifest: manifest,
+          status: :enabled,
+          error_message: nil,
+          digest: new_digest,
+          trusted: trusted
+        })
+
+      maybe_register_provider(plugin)
+      {:ok, plugin}
+    end
   end
 
   defp get_plugin_container(plugin) do

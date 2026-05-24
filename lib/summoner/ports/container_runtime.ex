@@ -39,6 +39,7 @@ defmodule Summoner.Ports.ContainerRuntime do
   @callback host_port(String.t(), non_neg_integer()) ::
               {:ok, non_neg_integer()} | {:error, term()}
   @callback ensure_network(String.t()) :: :ok | {:error, term()}
+  @callback health_check(String.t(), non_neg_integer()) :: :ok | {:error, term()}
 
   defdelegate pull(image), to: @adapter
   defdelegate create(opts), to: @adapter
@@ -53,4 +54,5 @@ defmodule Summoner.Ports.ContainerRuntime do
   defdelegate resolve_digest(image), to: @adapter
   defdelegate host_port(container_id, container_port), to: @adapter
   defdelegate ensure_network(name), to: @adapter
+  defdelegate health_check(host, port), to: @adapter
 end
