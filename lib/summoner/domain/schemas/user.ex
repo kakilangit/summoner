@@ -47,6 +47,7 @@ defmodule Summoner.Domain.Schemas.User do
         message: "must have the @ sign and no spaces"
       )
       |> validate_length(:email, max: 160)
+      |> validate_email_domain()
 
     if Keyword.get(opts, :validate_unique, true) do
       repo = Keyword.get(opts, :repo, Summoner.Repo)
@@ -65,6 +66,20 @@ defmodule Summoner.Domain.Schemas.User do
       add_error(changeset, :email, "did not change")
     else
       changeset
+    end
+  end
+
+  defp validate_email_domain(changeset) do
+    with {:ok, email} <- fetch_change(changeset, :email),
+         true <- changeset.valid? do
+      [_, domain] = String.split(email, "@", parts: 2)
+
+      case :inet_res.lookup(to_charlist(domain), :in, :mx) do
+        [] -> add_error(changeset, :email, "has an invalid email domain")
+        _records -> changeset
+      end
+    else
+      _ -> changeset
     end
   end
 

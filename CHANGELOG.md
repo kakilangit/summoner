@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.29] - 2026-05-24
+
+### Fixed
+
+- Email domain MX validation on registration — rejects emails with unresolvable domains
+- Archon nav link pointing to `/archon` instead of `/admin`
+
 ## [0.1.28] - 2026-05-24
 
 ### Added
@@ -544,6 +551,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.29]: https://github.com/kakilangit/summoner/compare/v0.1.28...v0.1.29
 [0.1.28]: https://github.com/kakilangit/summoner/compare/v0.1.27...v0.1.28
 [0.1.27]: https://github.com/kakilangit/summoner/compare/v0.1.26...v0.1.27
 [0.1.26]: https://github.com/kakilangit/summoner/compare/v0.1.25...v0.1.26
