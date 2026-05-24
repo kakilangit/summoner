@@ -184,7 +184,7 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
            "messages" => format_messages_for_hook(messages)
          }) do
       {:halt, reason} ->
-        finish(state, :completed, :hook_halted, %{
+        finish(state, :completed, :completed, %{
           "hook" => "guardrails",
           "reason" => reason
         })

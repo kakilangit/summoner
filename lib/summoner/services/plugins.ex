@@ -105,7 +105,7 @@ defmodule Summoner.Services.Plugins do
     if plugin.status in [:installed, :disabled, :error] do
       case ensure_plugin_container(plugin) do
         {:ok, _container} ->
-          Persistence.update_status(plugin, :enabled)
+          {:ok, plugin} = Persistence.update_status(plugin, :enabled)
           maybe_register_provider(plugin)
           {:ok, plugin}
 
@@ -123,7 +123,7 @@ defmodule Summoner.Services.Plugins do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
     if plugin.status == :enabled do
-      Persistence.update_status(plugin, :disabled)
+      {:ok, plugin} = Persistence.update_status(plugin, :disabled)
       maybe_deactivate_provider(plugin)
       {:ok, plugin}
     else
