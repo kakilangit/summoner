@@ -4,7 +4,7 @@ defmodule Summoner.MixProject do
   def project do
     [
       app: :summoner,
-      version: "0.1.24",
+      version: "0.1.25",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -79,7 +79,7 @@ defmodule Summoner.MixProject do
 
       # Domain
       {:a2a, "~> 0.2.0"},
-      {:arcanum, "~> 0.1.5"},
+      {:arcanum, "~> 0.1.6"},
       {:anubis_mcp, "~> 1.3"},
       {:nulid, "~> 0.2"},
       {:oban, "~> 2.19"},

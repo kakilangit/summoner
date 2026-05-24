@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.25] - 2026-05-24
+
+### Fixed
+
+- DeepSeek V4 Pro failing with reasoning_content passback error (arcanum 0.1.6)
+
 ## [0.1.24] - 2026-05-24
 
 ### Fixed
@@ -510,6 +516,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.25]: https://github.com/kakilangit/summoner/compare/v0.1.24...v0.1.25
 [0.1.24]: https://github.com/kakilangit/summoner/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/kakilangit/summoner/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/kakilangit/summoner/compare/v0.1.20...v0.1.22
