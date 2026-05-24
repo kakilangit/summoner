@@ -13,7 +13,7 @@ config :summoner, SummonerWeb.Endpoint, cache_static_manifest: "priv/static/cach
 config :summoner, SummonerWeb.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   exclude: [
-    # paths: ["/health"],
+    paths: ["/health"],
     hosts: ["localhost", "127.0.0.1"]
   ]
 

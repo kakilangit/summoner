@@ -779,7 +779,7 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
     case Req.get(url,
            headers: headers,
            receive_timeout: timeout_seconds * 1_000,
-           max_retries: 0,
+           max_retries: 2,
            redirect_log_level: false,
            max_redirects: 5
          ) do
