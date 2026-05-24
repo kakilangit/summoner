@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 - Grimoire guardrails hooks — lifecycle hook points wired into ReAct loop
 - `before_invocation` and `on_tool_call` hooks with halt/rejection support
 - Hook rejection surfaces as assistant message in conversation
+- Zero-downtime plugin rolling restart — new container starts and health-checks before switching digest
+- Plugin config schema validation — checks required fields, types, and constraints at install and enable
+- SSE streaming for invoke_agent callback — plugins can receive tokens as they're generated via `ctx.invoke_agent_stream()`
+
+### Changed
+
+- `ContainerRuntime` port now includes `health_check/2` for HTTP `/health` probes on plugin containers
+- `PluginClient.health/1` delegates to `ContainerRuntime.health_check/2` (no longer service→service call)
+- `Plugins.upgrade/3` uses dual-container overlap for zero-downtime upgrades
 
 ### Fixed
 
