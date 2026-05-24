@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.30] - 2026-05-24
+
+### Added
+
+- Grimoire guardrails hooks — lifecycle hook points wired into ReAct loop
+- `before_invocation` and `on_tool_call` hooks with halt/rejection support
+- Hook rejection surfaces as assistant message in conversation
+
+### Fixed
+
+- Plugin enable/disable returns updated struct (UI now reflects change without reload)
+- Hook halt end_reason uses valid `:completed` value
+
 ## [0.1.29] - 2026-05-24
 
 ### Fixed
@@ -551,6 +564,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.30]: https://github.com/kakilangit/summoner/compare/v0.1.29...v0.1.30
 [0.1.29]: https://github.com/kakilangit/summoner/compare/v0.1.28...v0.1.29
 [0.1.28]: https://github.com/kakilangit/summoner/compare/v0.1.27...v0.1.28
 [0.1.27]: https://github.com/kakilangit/summoner/compare/v0.1.26...v0.1.27
