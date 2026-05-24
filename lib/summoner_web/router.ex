@@ -24,6 +24,8 @@ defmodule SummonerWeb.Router do
     plug SummonerWeb.Plugs.ScopeFromPath
   end
 
+  get "/health", SummonerWeb.HealthController, :check
+
   scope "/", SummonerWeb do
     pipe_through :browser
 

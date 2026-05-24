@@ -93,6 +93,11 @@ defmodule Summoner.Domain.Policies.FailoverTest do
       refute Failover.failover_eligible?(:unknown)
       refute Failover.failover_eligible?({:validation, "bad"})
     end
+
+    test "eligible for max_retries_exceeded with status details" do
+      assert Failover.failover_eligible?({:api_error, :max_retries_exceeded, 429, "rate limited"})
+      assert Failover.failover_eligible?({:api_error, :max_retries_exceeded, 502, "bad gateway"})
+    end
   end
 
   describe "creates_cycle?/3" do

@@ -251,6 +251,14 @@ defmodule Summoner.Services.Orchestration.ReactLoop do
     "HTTP #{status} — #{format_api_error(status, body)}"
   end
 
+  defp format_inference_error({:api_error, :max_retries_exceeded, status, _body}) do
+    "Provider API unavailable — all retry attempts exhausted (last: HTTP #{status})"
+  end
+
+  defp format_inference_error({:api_error, :max_retries_exceeded}) do
+    "Provider API unavailable — all retry attempts exhausted"
+  end
+
   defp format_inference_error(reason) do
     format_error(reason)
   end

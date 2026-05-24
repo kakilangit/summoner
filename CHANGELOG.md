@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.28] - 2026-05-24
+
+### Added
+
+- `GET /health` endpoint — returns 200 with `{"status": "ok"}`, no auth required, excluded from force_ssl
+
+### Fixed
+
+- `webfetch` tool now retries transient HTTP errors (`max_retries: 2`) instead of failing immediately
+- `format_inference_error` handles new arcanum retry exhaustion error shape with HTTP status detail
+- `FailoverPolicy` recognizes `{:api_error, :max_retries_exceeded, status, body}` as failover-eligible
+
 ## [0.1.27] - 2026-05-24
 
 ### Changed
@@ -532,6 +544,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.28]: https://github.com/kakilangit/summoner/compare/v0.1.27...v0.1.28
 [0.1.27]: https://github.com/kakilangit/summoner/compare/v0.1.26...v0.1.27
 [0.1.26]: https://github.com/kakilangit/summoner/compare/v0.1.25...v0.1.26
 [0.1.25]: https://github.com/kakilangit/summoner/compare/v0.1.24...v0.1.25

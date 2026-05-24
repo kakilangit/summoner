@@ -67,6 +67,8 @@ defmodule Summoner.Domain.Policies.Failover do
   def failover_eligible?({:api_error, status, _body}) when status in @failover_http_statuses,
     do: true
 
+  def failover_eligible?({:api_error, :max_retries_exceeded, _status, _body}), do: true
+
   def failover_eligible?({error_type, _details}) when error_type in @failover_errors, do: true
   def failover_eligible?(error_type) when error_type in @failover_errors, do: true
   def failover_eligible?(_), do: false
