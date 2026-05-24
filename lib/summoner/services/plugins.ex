@@ -102,7 +102,8 @@ defmodule Summoner.Services.Plugins do
   def enable(workspace_id, plugin_id) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
 
-    if plugin.status in [:installed, :disabled, :error] do
+    with :ok <- validate_plugin_config(plugin),
+         true <- plugin.status in [:installed, :disabled, :error] do
       case ensure_plugin_container(plugin) do
         {:ok, _container} ->
           {:ok, plugin} = Persistence.update_status(plugin, :enabled)
@@ -114,7 +115,8 @@ defmodule Summoner.Services.Plugins do
           {:error, reason}
       end
     else
-      {:error, :already_enabled}
+      false -> {:error, :already_enabled}
+      {:error, _} = error -> error
     end
   end
 
@@ -134,7 +136,15 @@ defmodule Summoner.Services.Plugins do
   @doc "Update plugin configuration. No restart needed — config is per-request."
   def configure(workspace_id, plugin_id, config) do
     plugin = Persistence.get_plugin!(workspace_id, plugin_id)
-    Persistence.update_plugin(plugin, %{config: config})
+    schema = plugin.manifest["config_schema"]
+
+    case ManifestValidator.validate_config(config, schema) do
+      :ok ->
+        Persistence.update_plugin(plugin, %{config: config})
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   @doc "Upgrade plugin to new image version."
@@ -260,6 +270,10 @@ defmodule Summoner.Services.Plugins do
       {:ok, content} -> {:ok, content}
       {:error, _} -> {:error, "No grimoire.json found in image"}
     end
+  end
+
+  defp validate_plugin_config(plugin) do
+    ManifestValidator.validate_config(plugin.config, plugin.manifest["config_schema"])
   end
 
   defp ensure_plugin_container(plugin) do
