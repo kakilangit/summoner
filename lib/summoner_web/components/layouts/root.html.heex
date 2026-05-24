@@ -23,7 +23,7 @@
           <%= if @current_scope do %>
             <.link href={~p"/tenants"} class="btn btn-ghost btn-sm">Guilds</.link>
             <%= if @current_scope.user.role == "admin" do %>
-              <.link href="/archon" class="btn btn-ghost btn-sm">Archon</.link>
+              <.link href={~p"/admin"} class="btn btn-ghost btn-sm">Archon</.link>
             <% end %>
 
             <%!-- Settings dropdown --%>
@@ -82,7 +82,7 @@
               </li>
               <%= if @current_scope.user.role == "admin" do %>
                 <li>
-                  <.link href="/archon">Archon</.link>
+                  <.link href={~p"/admin"}>Archon</.link>
                 </li>
               <% end %>
               <li class="menu-title mt-2">Settings</li>
