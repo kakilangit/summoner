@@ -22,11 +22,20 @@ defmodule Summoner.Ports.Persistence.Admin do
   defdelegate reset_user_password(user), to: @adapter
   defdelegate workspace_count_for_user(user), to: @adapter
   defdelegate list_user_workspaces(user), to: @adapter
+  defdelegate first_workspace_for_user(user), to: @adapter
+  defdelegate add_user_to_workspace(user, workspace_id, role \\ :member), to: @adapter
+  defdelegate remove_user_from_workspace(user, workspace_id), to: @adapter
+
+  defdelegate list_user_tenants(user), to: @adapter
+  defdelegate first_tenant_for_user(user), to: @adapter
+  defdelegate add_user_to_tenant(user, tenant_id, role \\ :member), to: @adapter
+  defdelegate remove_user_from_tenant(user, tenant_id), to: @adapter
 
   # Workspaces
   defdelegate list_workspaces(), to: @adapter
   defdelegate list_workspaces(opts), to: @adapter
   defdelegate get_workspace!(id), to: @adapter
+  defdelegate all_workspaces(), to: @adapter
   defdelegate member_count(workspace), to: @adapter
   defdelegate delete_workspace(workspace), to: @adapter
 
@@ -45,4 +54,10 @@ defmodule Summoner.Ports.Persistence.Admin do
 
   # Helpers
   defdelegate generate_password(), to: @adapter
+
+  # System permissions
+  defdelegate grant_system_permission(user, permission), to: @adapter
+  defdelegate revoke_system_permission(user, permission), to: @adapter
+  defdelegate list_system_permissions(user), to: @adapter
+  defdelegate user_has_system_permission?(user, permission), to: @adapter
 end

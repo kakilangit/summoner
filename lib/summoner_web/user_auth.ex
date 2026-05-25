@@ -8,8 +8,10 @@ defmodule SummonerWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias Summoner.Domain.Policies.SystemPolicy
   alias Summoner.Domain.Schemas.Scope
   alias Summoner.Ports.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Admin
 
   # -------------------------------------------------------------------
   # LiveView on_mount hooks
@@ -53,9 +55,22 @@ defmodule SummonerWeb.UserAuth do
     socket = mount_current_scope(socket, session)
 
     if socket.assigns.current_scope do
-      {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
+      user = socket.assigns.current_scope.user
+      {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket, user))}
     else
       {:cont, socket}
+    end
+  end
+
+  def on_mount(:attach_system_admin, _params, _session, socket) do
+    case socket.assigns[:current_scope] do
+      %{user: user} ->
+        permissions = Admin.list_system_permissions(user)
+        is_admin = SystemPolicy.system_admin?(user, permissions)
+        {:cont, Phoenix.Component.assign(socket, :is_system_admin, is_admin)}
+
+      _ ->
+        {:cont, Phoenix.Component.assign(socket, :is_system_admin, false)}
     end
   end
 
@@ -97,14 +112,32 @@ defmodule SummonerWeb.UserAuth do
   Logs the user in.
 
   Redirects to the session's `:user_return_to` path
-  or falls back to the `signed_in_path/1`.
+  or falls back to the `signed_in_path/2`.
   """
   def log_in_user(conn, user, params \\ %{}) do
     user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> create_or_extend_session(user, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> then(fn conn ->
+      redirect_path = user_return_to || signed_in_path(conn, user)
+
+      conn
+      |> maybe_put_no_workspace_flash(redirect_path, user_return_to, user)
+      |> redirect(to: redirect_path)
+    end)
+  end
+
+  defp maybe_put_no_workspace_flash(conn, path, user_return_to, user) do
+    if path == ~p"/users/log-in" and is_nil(user_return_to) and not SystemPolicy.root_admin?(user) do
+      put_flash(
+        conn,
+        :error,
+        "Your account does not have access to any realm. Please contact an administrator."
+      )
+    else
+      conn
+    end
   end
 
   @doc """
@@ -253,15 +286,33 @@ defmodule SummonerWeb.UserAuth do
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns.current_scope do
+      user = conn.assigns.current_scope.user
+
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> redirect(to: signed_in_path(conn, user))
       |> halt()
     else
       conn
     end
   end
 
-  defp signed_in_path(_conn), do: ~p"/tenants"
+  defp signed_in_path(_conn, nil), do: ~p"/tenants"
+
+  defp signed_in_path(_conn, user) do
+    cond do
+      SystemPolicy.system_admin?(user, Admin.list_system_permissions(user)) ->
+        ~p"/tenants"
+
+      tenant_membership = Admin.first_tenant_for_user(user) ->
+        ~p"/tenants/#{tenant_membership.tenant_id}/workspaces"
+
+      workspace_membership = Admin.first_workspace_for_user(user) ->
+        ~p"/tenants/#{workspace_membership.workspace.tenant_id}/workspaces"
+
+      true ->
+        ~p"/users/log-in"
+    end
+  end
 
   @doc """
   Plug for routes that require the user to be authenticated.

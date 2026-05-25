@@ -42,6 +42,13 @@ defmodule Summoner.Adapters.Persistence.AccountsFixtures do
     user
   end
 
+  def admin_user_fixture(attrs \\ %{}) do
+    alias Summoner.Ports.Persistence.Admin
+    user = user_fixture(attrs)
+    {:ok, admin} = Admin.update_user_role(user, "admin")
+    admin
+  end
+
   def user_scope_fixture do
     user = user_fixture()
     user_scope_fixture(user)

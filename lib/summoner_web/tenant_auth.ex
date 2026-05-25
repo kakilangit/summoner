@@ -13,7 +13,8 @@ defmodule SummonerWeb.TenantAuth do
   import Phoenix.Component
   use SummonerWeb, :verified_routes
 
-  alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Domain.Policies.SystemPolicy
+  alias Summoner.Domain.Policies.TenantPolicy
   alias Summoner.Domain.Schemas.TenantMembership
   alias Summoner.Ports.Persistence.Tenants
 
@@ -42,7 +43,7 @@ defmodule SummonerWeb.TenantAuth do
   end
 
   defp assign_tenant(socket, tenant_id, scope, nil) do
-    if Scope.admin?(scope) do
+    if SystemPolicy.system_admin?(scope.user) do
       tenant = Tenants.get_tenant!(tenant_id)
       synthetic = %TenantMembership{role: :admin}
 
@@ -64,16 +65,23 @@ defmodule SummonerWeb.TenantAuth do
   end
 
   defp tenant_can?(membership, :manage_resources),
-    do: membership.role == :admin
+    do: TenantPolicy.can?(membership, :manage_shared_resources)
 
   defp tenant_can?(membership, :manage_members),
-    do: membership.role == :admin
+    do: TenantPolicy.can?(membership, :manage_tenant_members)
 
   defp tenant_can?(membership, :manage_settings),
-    do: membership.role == :admin
+    do: TenantPolicy.can?(membership, :manage_tenant_settings)
 
   defp tenant_can?(membership, :delete_tenant),
-    do: membership.role == :admin
+    do: TenantPolicy.can?(membership, :delete_tenant)
 
-  defp tenant_can?(_membership, _action), do: false
+  defp tenant_can?(membership, :create_workspaces),
+    do: TenantPolicy.can?(membership, :create_workspaces)
+
+  defp tenant_can?(membership, :view_stats),
+    do: TenantPolicy.can?(membership, :view_tenant_stats)
+
+  defp tenant_can?(membership, action),
+    do: TenantPolicy.can?(membership, action)
 end

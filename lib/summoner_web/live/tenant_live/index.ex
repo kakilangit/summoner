@@ -1,7 +1,7 @@
 defmodule SummonerWeb.TenantLive.Index do
   use SummonerWeb, :live_view
 
-  alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Domain.Policies.SystemPolicy
   alias Summoner.Ports.Persistence.Admin
   alias Summoner.Ports.Persistence.Tenants
 
@@ -12,9 +12,10 @@ defmodule SummonerWeb.TenantLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    scope = socket.assigns.current_scope
+    user = socket.assigns.current_scope.user
+    user_permissions = Admin.list_system_permissions(user)
 
-    if Scope.admin?(scope) do
+    if SystemPolicy.system_admin?(user, user_permissions) do
       socket =
         socket
         |> assign(
@@ -29,7 +30,7 @@ defmodule SummonerWeb.TenantLive.Index do
 
       {:ok, socket}
     else
-      tenants = Tenants.list_tenants_for_user(scope)
+      tenants = Tenants.list_tenants_for_user(socket.assigns.current_scope)
 
       case tenants do
         [single] ->

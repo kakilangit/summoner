@@ -1,6 +1,7 @@
 defmodule SummonerWeb.AdminLive.QuotaIndex do
   use SummonerWeb, :live_view
 
+  alias Summoner.Ports.Persistence.Admin
   alias Summoner.Ports.Persistence.Invitations
 
   @sort_options [{"Amount", :amount}, {"Created", :inserted_at}]
@@ -93,6 +94,15 @@ defmodule SummonerWeb.AdminLive.QuotaIndex do
                   quota.user.role == "user" && "badge-ghost"
                 ]}>
                   {quota.user.role}
+                </span>
+                <span :if={Admin.root_admin?(quota.user)} class="badge badge-warning badge-xs ml-1">
+                  Root
+                </span>
+                <span
+                  :if={Admin.user_has_system_permission?(quota.user, :manage_users)}
+                  class="badge badge-info badge-xs ml-1"
+                >
+                  System
                 </span>
               </td>
             </tr>

@@ -1,13 +1,16 @@
 defmodule SummonerWeb.TenantLive.New do
   use SummonerWeb, :live_view
 
-  alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Domain.Policies.SystemPolicy
   alias Summoner.Domain.Schemas.Tenant
-  alias Summoner.Ports.Persistence.Tenants
+  alias Summoner.Ports.Persistence.{Admin, Tenants}
 
   @impl true
   def mount(_params, _session, socket) do
-    if Scope.admin?(socket.assigns.current_scope) do
+    user = socket.assigns.current_scope.user
+    user_permissions = Admin.list_system_permissions(user)
+
+    if SystemPolicy.system_admin?(user, user_permissions) do
       socket =
         socket
         |> assign(page_title: "New Guild")

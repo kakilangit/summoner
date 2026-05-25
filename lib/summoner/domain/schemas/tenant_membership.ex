@@ -3,7 +3,8 @@ defmodule Summoner.Domain.Schemas.TenantMembership do
   Schema for tenant memberships — user-to-tenant role assignments.
 
   Roles:
-  - `:admin` — full tenant management (settings, members, shared resources, workspaces)
+  - `:owner` — full control including ability to delete tenant; cannot be removed from their own tenant
+  - `:admin` — tenant management (settings, members, shared resources, workspaces)
   - `:member` — belongs to this tenant, accesses workspaces via workspace memberships
   """
 
@@ -14,7 +15,7 @@ defmodule Summoner.Domain.Schemas.TenantMembership do
   alias Summoner.Domain.Schemas.Tenant
   alias Summoner.Domain.Schemas.User
 
-  @roles [:admin, :member]
+  @roles [:owner, :admin, :member]
 
   schema "tenant_memberships" do
     field :role, Ecto.Enum, values: @roles, default: :member
@@ -27,6 +28,9 @@ defmodule Summoner.Domain.Schemas.TenantMembership do
 
   @doc "Returns the list of available roles."
   def roles, do: @roles
+
+  @doc "Returns roles assignable by a tenant owner/admin (excludes :owner itself)."
+  def assignable_roles, do: [:admin, :member]
 
   @doc """
   Changeset for creating or updating a tenant membership.

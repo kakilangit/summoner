@@ -116,13 +116,19 @@ defmodule SummonerWeb.AdminLive.WorkspaceIndex do
               </td>
               <td>
                 <button
-                  phx-click="delete"
-                  phx-value-id={workspace.id}
+                  phx-click={show_confirm("#delete-workspace-#{workspace.id}")}
                   class="btn btn-ghost btn-xs btn-error"
-                  data-confirm="Delete this realm and all its data? This cannot be undone."
                 >
                   Delete
                 </button>
+                <.confirm_modal
+                  id={"delete-workspace-#{workspace.id}"}
+                  title="Delete Realm?"
+                  message="This will delete the realm and all its data. This cannot be undone."
+                  confirm_text="Delete"
+                  variant="error"
+                  on_confirm={JS.push("delete", value: %{id: workspace.id})}
+                />
               </td>
             </tr>
           </tbody>

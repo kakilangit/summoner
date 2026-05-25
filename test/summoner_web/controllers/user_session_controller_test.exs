@@ -2,10 +2,21 @@ defmodule SummonerWeb.UserSessionControllerTest do
   use SummonerWeb.ConnCase, async: true
 
   import Summoner.Adapters.Persistence.AccountsFixtures
-  alias Summoner.Adapters.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Accounts
+  alias Summoner.Ports.Persistence.Admin
 
   setup do
-    %{unconfirmed_user: unconfirmed_user_fixture(), user: user_fixture()}
+    user = user_fixture()
+    {:ok, admin_user} = Admin.update_user_role(user_fixture(), "admin")
+    Admin.grant_system_permission(admin_user, :manage_users)
+    {:ok, admin_unconfirmed_user} = Admin.update_user_role(unconfirmed_user_fixture(), "admin")
+    Admin.grant_system_permission(admin_unconfirmed_user, :manage_users)
+
+    %{
+      unconfirmed_user: admin_unconfirmed_user,
+      user: user,
+      admin_user: admin_user
+    }
   end
 
   describe "GET /users/log-in" do
@@ -72,12 +83,12 @@ defmodule SummonerWeb.UserSessionControllerTest do
   end
 
   describe "POST /users/log-in - email and password" do
-    test "logs the user in", %{conn: conn, user: user} do
-      user = set_password(user)
+    test "logs the user in", %{conn: conn, admin_user: admin_user} do
+      admin_user = set_password(admin_user)
 
       conn =
         post(conn, ~p"/users/log-in", %{
-          "user" => %{"email" => user.email, "password" => valid_user_password()}
+          "user" => %{"email" => admin_user.email, "password" => valid_user_password()}
         })
 
       assert get_session(conn, :user_token)
@@ -86,18 +97,18 @@ defmodule SummonerWeb.UserSessionControllerTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/tenants")
       response = html_response(conn, 200)
-      assert response =~ user.email
+      assert response =~ admin_user.email
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log-out"
     end
 
-    test "logs the user in with remember me", %{conn: conn, user: user} do
-      user = set_password(user)
+    test "logs the user in with remember me", %{conn: conn, admin_user: admin_user} do
+      admin_user = set_password(admin_user)
 
       conn =
         post(conn, ~p"/users/log-in", %{
           "user" => %{
-            "email" => user.email,
+            "email" => admin_user.email,
             "password" => valid_user_password(),
             "remember_me" => "true"
           }
@@ -149,8 +160,8 @@ defmodule SummonerWeb.UserSessionControllerTest do
                "login"
     end
 
-    test "logs the user in", %{conn: conn, user: user} do
-      {token, _hashed_token} = generate_user_magic_link_token(user)
+    test "logs the user in", %{conn: conn, admin_user: admin_user} do
+      {token, _hashed_token} = generate_user_magic_link_token(admin_user)
 
       conn =
         post(conn, ~p"/users/log-in", %{
@@ -163,7 +174,7 @@ defmodule SummonerWeb.UserSessionControllerTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/tenants")
       response = html_response(conn, 200)
-      assert response =~ user.email
+      assert response =~ admin_user.email
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log-out"
     end

@@ -3,6 +3,7 @@ defmodule SummonerWeb.UserAuthTest do
 
   alias Summoner.Adapters.Persistence.Accounts
   alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Ports.Persistence.Admin
   alias SummonerWeb.UserAuth
 
   import Summoner.Adapters.Persistence.AccountsFixtures
@@ -15,36 +16,45 @@ defmodule SummonerWeb.UserAuthTest do
       conn
       |> Map.replace!(:secret_key_base, SummonerWeb.Endpoint.config(:secret_key_base))
       |> init_test_session(%{})
+      |> fetch_flash()
 
-    %{user: %{user_fixture() | authenticated_at: DateTime.utc_now()}, conn: conn}
+    user = user_fixture() |> then(fn u -> %{u | authenticated_at: DateTime.utc_now()} end)
+    {:ok, admin_user} = Admin.update_user_role(user_fixture(), "admin")
+    admin_user = %{admin_user | authenticated_at: DateTime.utc_now()}
+    Admin.grant_system_permission(admin_user, :manage_users)
+
+    %{user: user, admin_user: admin_user, conn: conn}
   end
 
   describe "log_in_user/3" do
-    test "stores the user token in the session", %{conn: conn, user: user} do
-      conn = UserAuth.log_in_user(conn, user)
+    test "stores the user token in the session", %{conn: conn, admin_user: admin_user} do
+      conn = UserAuth.log_in_user(conn, admin_user)
       assert token = get_session(conn, :user_token)
       assert redirected_to(conn) == ~p"/tenants"
       assert Accounts.get_user_by_session_token(token)
     end
 
-    test "clears everything previously stored in the session", %{conn: conn, user: user} do
-      conn = conn |> put_session(:to_be_removed, "value") |> UserAuth.log_in_user(user)
+    test "clears everything previously stored in the session", %{
+      conn: conn,
+      admin_user: admin_user
+    } do
+      conn = conn |> put_session(:to_be_removed, "value") |> UserAuth.log_in_user(admin_user)
       refute get_session(conn, :to_be_removed)
     end
 
-    test "keeps session when re-authenticating", %{conn: conn, user: user} do
+    test "keeps session when re-authenticating", %{conn: conn, admin_user: admin_user} do
       conn =
         conn
-        |> assign(:current_scope, Scope.for_user(user))
+        |> assign(:current_scope, Scope.for_user(admin_user))
         |> put_session(:to_be_removed, "value")
-        |> UserAuth.log_in_user(user)
+        |> UserAuth.log_in_user(admin_user)
 
       assert get_session(conn, :to_be_removed)
     end
 
     test "clears session when user does not match when re-authenticating", %{
       conn: conn,
-      user: user
+      admin_user: admin_user
     } do
       other_user = user_fixture()
 
@@ -52,18 +62,20 @@ defmodule SummonerWeb.UserAuthTest do
         conn
         |> assign(:current_scope, Scope.for_user(other_user))
         |> put_session(:to_be_removed, "value")
-        |> UserAuth.log_in_user(user)
+        |> UserAuth.log_in_user(admin_user)
 
       refute get_session(conn, :to_be_removed)
     end
 
-    test "redirects to the configured path", %{conn: conn, user: user} do
-      conn = conn |> put_session(:user_return_to, "/hello") |> UserAuth.log_in_user(user)
+    test "redirects to the configured path", %{conn: conn, admin_user: admin_user} do
+      conn = conn |> put_session(:user_return_to, "/hello") |> UserAuth.log_in_user(admin_user)
       assert redirected_to(conn) == "/hello"
     end
 
-    test "writes a cookie if remember_me is configured", %{conn: conn, user: user} do
-      conn = conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+    test "writes a cookie if remember_me is configured", %{conn: conn, admin_user: admin_user} do
+      conn =
+        conn |> fetch_cookies() |> UserAuth.log_in_user(admin_user, %{"remember_me" => "true"})
+
       assert get_session(conn, :user_token) == conn.cookies[@remember_me_cookie]
       assert get_session(conn, :user_remember_me) == true
 
@@ -72,8 +84,13 @@ defmodule SummonerWeb.UserAuthTest do
       assert max_age == @remember_me_cookie_max_age
     end
 
-    test "writes a cookie if remember_me was set in previous session", %{conn: conn, user: user} do
-      conn = conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+    test "writes a cookie if remember_me was set in previous session", %{
+      conn: conn,
+      admin_user: admin_user
+    } do
+      conn =
+        conn |> fetch_cookies() |> UserAuth.log_in_user(admin_user, %{"remember_me" => "true"})
+
       assert get_session(conn, :user_token) == conn.cookies[@remember_me_cookie]
       assert get_session(conn, :user_remember_me) == true
 
@@ -87,7 +104,7 @@ defmodule SummonerWeb.UserAuthTest do
       # the conn is already logged in and has the remember_me cookie set,
       # now we log in again and even without explicitly setting remember_me,
       # the cookie should be set again
-      conn = conn |> UserAuth.log_in_user(user, %{})
+      conn = conn |> UserAuth.log_in_user(admin_user, %{})
       assert %{value: signed_token, max_age: max_age} = conn.resp_cookies[@remember_me_cookie]
       assert signed_token != get_session(conn, :user_token)
       assert max_age == @remember_me_cookie_max_age
@@ -96,8 +113,8 @@ defmodule SummonerWeb.UserAuthTest do
   end
 
   describe "logout_user/1" do
-    test "erases session and cookies", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+    test "erases session and cookies", %{conn: conn, admin_user: admin_user} do
+      user_token = Accounts.generate_user_session_token(admin_user)
 
       conn =
         conn
@@ -133,9 +150,9 @@ defmodule SummonerWeb.UserAuthTest do
       assert get_session(conn, :user_token) == user_token
     end
 
-    test "authenticates user from cookies", %{conn: conn, user: user} do
+    test "authenticates user from cookies", %{conn: conn, admin_user: admin_user} do
       logged_in_conn =
-        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+        conn |> fetch_cookies() |> UserAuth.log_in_user(admin_user, %{"remember_me" => "true"})
 
       user_token = logged_in_conn.cookies[@remember_me_cookie]
       %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]
@@ -145,22 +162,25 @@ defmodule SummonerWeb.UserAuthTest do
         |> put_req_cookie(@remember_me_cookie, signed_token)
         |> UserAuth.fetch_current_scope_for_user([])
 
-      assert conn.assigns.current_scope.user.id == user.id
-      assert conn.assigns.current_scope.user.authenticated_at == user.authenticated_at
+      assert conn.assigns.current_scope.user.id == admin_user.id
+      assert conn.assigns.current_scope.user.authenticated_at == admin_user.authenticated_at
       assert get_session(conn, :user_token) == user_token
       assert get_session(conn, :user_remember_me)
     end
 
-    test "does not authenticate if data is missing", %{conn: conn, user: user} do
-      _ = Accounts.generate_user_session_token(user)
+    test "does not authenticate if data is missing", %{conn: conn, admin_user: admin_user} do
+      _ = Accounts.generate_user_session_token(admin_user)
       conn = UserAuth.fetch_current_scope_for_user(conn, [])
       refute get_session(conn, :user_token)
       refute conn.assigns.current_scope
     end
 
-    test "reissues a new token after a few days and refreshes cookie", %{conn: conn, user: user} do
+    test "reissues a new token after a few days and refreshes cookie", %{
+      conn: conn,
+      admin_user: admin_user
+    } do
       logged_in_conn =
-        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+        conn |> fetch_cookies() |> UserAuth.log_in_user(admin_user, %{"remember_me" => "true"})
 
       token = logged_in_conn.cookies[@remember_me_cookie]
       %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]
@@ -222,10 +242,10 @@ defmodule SummonerWeb.UserAuthTest do
       %{conn: UserAuth.fetch_current_scope_for_user(conn, [])}
     end
 
-    test "redirects if user is authenticated", %{conn: conn, user: user} do
+    test "redirects if user is authenticated", %{conn: conn, admin_user: admin_user} do
       conn =
         conn
-        |> assign(:current_scope, Scope.for_user(user))
+        |> assign(:current_scope, Scope.for_user(admin_user))
         |> UserAuth.redirect_if_user_is_authenticated([])
 
       assert conn.halted
