@@ -6,7 +6,8 @@ defmodule Summoner.Domain.Schemas.WorkspaceMembership do
 
   ## Roles (highest to lowest privilege)
 
-  - `:admin` — full control: manage workspace settings, members, roles, delete workspace, configure resources
+  - `:owner` — full control including delete workspace; cannot be removed from their own workspace
+  - `:admin` — full control: manage workspace settings, members, roles, configure resources
   - `:member` — read + write: create/edit agents, conversations, pipelines, invoke agents
   - `:viewer` — read-only access to all workspace data
   """
@@ -18,7 +19,7 @@ defmodule Summoner.Domain.Schemas.WorkspaceMembership do
   alias Summoner.Domain.Schemas.User
   alias Summoner.Domain.Schemas.Workspace
 
-  @roles [:admin, :member, :viewer]
+  @roles [:owner, :admin, :member, :viewer]
 
   schema "workspace_memberships" do
     field :role, Ecto.Enum, values: @roles, default: :member
@@ -32,7 +33,7 @@ defmodule Summoner.Domain.Schemas.WorkspaceMembership do
   @doc "Returns the list of available roles."
   def roles, do: @roles
 
-  @doc "Returns roles assignable by a workspace admin (excludes :admin itself)."
+  @doc "Returns roles assignable by a workspace admin (excludes :owner and :admin itself)."
   def assignable_roles, do: [:member, :viewer]
 
   @doc """

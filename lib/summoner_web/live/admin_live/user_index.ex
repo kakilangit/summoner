@@ -167,6 +167,15 @@ defmodule SummonerWeb.AdminLive.UserIndex do
                 ]}>
                   {user.role}
                 </span>
+                <span :if={Admin.root_admin?(user)} class="badge badge-warning badge-xs ml-1">
+                  Root
+                </span>
+                <span
+                  :if={Admin.user_has_system_permission?(user, :manage_users)}
+                  class="badge badge-info badge-xs ml-1"
+                >
+                  System
+                </span>
               </td>
               <td>
                 <span :if={user.disabled_at} class="badge badge-sm badge-error">Disabled</span>
@@ -191,7 +200,7 @@ defmodule SummonerWeb.AdminLive.UserIndex do
               </td>
               <td>
                 <.link navigate={"/admin/users/#{user.id}"} class="btn btn-ghost btn-xs">
-                  View
+                  Edit
                 </.link>
               </td>
             </tr>

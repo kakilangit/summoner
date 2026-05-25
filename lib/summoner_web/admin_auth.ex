@@ -15,10 +15,13 @@ defmodule SummonerWeb.AdminAuth do
       end
   """
 
-  alias Summoner.Domain.Schemas.Scope
+  alias Summoner.Domain.Policies.SystemPolicy
+  alias Summoner.Ports.Persistence.Admin
 
   def on_mount(:ensure_admin, _params, _session, socket) do
-    if Scope.admin?(socket.assigns.current_scope) do
+    user = socket.assigns.current_scope.user
+
+    if admin_user?(user) do
       {:cont, socket}
     else
       socket =
@@ -28,5 +31,10 @@ defmodule SummonerWeb.AdminAuth do
 
       {:halt, socket}
     end
+  end
+
+  defp admin_user?(user) do
+    SystemPolicy.root_admin?(user) or
+      Enum.any?(Admin.list_system_permissions(user))
   end
 end

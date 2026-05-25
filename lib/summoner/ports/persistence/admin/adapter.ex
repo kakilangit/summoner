@@ -20,11 +20,32 @@ defmodule Summoner.Ports.Persistence.Admin.Adapter do
               {:ok, {struct(), String.t()}} | {:error, Ecto.Changeset.t()}
   @callback workspace_count_for_user(struct()) :: non_neg_integer()
   @callback list_user_workspaces(struct()) :: [struct()]
+  @callback first_workspace_for_user(struct()) :: struct() | nil
+  @callback add_user_to_workspace(struct(), String.t(), atom()) ::
+              {:ok, struct()} | {:error, Ecto.Changeset.t()}
+  @callback remove_user_from_workspace(struct(), String.t()) ::
+              {:ok, struct()} | {:error, term()}
+
+  @callback list_user_tenants(struct()) :: [struct()]
+  @callback first_tenant_for_user(struct()) :: struct() | nil
+  @callback add_user_to_tenant(struct(), String.t(), atom()) ::
+              {:ok, struct()} | {:error, Ecto.Changeset.t()}
+  @callback remove_user_from_tenant(struct(), String.t()) ::
+              {:ok, struct()} | {:error, term()}
+
+  # System permissions
+  @callback grant_system_permission(struct(), atom()) ::
+              {:ok, struct()} | {:error, Ecto.Changeset.t()}
+  @callback revoke_system_permission(struct(), atom()) ::
+              {:ok, :revoked} | {:error, :not_found}
+  @callback list_system_permissions(struct()) :: [atom()]
+  @callback user_has_system_permission?(struct(), atom()) :: boolean()
 
   # Workspaces
   @callback list_workspaces() :: struct()
   @callback list_workspaces(keyword()) :: struct()
   @callback get_workspace!(String.t()) :: struct()
+  @callback all_workspaces() :: [struct()]
   @callback member_count(struct()) :: non_neg_integer()
   @callback delete_workspace(struct()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
 

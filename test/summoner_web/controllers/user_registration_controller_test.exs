@@ -27,7 +27,10 @@ defmodule SummonerWeb.UserRegistrationControllerTest do
     end
 
     test "redirects if already logged in", %{conn: conn, tenant: tenant} do
-      conn = conn |> log_in_user(user_fixture()) |> get(~p"/tenants/#{tenant.id}/register")
+      alias Summoner.Ports.Persistence.Admin
+      {:ok, admin_user} = Admin.update_user_role(user_fixture(), "admin")
+      Admin.grant_system_permission(admin_user, :manage_users)
+      conn = conn |> log_in_user(admin_user) |> get(~p"/tenants/#{tenant.id}/register")
       assert redirected_to(conn) == ~p"/tenants"
     end
 

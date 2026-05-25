@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.31] - 2026-05-25
+
+### Added
+
+- RBAC foundation — `system_permissions` table, `:owner` role for tenant and workspace memberships
+- `SystemPolicy` — pure function module for system-level authorization (root admin, system permissions)
+- `TenantPolicy` — pure function module for tenant-level authorization (owner > admin > member)
+- `WorkspacePolicy` enhanced with `:owner` role (owner > admin > member > viewer) and granular actions
+- `attach_system_admin` on_mount hook — assigns `@is_system_admin` to all authenticated LiveView sessions
+- Admin UI: system permissions section, tenant/workspace assignment with datalist search
+- Auto-create tenant membership when adding user to workspace
+- Backfill migration for existing workspace members missing tenant memberships
+- RBAC permission matrix documentation (`docs/RBAC.md`)
+
+### Changed
+
+- Admin panel access now uses `SystemPolicy.root_admin?` + `system_permissions` instead of `user.role == "admin"`
+- Tenant index, tenant new, quota index updated to use policy-based checks
+- Root layout nav (desktop + mobile) uses `@is_system_admin` assign
+- All confirm dialogs converted from browser `data-confirm` to DaisyUI `confirm_modal`
+- `@impl true` added to all Admin adapter callback implementations
+- Login redirect resolves tenant from workspace membership when no direct tenant membership exists
+
+### Fixed
+
+- `SystemPolicy.root_admin?/1` was reading wrong config key (`:root_admin_email` instead of `:admin_email`)
+- Root admin check now uses case-insensitive email comparison
+- Users with workspace membership but no tenant membership could not log in
+- Migration SQL syntax for dropping check constraints (`ALTER TABLE ... DROP CONSTRAINT` not `ALTER COLUMN ... DROP CONSTRAINT`)
+
 ## [0.1.30] - 2026-05-24
 
 ### Added
@@ -573,6 +603,7 @@ All notable changes to this project will be documented in this file.
 
 - Replaced leftover HocusPocus references with Summoner
 
+[0.1.31]: https://github.com/kakilangit/summoner/compare/v0.1.30...v0.1.31
 [0.1.30]: https://github.com/kakilangit/summoner/compare/v0.1.29...v0.1.30
 [0.1.29]: https://github.com/kakilangit/summoner/compare/v0.1.28...v0.1.29
 [0.1.28]: https://github.com/kakilangit/summoner/compare/v0.1.27...v0.1.28

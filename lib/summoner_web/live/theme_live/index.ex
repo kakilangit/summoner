@@ -186,13 +186,20 @@ defmodule SummonerWeb.ThemeLive.Index do
               </span>
               <button
                 :if={!theme.is_builtin}
-                phx-click="delete"
-                phx-value-id={theme.id}
-                data-confirm="Delete this theme?"
+                phx-click={show_confirm("#delete-theme-#{theme.id}")}
                 class="btn btn-sm btn-ghost btn-error"
               >
                 Delete
               </button>
+              <.confirm_modal
+                :if={!theme.is_builtin}
+                id={"delete-theme-#{theme.id}"}
+                title="Delete Theme?"
+                message="This theme will be permanently deleted."
+                confirm_text="Delete"
+                variant="error"
+                on_confirm={JS.push("delete", value: %{id: theme.id})}
+              />
             </div>
           </div>
         </div>

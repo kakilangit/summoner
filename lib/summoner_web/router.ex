@@ -34,7 +34,10 @@ defmodule SummonerWeb.Router do
 
   # Authenticated LiveView routes
   live_session :authenticated,
-    on_mount: [{SummonerWeb.UserAuth, :ensure_authenticated}] do
+    on_mount: [
+      {SummonerWeb.UserAuth, :ensure_authenticated},
+      {SummonerWeb.UserAuth, :attach_system_admin}
+    ] do
     scope "/", SummonerWeb do
       pipe_through [:browser, :require_authenticated_user]
 
@@ -48,6 +51,7 @@ defmodule SummonerWeb.Router do
   live_session :admin,
     on_mount: [
       {SummonerWeb.UserAuth, :ensure_authenticated},
+      {SummonerWeb.UserAuth, :attach_system_admin},
       {SummonerWeb.AdminAuth, :ensure_admin}
     ] do
     scope "/admin", SummonerWeb do
@@ -66,6 +70,7 @@ defmodule SummonerWeb.Router do
   live_session :tenant,
     on_mount: [
       {SummonerWeb.UserAuth, :ensure_authenticated},
+      {SummonerWeb.UserAuth, :attach_system_admin},
       {SummonerWeb.TenantAuth, :ensure_tenant_member}
     ] do
     scope "/tenants/:tenant_id", SummonerWeb do
@@ -98,6 +103,7 @@ defmodule SummonerWeb.Router do
   live_session :workspace,
     on_mount: [
       {SummonerWeb.UserAuth, :ensure_authenticated},
+      {SummonerWeb.UserAuth, :attach_system_admin},
       {SummonerWeb.TenantAuth, :ensure_tenant_member},
       {SummonerWeb.WorkspaceAuth, :ensure_workspace_member}
     ] do
