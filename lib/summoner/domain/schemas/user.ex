@@ -7,6 +7,8 @@ defmodule Summoner.Domain.Schemas.User do
 
   import Ecto.Changeset
 
+  @dns_client Application.compile_env(:summoner, :dns_client, Summoner.Adapters.DNS)
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
@@ -40,6 +42,8 @@ defmodule Summoner.Domain.Schemas.User do
   end
 
   defp validate_email(changeset, opts) do
+    dns_client = Keyword.get(opts, :dns_client, @dns_client)
+
     changeset =
       changeset
       |> validate_required([:email])
@@ -47,7 +51,7 @@ defmodule Summoner.Domain.Schemas.User do
         message: "must have the @ sign and no spaces"
       )
       |> validate_length(:email, max: 160)
-      |> validate_email_domain()
+      |> validate_email_domain(dns_client)
 
     if Keyword.get(opts, :validate_unique, true) do
       repo = Keyword.get(opts, :repo, Summoner.Repo)
@@ -69,12 +73,12 @@ defmodule Summoner.Domain.Schemas.User do
     end
   end
 
-  defp validate_email_domain(changeset) do
+  defp validate_email_domain(changeset, dns_client) do
     with {:ok, email} <- fetch_change(changeset, :email),
          true <- changeset.valid? do
       [_, domain] = String.split(email, "@", parts: 2)
 
-      case :inet_res.lookup(to_charlist(domain), :in, :mx) do
+      case dns_client.lookup_mx(domain) do
         [] -> add_error(changeset, :email, "has an invalid email domain")
         _records -> changeset
       end

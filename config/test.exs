@@ -60,6 +60,7 @@ config :summoner, Summoner.Adapters.Crypto.Vault,
 # Use Mox HTTP client for inference adapters in tests
 config :summoner, :http_client, Summoner.Ports.HTTPClientMock
 config :arcanum, :http_client, Summoner.Ports.HTTPClientMock
+config :summoner, :dns_client, Summoner.Adapters.DNSTest
 
 # Disable Discovery GenServer in tests
 config :summoner, :start_discovery, false

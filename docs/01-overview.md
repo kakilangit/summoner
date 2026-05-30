@@ -55,8 +55,8 @@ Adapters (persistence, pubsub, workers, mailer, crypto)
 | Layer | Namespace | Contents |
 |-------|-----------|----------|
 | Domain | `Summoner.Domain.*` | Ecto schemas, domain event structs, authorization policies, value types |
-| Ports | `Summoner.Ports.*` | Behaviour definitions (`Events`, `Workers`, `Persistence.*`) with compile-time adapter injection |
-| Adapters | `Summoner.Adapters.*` | Repo-backed persistence, PubSub, Oban workers, Cloak crypto, Swoosh mailer |
+| Ports | `Summoner.Ports.*` | Behaviour definitions (`DNS`, `Events`, `Workers`, `Persistence.*`) with compile-time adapter injection |
+| Adapters | `Summoner.Adapters.*` | Repo-backed persistence, DNS, PubSub, Oban workers, Cloak crypto, Swoosh mailer |
 | Services | `Summoner.Services.*` | Orchestration (ReAct loop), inference, swarm coordination, MCP, A2A |
 
 Domain logic never imports infrastructure modules. Services and LiveViews access persistence exclusively through port modules, not adapters directly.
