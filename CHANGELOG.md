@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.32] - 2026-05-30
+
+### Added
+
+- Chat composer now supports `Shift+Enter` for multiline drafts
+- DNS validation port for email domain checks, with a test adapter for deterministic fixtures
+
+### Changed
+
+- User fixtures now confirm users directly instead of replaying the login flow
+- Email domain validation now uses a DNS port instead of calling the Erlang resolver directly
+
+### Fixed
+
+- Web tests no longer depend on live MX lookups for fixture users
+- Chat composer no longer submits on `Shift+Enter`
+
 ## [0.1.31] - 2026-05-25
 
 ### Added

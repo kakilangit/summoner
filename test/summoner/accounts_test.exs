@@ -7,6 +7,12 @@ defmodule Summoner.Adapters.Persistence.AccountsTest do
   alias Summoner.Domain.Schemas.User
   alias Summoner.Domain.Schemas.UserToken
 
+  defmodule InvalidDNS do
+    @moduledoc false
+
+    def lookup_mx(_domain), do: []
+  end
+
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
       refute Accounts.get_user_by_email("unknown@example.com")
@@ -66,6 +72,13 @@ defmodule Summoner.Adapters.Persistence.AccountsTest do
       too_long = String.duplicate("db", 100)
       {:error, changeset} = Accounts.register_user(%{email: too_long})
       assert "should be at most 160 character(s)" in errors_on(changeset).email
+    end
+
+    test "validates email domain using DNS" do
+      changeset =
+        User.email_changeset(%User{}, %{email: "user@invalid.test"}, dns_client: InvalidDNS)
+
+      assert %{email: ["has an invalid email domain"]} = errors_on(changeset)
     end
 
     test "validates email uniqueness" do

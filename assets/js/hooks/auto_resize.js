@@ -9,7 +9,11 @@ const AutoResize = {
     this._resize()
     this.el.addEventListener("input", () => this._resize())
     this.el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key !== "Enter") return
+
+      e.stopPropagation()
+
+      if (!e.shiftKey) {
         e.preventDefault()
         this.el.closest("form")?.requestSubmit()
       }

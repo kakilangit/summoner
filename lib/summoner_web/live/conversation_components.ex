@@ -570,20 +570,19 @@ defmodule SummonerWeb.ConversationComponents do
           <span class={media_button_icon(@media_mode)}></span>
         </button>
 
-        <input
-          type="text"
+        <textarea
           name="message"
           id="message-input"
           placeholder={media_placeholder(@media_mode, @placeholder)}
           class={[
-            "input input-bordered w-full flex-1",
-            if(@media_mode, do: "focus:input-accent", else: "focus:input-primary")
+            "textarea textarea-bordered w-full flex-1 resize-none",
+            if(@media_mode, do: "focus:textarea-accent", else: "focus:textarea-primary")
           ]}
           autocomplete="off"
           autofocus
-          phx-debounce="blur"
           phx-hook="MessageInput"
-        />
+          rows="1"
+        ></textarea>
         <button
           :if={!@processing}
           type="submit"
