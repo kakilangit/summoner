@@ -513,13 +513,22 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
   # -------------------------------------------------------------------
 
   defp exec_bash(%{"command" => ""}, _root), do: {:error, "command is required"}
-  defp exec_bash(%{"command" => cmd} = args, root), do: run_shell(cmd, args, root)
+
+  defp exec_bash(%{"command" => cmd} = args, root) do
+    Logger.info(
+      "bash request command=#{inspect(cmd)} timeout_ms=#{Map.get(args, "timeout", @default_shell_timeout)} workdir=#{inspect(Map.get(args, "workdir"))}"
+    )
+
+    run_shell(cmd, args, root)
+  end
+
   defp exec_bash(_args, _root), do: {:error, "command is required"}
 
   defp run_shell(command, args, workspace_root) do
     timeout = clamp_timeout(Map.get(args, "timeout", @default_shell_timeout))
 
     with {:ok, workdir} <- sandbox_path(Map.get(args, "workdir"), workspace_root) do
+      Logger.debug("bash sandbox resolved workdir=#{workdir} timeout_ms=#{timeout}")
       run_shell_cmd(command, workdir, timeout)
     end
   rescue
@@ -556,6 +565,10 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
 
   defp exec_read(args, workspace_root) do
     with {:ok, path} <- sandbox_path(Map.get(args, "file_path"), workspace_root) do
+      Logger.info(
+        "read request path=#{path} offset=#{Map.get(args, "offset", 1)} limit=#{Map.get(args, "limit", @max_read_lines)}"
+      )
+
       read_path(path, args)
     end
   end
@@ -614,6 +627,7 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
   defp exec_write(args, workspace_root) do
     with {:ok, path} <- sandbox_path(Map.get(args, "file_path"), workspace_root) do
       content = Map.get(args, "content", "")
+      Logger.info("write request path=#{path} bytes=#{byte_size(content)}")
       path |> Path.dirname() |> File.mkdir_p!()
       File.write!(path, content)
       {:ok, "Written #{byte_size(content)} bytes to #{path}"}
@@ -630,6 +644,11 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
          {:ok, content} <- read_for_edit(path) do
       new_string = Map.get(args, "new_string", "")
       replace_all = Map.get(args, "replace_all", false)
+
+      Logger.info(
+        "edit request path=#{path} replace_all=#{replace_all} old_bytes=#{byte_size(old_string)} new_bytes=#{byte_size(new_string)}"
+      )
+
       apply_edit(path, content, old_string, new_string, replace_all)
     end
   end
@@ -676,6 +695,10 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
 
   defp exec_grep(%{"pattern" => pattern} = args, workspace_root) do
     with {:ok, path} <- sandbox_path(Map.get(args, "path"), workspace_root) do
+      Logger.info(
+        "grep request path=#{path} pattern=#{inspect(pattern)} include=#{inspect(Map.get(args, "include"))}"
+      )
+
       run_ripgrep(pattern, path, Map.get(args, "include"))
     end
   rescue
@@ -721,6 +744,7 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
 
   defp exec_glob(%{"pattern" => pattern} = args, workspace_root) do
     with {:ok, path} <- sandbox_path(Map.get(args, "path"), workspace_root) do
+      Logger.info("glob request path=#{path} pattern=#{inspect(pattern)}")
       find_glob_matches(pattern, path, workspace_root)
     end
   end
@@ -776,6 +800,8 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
     accept = fetch_accept_header(format)
     headers = [{"accept", accept} | @fetch_headers]
 
+    Logger.info("webfetch request url=#{url} format=#{format} timeout_s=#{timeout_seconds}")
+
     case Req.get(url,
            headers: headers,
            receive_timeout: timeout_seconds * 1_000,
@@ -787,12 +813,15 @@ defmodule Summoner.Services.Orchestration.BuiltinTools do
         process_fetch_response(body, format)
 
       {:ok, %Req.Response{status: status}} ->
+        Logger.warning("webfetch http error url=#{url} status=#{status}")
         {:error, "HTTP #{status} fetching #{url}"}
 
       {:error, %Mint.TransportError{reason: reason}} ->
+        Logger.warning("webfetch connection error url=#{url} reason=#{reason}")
         {:error, "connection error: #{reason}"}
 
       {:error, reason} ->
+        Logger.warning("webfetch fetch error url=#{url} reason=#{inspect(reason)}")
         {:error, "fetch error: #{inspect(reason)}"}
     end
   end
