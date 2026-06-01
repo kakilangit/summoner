@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.33] - 2026-06-01
+
+### Added
+
+- Built-in tool request logging for easier debugging of shell, file, and web fetch calls
+
+### Changed
+
+- Built-in tools now log the inputs needed to trace failed requests
+
+### Fixed
+
+- Web fetch failures now include the actual URL in logs
+
 ## [0.1.32] - 2026-05-30
 
 ### Added
@@ -18,6 +32,8 @@ All notable changes to this project will be documented in this file.
 
 - Web tests no longer depend on live MX lookups for fixture users
 - Chat composer no longer submits on `Shift+Enter`
+
+[0.1.33]: https://github.com/kakilangit/summoner/compare/v0.1.32...v0.1.33
 
 ## [0.1.31] - 2026-05-25
 
